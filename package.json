@@ -1,0 +1,102 @@
+{
+	"$schema": "https://www.raycast.com/schemas/extension.json",
+	"name": "ableton-session-manager",
+	"title": "Ableton Session Manager",
+	"description": "Manage and search Ableton Live projects",
+	"icon": "Project (Apple).png",
+	"author": "iyek",
+	"platforms": [
+		"macOS"
+	],
+	"categories": [
+		"Productivity"
+	],
+	"license": "MIT",
+	"preferences": [
+		{
+			"name": "language",
+			"title": "Language",
+			"description": "Language used by the extension interface",
+			"type": "dropdown",
+			"required": false,
+			"default": "en",
+			"data": [
+				{ "title": "English", "value": "en" },
+				{ "title": "简体中文", "value": "zh-CN" }
+			]
+		},
+		{
+			"name": "projectsFolder",
+			"title": "Projects Folder",
+			"description": "Folder containing your Ableton Live Projects",
+			"type": "directory",
+			"required": true
+		},
+		{
+			"name": "bouncesFolderName",
+			"title": "Bounces Folder",
+			"description": "Subfolder name where bounces live. Leave empty to use the project root.",
+			"type": "textfield",
+			"required": false,
+			"placeholder": "e.g. Bounces"
+		},
+		{
+			"name": "notesFolder",
+			"title": "Notes Folder",
+			"description": "Store project notes as .md files in this folder (e.g. an Obsidian vault). Leave empty to store notes inside the extension.",
+			"type": "directory",
+			"required": false
+		},
+		{
+			"name": "projectView",
+			"title": "Projects View",
+			"description": "How the Search Projects list is displayed",
+			"type": "dropdown",
+			"required": false,
+			"default": "overview",
+			"data": [
+				{ "title": "Overview", "value": "overview" },
+				{ "title": "Detail", "value": "detail" }
+			]
+		}
+	],
+	"commands": [
+		{
+			"name": "search-projects",
+			"title": "Search Projects",
+			"description": "Search and open Ableton Live projects",
+			"mode": "view",
+			"subtitle": "Ableton Session Manager"
+		},
+		{
+			"name": "manage-categories",
+			"title": "Manage Categories",
+			"description": "Create and manage genres and collections",
+			"mode": "view",
+			"subtitle": "Ableton Session Manager"
+		}
+	],
+	"tools": [],
+	"dependencies": {
+		"@raycast/api": "^1.104.20",
+		"@raycast/utils": "^2.2.7",
+		"fast-xml-parser": "^5.11.2",
+		"saxes": "^6.0.0"
+	},
+	"devDependencies": {
+		"@raycast/eslint-config": "^2.2.0",
+		"@types/node": "22.19.17",
+		"@types/react": "19.0.10",
+		"eslint": "^10.5.0",
+		"prettier": "^3.8.5",
+		"typescript": "^6.0.3"
+	},
+	"scripts": {
+		"build": "ray build",
+		"dev": "ray develop",
+		"fix-lint": "ray lint --fix",
+		"lint": "ray lint",
+		"prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the `prepublishOnly` script and rerun `npm publish` again.\\nIf you wanted to publish the Raycast Store instead, use `npm run publish` instead.\\n\\n\" && exit 1",
+		"publish": "npx @raycast/api@latest publish"
+	}
+}
