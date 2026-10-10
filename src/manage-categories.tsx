@@ -28,7 +28,11 @@ const TAXONOMIES: Record<CategoryKind, Taxonomy> = {
 };
 
 function slugify(name: string): string {
-  const slug = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
   return slug || name.trim().toLowerCase();
 }
 
@@ -46,7 +50,7 @@ function CategoryForm(props: { title: string; initialName?: string; onSubmit: (n
             onSubmit={async () => {
               const trimmed = name.trim();
               if (trimmed === "") {
-                await showToast({ style: Toast. Style.Failure, title: t.invalidName });
+                await showToast({ style: Toast.Style.Failure, title: t.invalidName });
                 return;
               }
               await props.onSubmit(trimmed);
@@ -111,7 +115,7 @@ export default function Command() {
     const next = options.filter((o) => o.id !== option.id);
     await TAXONOMIES[kind].save(next);
     setOptions(next);
-    await showToast({ style: Toast. Style.Success, title: t.deleted });
+    await showToast({ style: Toast.Style.Success, title: t.deleted });
   }
 
   const createAction = (
@@ -156,7 +160,7 @@ export default function Command() {
               {createAction}
               <Action
                 title={t.delete}
-                icon={Icon. Trash}
+                icon={Icon.Trash}
                 style={Action.Style.Destructive}
                 shortcut={{ modifiers: ["ctrl"], key: "x" }}
                 onAction={() => deleteOption(option)}

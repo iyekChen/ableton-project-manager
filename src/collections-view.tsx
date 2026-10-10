@@ -13,7 +13,7 @@ import {
 } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { getTranslations } from "./i18n";
-import type { Project } from "./search-projects";
+import type { Project } from "./projects/types";
 import {
   TrackMap,
   assignNumber,
@@ -98,7 +98,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
               {tracked.map((p, i) => {
                 const num = map[p.id];
                 const dup = (counts.get(num) ?? 0) > 1;
-                const accessories: List.Item. Accessory[] = [{ text: `Track ${String(num).padStart(2, "0")}` }];
+                const accessories: List.Item.Accessory[] = [{ text: `Track ${String(num).padStart(2, "0")}` }];
                 if (dup) {
                   accessories.push({
                     icon: { source: Icon.Warning, tintColor: Color.Yellow },
@@ -119,9 +119,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                           target={
                             <SetTrackNumberForm
                               current={num}
-                              onSubmit={(n) =>
-                                apply(n === null ? removeNumber(map, p.id) : assignNumber(map, p.id, n))
-                              }
+                              onSubmit={(n) => apply(n === null ? removeNumber(map, p.id) : assignNumber(map, p.id, n))}
                             />
                           }
                         />
@@ -176,9 +174,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                         target={
                           <SetTrackNumberForm
                             current={nextNumber(map)}
-                            onSubmit={(n) =>
-                              apply(n === null ? removeNumber(map, p.id) : assignNumber(map, p.id, n))
-                            }
+                            onSubmit={(n) => apply(n === null ? removeNumber(map, p.id) : assignNumber(map, p.id, n))}
                           />
                         }
                       />
@@ -199,13 +195,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
   );
 }
 
-function SetTrackNumberForm({
-  current,
-  onSubmit,
-}: {
-  current?: number;
-  onSubmit: (n: number | null) => void;
-}) {
+function SetTrackNumberForm({ current, onSubmit }: { current?: number; onSubmit: (n: number | null) => void }) {
   const { pop } = useNavigation();
   const [value, setValue] = useState("");
 

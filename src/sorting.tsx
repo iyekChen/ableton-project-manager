@@ -90,7 +90,6 @@ export function useSortOption(storageKey: string, allowed: SortOption[], fallbac
     // allowed 对每个界面固定,按 storageKey 加载一次即可
   }, [storageKey]);
 
-
   const setSortBy = async (next: SortOption) => {
     setSortByState(next);
     await LocalStorage.setItem(storageKey, next);

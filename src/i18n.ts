@@ -129,7 +129,8 @@ const translations: Record<Language, TranslationKeys> = {
     nameExists: "A project with that name already exists",
     renameFailed: "Rename failed",
     renameConfirmTitle: "Rename project?",
-    renameConfirmMessage: "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
+    renameConfirmMessage:
+      "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
     rename: "Rename",
     sizeLargest: "Size — Largest",
     sizeSmallest: "Size — Smallest",
@@ -219,7 +220,6 @@ const translations: Record<Language, TranslationKeys> = {
     deleted: "已删除",
     noCategories: "还没有选项",
   },
-
 };
 
 export function getTranslations(language: Language): TranslationKeys {

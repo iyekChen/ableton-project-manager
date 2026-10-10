@@ -97,7 +97,7 @@ export function getAlsMetadata(filePath: string): Promise<AlsMetadata> {
 
     parser.on("opentag", (tag) => {
       stack.push(tag.name);
-      
+
       const attributes = tag.attributes as Record<string, unknown>;
       const value = attributes.Value;
 
@@ -105,10 +105,7 @@ export function getAlsMetadata(filePath: string): Promise<AlsMetadata> {
       const insideTempo = insideMainTrack && stack.includes("Tempo");
 
       const isGlobalScaleOpen =
-        stack.length === 3 &&
-        stack[0] === "Ableton" &&
-        stack[1] === "LiveSet" &&
-        tag.name === "ScaleInformation";
+        stack.length === 3 && stack[0] === "Ableton" && stack[1] === "LiveSet" && tag.name === "ScaleInformation";
 
       const isGlobalInKey =
         stack.length === 3 && stack[0] === "Ableton" && stack[1] === "LiveSet" && tag.name === "InKey";
