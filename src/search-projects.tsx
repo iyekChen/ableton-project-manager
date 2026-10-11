@@ -12,7 +12,6 @@ import {
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import fs from "node:fs";
-import { extname, join } from "node:path";
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { getSettings } from "./settings";
@@ -30,14 +29,13 @@ import { EditNote } from "./components/project/edit-note";
 import { Sets } from "./components/project/sets";
 import type { Project } from "./projects/types";
 import { loadProjects } from "./projects/load-projects";
+import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
 const PLAYER_PATH = ensureAudioPlayerBinary();
-
-const AUDIO_EXTENSIONS = new Set([".wav", ".aif", ".aiff", ".mp3", ".m4a", ".flac"]);
 
 const PROJECT_SORT_OPTIONS: SortOption[] = [
   "modified-desc",
@@ -63,53 +61,6 @@ function formatDate(ms: number): string {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
-}
-
-/**
- * 查找项目中创建时间最新的 Bounce。
- * 扫描范围、文件格式和 Bounces 列表保持一致。
- */
-function findLatestBounce(projectPath: string): string | null {
-  const prefs = getPreferenceValues<{ bouncesFolderName?: string }>();
-  const folderName = (prefs.bouncesFolderName ?? "").trim();
-  const folderPath = folderName ? join(projectPath, folderName) : projectPath;
-
-  let entries: string[];
-
-  try {
-    entries = fs.readdirSync(folderPath);
-  } catch {
-    return null;
-  }
-
-  let latestPath: string | null = null;
-  let latestCreatedAt = Number.NEGATIVE_INFINITY;
-
-  for (const entry of entries) {
-    if (!AUDIO_EXTENSIONS.has(extname(entry).toLowerCase())) {
-      continue;
-    }
-
-    const filePath = join(folderPath, entry);
-
-    try {
-      const stats = fs.statSync(filePath);
-
-      if (!stats.isFile()) {
-        continue;
-      }
-
-      if (stats.birthtimeMs > latestCreatedAt) {
-        latestCreatedAt = stats.birthtimeMs;
-        latestPath = filePath;
-      }
-    } catch {
-      // 跳过无法读取的文件，继续检查其他 Bounce。
-      continue;
-    }
-  }
-
-  return latestPath;
 }
 
 export default function Command() {
@@ -319,7 +270,7 @@ export default function Command() {
                     return;
                   }
 
-                  const latestBouncePath = findLatestBounce(item.folderPath);
+                  const latestBouncePath = findLatestBounce(resolveBouncesFolder(item.folderPath));
 
                   if (!latestBouncePath) {
                     await showToast({

@@ -1,11 +1,11 @@
-import { List, ActionPanel, Action, Icon, getPreferenceValues } from "@raycast/api";
+import { List, ActionPanel, Action, Icon } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { existsSync, readdirSync, statSync } from "fs";
-import { extname, join } from "path";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "./sorting";
 import type { SortOption } from "./sorting";
+import { listBounces, resolveBouncesFolder } from "./projects/bounces";
+import type { Bounce } from "./projects/bounces";
 
 const t = getTranslations(getSettings().language);
 
@@ -20,49 +20,6 @@ const BOUNCES_SORT_OPTIONS: SortOption[] = [
   "size-desc",
   "size-asc",
 ];
-
-const AUDIO_EXTENSIONS = new Set([".wav", ".aif", ".aiff", ".mp3", ".m4a", ".flac"]);
-
-type Bounce = {
-  name: string;
-  path: string;
-  createdAt: number;
-  modifiedAt: number;
-  size: number;
-};
-
-// 项目文件夹「顶层」扫描，不进 Samples / Backup 等子文件夹。
-// statSync 会跟随 symlink，所以链接到外部文件夹的 bounce 也能读到。
-function loadBounces(folderPath: string): Bounce[] {
-  if (!existsSync(folderPath)) return [];
-
-  let entries: string[];
-  try {
-    entries = readdirSync(folderPath);
-  } catch {
-    return [];
-  }
-
-  const bounces: Bounce[] = [];
-  for (const entry of entries) {
-    if (!AUDIO_EXTENSIONS.has(extname(entry).toLowerCase())) continue;
-    const fullPath = join(folderPath, entry);
-    try {
-      const stats = statSync(fullPath); // follows symlinks
-      if (!stats.isFile()) continue;
-      bounces.push({
-        name: entry,
-        path: fullPath,
-        createdAt: stats.birthtimeMs,
-        modifiedAt: stats.mtimeMs,
-        size: stats.size,
-      });
-    } catch {
-      continue;
-    }
-  }
-  return bounces;
-}
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -82,10 +39,7 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
   const [sortBy, setSortBy] = useSortOption(BOUNCES_SORT_STORAGE_KEY, BOUNCES_SORT_OPTIONS, "created-desc");
 
   useEffect(() => {
-    const prefs = getPreferenceValues<{ bouncesFolderName?: string }>();
-    const folderName = (prefs.bouncesFolderName ?? "").trim();
-    const folderPath = folderName ? join(props.projectPath, folderName) : props.projectPath;
-    setBounces(loadBounces(folderPath));
+    setBounces(listBounces(resolveBouncesFolder(props.projectPath)));
     setIsLoading(false);
   }, [props.projectPath]);
 
@@ -97,7 +51,7 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
   }));
 
   return (
-    <List isLoading={isLoading} navigationTitle={`${t.previewBounces} — ${props.projectName}`}>
+    <List isLoading={isLoading} navigationTitle={`${t.browseBounces} — ${props.projectName}`}>
       {sorted.length === 0 ? (
         <List.EmptyView icon={Icon.Music} title={t.noBounces} />
       ) : (
@@ -109,7 +63,6 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
               icon={Icon.Music}
               accessories={[{ text: formatSize(b.size) }]}
               quickLook={{ path: b.path, name: b.name }}
-
               actions={
                 <ActionPanel>
                   <Action.ToggleQuickLook />
