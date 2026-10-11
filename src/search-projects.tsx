@@ -125,7 +125,7 @@ export default function Command() {
 
   const baseProjectsRef = useRef<Project[]>([]);
 
-  const { playbackStatus, play, stop } = useAudioPlayer({
+  const { playbackStatus, playingId, play, stop } = useAudioPlayer({
     playerPath: PLAYER_PATH,
   });
 
@@ -223,6 +223,11 @@ export default function Command() {
     const noteFile = noteFilePath(item.id);
     const canOpenNote = noteFile !== null && fs.existsSync(noteFile);
 
+    // 只有「正在播放的那一行」显示 Stop，其余行显示 Play。
+    const isThisPlaying = playingId === item.id;
+    const isThisActive =
+      isThisPlaying && (playbackStatus === "Starting" || playbackStatus === "Playing" || playbackStatus === "Stopping");
+
     return (
       <List.Item
         key={item.id}
@@ -297,23 +302,19 @@ export default function Command() {
 
               <Action
                 title={
-                  playbackStatus === "Starting" || playbackStatus === "Playing" || playbackStatus === "Stopping"
+                  isThisActive
                     ? playbackStatus === "Stopping"
                       ? t.stoppingPlayback
                       : t.stopPlayback
                     : t.playLatestBounce
                 }
-                icon={
-                  playbackStatus === "Starting" || playbackStatus === "Playing" || playbackStatus === "Stopping"
-                    ? Icon.Stop
-                    : Icon.Play
-                }
+                icon={isThisActive ? Icon.Stop : Icon.Play}
                 onAction={async () => {
-                  if (playbackStatus === "Stopping") {
+                  if (isThisPlaying && playbackStatus === "Stopping") {
                     return;
                   }
 
-                  if (playbackStatus === "Starting" || playbackStatus === "Playing") {
+                  if (isThisPlaying && (playbackStatus === "Starting" || playbackStatus === "Playing")) {
                     stop();
                     return;
                   }
@@ -328,7 +329,7 @@ export default function Command() {
                     return;
                   }
 
-                  play(latestBouncePath, {
+                  play(item.id, latestBouncePath, {
                     onPlaying: () => {
                       void showToast({
                         style: Toast.Style.Success,

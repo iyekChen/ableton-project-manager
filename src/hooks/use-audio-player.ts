@@ -18,6 +18,8 @@ interface ActivePlayer {
 
 export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
   const [playbackStatus, setPlaybackStatus] = useState<PlaybackStatus>("Stopped");
+  // 当前正在播放的身份（由调用方传入，通常是项目 id）；未播放时为 null。
+  const [playingId, setPlayingId] = useState<string | null>(null);
 
   const playbackStatusRef = useRef<PlaybackStatus>("Stopped");
   const activePlayerRef = useRef<ActivePlayer | null>(null);
@@ -29,7 +31,7 @@ export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
   }, []);
 
   const play = useCallback(
-    (audioPath: string, callbacks?: PlaybackCallbacks) => {
+    (id: string, audioPath: string, callbacks?: PlaybackCallbacks) => {
       // 先切换会话编号，使旧播放器的回调失效。
       const sessionId = ++sessionIdRef.current;
 
@@ -40,6 +42,7 @@ export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
       previousPlayer?.controller.cleanup();
 
       updatePlaybackStatus("Starting");
+      setPlayingId(id);
 
       const controller = startAudioPlayer({
         audioPath,
@@ -58,6 +61,8 @@ export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
           }
 
           if (status === "Stopped" || status === "Failed") {
+            setPlayingId(null);
+
             if (activePlayerRef.current?.sessionId === sessionId) {
               activePlayerRef.current = null;
             }
@@ -90,6 +95,7 @@ export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
         updatePlaybackStatus("Stopped");
       }
 
+      setPlayingId(null);
       return;
     }
 
@@ -110,6 +116,7 @@ export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
 
   return {
     playbackStatus,
+    playingId,
     play,
     stop,
   };
