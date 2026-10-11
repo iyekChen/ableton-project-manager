@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import fs from "node:fs";
 import { extname, join } from "node:path";
 import { useAudioPlayer } from "./hooks/use-audio-player";
+import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { getSettings } from "./settings";
 import { getAllProjectMetadata, movePinnedProject, setProjectPinned } from "./project-metadata";
 import { getTranslations } from "./i18n";
@@ -34,7 +35,7 @@ const settings = getSettings();
 const t = getTranslations(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
-const PLAYER_PATH = "/tmp/asm-audio-player";
+const PLAYER_PATH = ensureAudioPlayerBinary();
 
 const AUDIO_EXTENSIONS = new Set([".wav", ".aif", ".aiff", ".mp3", ".m4a", ".flac"]);
 

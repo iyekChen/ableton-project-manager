@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 把 swift/AudioPlayer.swift 编译成通用二进制（arm64 + x86_64），输出到 assets/asm-audio-player。
+# 需要已安装 Xcode 命令行工具（提供 swiftc / lipo）。
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SRC="$ROOT/swift/AudioPlayer.swift"
+OUT="$ROOT/assets/asm-audio-player"
+BUILD_DIR="$ROOT/.build/audio-player"
+
+mkdir -p "$BUILD_DIR"
+
+# 分别编译两种芯片架构。-O 为优化编译；macos11 是最低系统版本，可按需调整。
+swiftc -O -target arm64-apple-macos11  -o "$BUILD_DIR/asm-audio-player-arm64"  "$SRC"
+swiftc -O -target x86_64-apple-macos11 -o "$BUILD_DIR/asm-audio-player-x86_64" "$SRC"
+
+# 合并成一个通用二进制。
+lipo -create \
+  "$BUILD_DIR/asm-audio-player-arm64" \
+  "$BUILD_DIR/asm-audio-player-x86_64" \
+  -output "$OUT"
+
+chmod +x "$OUT"
+
+echo "✅ Built universal binary at $OUT"
+lipo -info "$OUT"
