@@ -302,6 +302,7 @@ export default function Command() {
               <Action
                 title={t.browseBounces}
                 icon={Icon.Eye}
+                shortcut={{ modifiers: ["opt"], key: "return" }}
                 onAction={async () => {
                   if (item.bouncesCount === 0) {
                     await showToast({
@@ -318,6 +319,7 @@ export default function Command() {
               <Action.Push
                 title={t.browseCollections}
                 icon={Icon.Cd}
+                shortcut={{ modifiers: ["ctrl"], key: "return" }}
                 target={<CollectionList projects={projects} collections={collectionOptions} />}
               />
             </ActionPanel.Section>
