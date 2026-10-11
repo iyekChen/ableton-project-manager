@@ -59,7 +59,14 @@ type TranslationKeys = {
   rename: string;
   sizeLargest: string;
   sizeSmallest: string;
-  previewBounces: string;
+  browseBounces: string;
+  playLatestBounce: string;
+  playingLatestBounce: string;
+  playbackFailed: string;
+  stopPlayback: string;
+  stoppingPlayback: string;
+  nothingIsPlaying: string;
+  playbackStopped: string;
   noBounces: string;
   stage: string;
   genre: string;
@@ -134,7 +141,14 @@ const translations: Record<Language, TranslationKeys> = {
     rename: "Rename",
     sizeLargest: "Size — Largest",
     sizeSmallest: "Size — Smallest",
-    previewBounces: "Preview Bounces",
+    browseBounces: "Browse Bounces",
+    playLatestBounce: "Play Latest Bounce",
+    playingLatestBounce: "Playing Latest Bounce",
+    playbackFailed: "Playback Failed",
+    stopPlayback: "Stop Playback",
+    stoppingPlayback: "Stopping Playback",
+    nothingIsPlaying: "Nothing Is Playing",
+    playbackStopped: "Playback Stopped",
     noBounces: "No Bounces Found",
     stage: "Stage",
     genre: "Genre",
@@ -207,7 +221,14 @@ const translations: Record<Language, TranslationKeys> = {
     rename: "重命名",
     sizeLargest: "大小 — 最大",
     sizeSmallest: "大小 — 最小",
-    previewBounces: "预览 Bounces",
+    browseBounces: "浏览 Bounces",
+    playLatestBounce: "播放最新 Bounce",
+    playingLatestBounce: "正在播放最新 Bounce",
+    playbackFailed: "播放失败",
+    stopPlayback: "停止播放",
+    stoppingPlayback: "正在停止播放",
+    nothingIsPlaying: "当前没有正在播放的音频",
+    playbackStopped: "已停止播放",
     noBounces: "没有找到 Bounces",
     stage: "阶段",
     genre: "风格",

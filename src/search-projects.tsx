@@ -12,6 +12,8 @@ import {
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import fs from "node:fs";
+import { extname, join } from "node:path";
+import { useAudioPlayer } from "./hooks/use-audio-player";
 import { getSettings } from "./settings";
 import { getAllProjectMetadata, movePinnedProject, setProjectPinned } from "./project-metadata";
 import { getTranslations } from "./i18n";
@@ -32,6 +34,10 @@ const settings = getSettings();
 const t = getTranslations(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
+const PLAYER_PATH = "/tmp/asm-audio-player";
+
+const AUDIO_EXTENSIONS = new Set([".wav", ".aif", ".aiff", ".mp3", ".m4a", ".flac"]);
+
 const PROJECT_SORT_OPTIONS: SortOption[] = [
   "modified-desc",
   "modified-asc",
@@ -40,22 +46,74 @@ const PROJECT_SORT_OPTIONS: SortOption[] = [
   "name-asc",
   "name-desc",
 ];
+
 const SHOW_DETAIL = getPreferenceValues<{ projectView?: string }>().projectView === "detail";
 
 function namesFor(ids: string[], options: TaxonomyOption[]): string[] {
-  return ids.map((id) => options.find((o) => o.id === id)?.name).filter((n): n is string => n !== undefined);
+  return ids
+    .map((id) => options.find((option) => option.id === id)?.name)
+    .filter((name): name is string => name !== undefined);
 }
 
 function formatDate(ms: number): string {
-  const d = new Date(ms);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const date = new Date(ms);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * 查找项目中创建时间最新的 Bounce。
+ * 扫描范围、文件格式和 Bounces 列表保持一致。
+ */
+function findLatestBounce(projectPath: string): string | null {
+  const prefs = getPreferenceValues<{ bouncesFolderName?: string }>();
+  const folderName = (prefs.bouncesFolderName ?? "").trim();
+  const folderPath = folderName ? join(projectPath, folderName) : projectPath;
+
+  let entries: string[];
+
+  try {
+    entries = fs.readdirSync(folderPath);
+  } catch {
+    return null;
+  }
+
+  let latestPath: string | null = null;
+  let latestCreatedAt = Number.NEGATIVE_INFINITY;
+
+  for (const entry of entries) {
+    if (!AUDIO_EXTENSIONS.has(extname(entry).toLowerCase())) {
+      continue;
+    }
+
+    const filePath = join(folderPath, entry);
+
+    try {
+      const stats = fs.statSync(filePath);
+
+      if (!stats.isFile()) {
+        continue;
+      }
+
+      if (stats.birthtimeMs > latestCreatedAt) {
+        latestCreatedAt = stats.birthtimeMs;
+        latestPath = filePath;
+      }
+    } catch {
+      // 跳过无法读取的文件，继续检查其他 Bounce。
+      continue;
+    }
+  }
+
+  return latestPath;
 }
 
 export default function Command() {
   const { push } = useNavigation();
+
   const [stageOptions, setStageOptions] = useState<TaxonomyOption[]>([]);
   const [genreOptions, setGenreOptions] = useState<TaxonomyOption[]>([]);
   const [collectionOptions, setCollectionOptions] = useState<TaxonomyOption[]>([]);
@@ -65,6 +123,10 @@ export default function Command() {
   const [isLoading, setIsLoading] = useState(true);
 
   const baseProjectsRef = useRef<Project[]>([]);
+
+  const { playbackStatus, play, stop } = useAudioPlayer({
+    playerPath: PLAYER_PATH,
+  });
 
   useEffect(() => {
     void stageTaxonomy.get().then(setStageOptions);
@@ -144,7 +206,11 @@ export default function Command() {
   const unpinnedProjects = sortItems(
     filteredProjects.filter((project) => !project.pinned),
     sortBy,
-    (project) => ({ created: project.createdAt, modified: project.modifiedAt, name: project.title }),
+    (project) => ({
+      created: project.createdAt,
+      modified: project.modifiedAt,
+      name: project.title,
+    }),
   );
 
   const renderProject = (item: Project) => {
@@ -229,7 +295,59 @@ export default function Command() {
               <Action.Push title={t.viewSets} icon={Icon.Eye} target={<Sets project={item} />} />
 
               <Action
-                title={t.previewBounces}
+                title={
+                  playbackStatus === "Starting" || playbackStatus === "Playing" || playbackStatus === "Stopping"
+                    ? playbackStatus === "Stopping"
+                      ? t.stoppingPlayback
+                      : t.stopPlayback
+                    : t.playLatestBounce
+                }
+                icon={
+                  playbackStatus === "Starting" || playbackStatus === "Playing" || playbackStatus === "Stopping"
+                    ? Icon.Stop
+                    : Icon.Play
+                }
+                onAction={async () => {
+                  if (playbackStatus === "Stopping") {
+                    return;
+                  }
+
+                  if (playbackStatus === "Starting" || playbackStatus === "Playing") {
+                    stop();
+                    return;
+                  }
+
+                  const latestBouncePath = findLatestBounce(item.folderPath);
+
+                  if (!latestBouncePath) {
+                    await showToast({
+                      style: Toast.Style.Failure,
+                      title: t.noBounces,
+                    });
+                    return;
+                  }
+
+                  play(latestBouncePath, {
+                    onPlaying: () => {
+                      void showToast({
+                        style: Toast.Style.Success,
+                        title: t.playingLatestBounce,
+                        message: item.title,
+                      });
+                    },
+                    onError: (message) => {
+                      void showToast({
+                        style: Toast.Style.Failure,
+                        title: t.playbackFailed,
+                        message,
+                      });
+                    },
+                  });
+                }}
+              />
+
+              <Action
+                title={t.browseBounces}
                 icon={Icon.Eye}
                 onAction={async () => {
                   if (item.bouncesCount === 0) {
@@ -291,6 +409,7 @@ export default function Command() {
               title={t.copyProjectName}
               shortcut={{ modifiers: ["cmd"], key: "c" }}
             />
+
             <Action.CopyToClipboard
               content={item.folderPath}
               title={t.copyProjectPath}
