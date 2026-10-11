@@ -14,6 +14,17 @@ export interface AudioPlayerController {
   cleanup: () => void;
 }
 
+/**
+ * 与 swift/AudioPlayer.swift 约定的进程间通信协议。
+ * 这是跨语言契约：修改任一端的字符串时，另一端必须同步更新。
+ */
+const PLAYER_PROTOCOL = {
+  /** 子进程通过 stdout 输出，表示音频已开始播放。 */
+  ready: "READY",
+  /** 通过 stdin 写给子进程，请求淡出并停止播放。 */
+  stop: "STOP",
+} as const;
+
 let nextInstanceId = 1;
 
 /**
@@ -74,7 +85,7 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
         stdoutBuffer = lines.pop() ?? "";
 
         for (const line of lines) {
-          if (line.trim() === "READY" && active) {
+          if (line.trim() === PLAYER_PROTOCOL.ready && active) {
             onStatusChange("Playing");
           }
         }
@@ -145,7 +156,7 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
 
     onStatusChange("Stopping");
 
-    player.stdin?.write("STOP\n");
+    player.stdin?.write(`${PLAYER_PROTOCOL.stop}\n`);
   }
 
   function cleanup() {
@@ -162,7 +173,7 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
     child = null;
 
     if (player && player.exitCode === null && player.signalCode === null) {
-      player.stdin?.write("STOP\n");
+      player.stdin?.write(`${PLAYER_PROTOCOL.stop}\n`);
 
       const forceKillTimer = setTimeout(() => {
         if (player.exitCode === null && player.signalCode === null) {

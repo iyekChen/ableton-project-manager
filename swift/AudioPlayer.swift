@@ -2,6 +2,11 @@ import AVFoundation
 import Darwin
 import Foundation
 
+// 与 src/audio-player.ts 约定的进程间通信协议。
+// 这是跨语言契约：修改任一端的字符串时，另一端必须同步更新。
+let readyMessage = "READY"  // 经 stdout 输出 = 已开始播放
+let stopCommand = "STOP"    // 经 stdin 收到 = 请求淡出停止
+
 final class AudioPlayerDelegate: NSObject, AVAudioPlayerDelegate {
   func audioPlayerDidFinishPlaying(
     _ player: AVAudioPlayer,
@@ -43,7 +48,7 @@ do {
     exit(EXIT_FAILURE)
   }
 
-  print("READY")
+  print(readyMessage)
   fflush(stdout)
 
   var isStopping = false
@@ -62,7 +67,7 @@ do {
 
   DispatchQueue.global(qos: .userInitiated).async {
     while let line = readLine() {
-      if line.trimmingCharacters(in: .whitespacesAndNewlines) == "STOP" {
+      if line.trimmingCharacters(in: .whitespacesAndNewlines) == stopCommand {
         DispatchQueue.main.async {
           stopPlayback()
         }
