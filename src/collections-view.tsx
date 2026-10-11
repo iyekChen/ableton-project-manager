@@ -23,6 +23,8 @@ import {
   setTrackMap,
   swapNumbers,
 } from "./collection-order";
+import { TRACK_ROLES } from "./track-role";
+import { RoleMap, assignRole, clearRole, getRoleMap, setRoleMap } from "./collection-roles";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
@@ -63,11 +65,14 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
   const members = projects.filter((p) => p.collectionIds.includes(collection.id));
 
   const [map, setMap] = useState<TrackMap>({});
+  const [roles, setRoles] = useState<RoleMap>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      setMap(await getTrackMap(collection.id));
+      const [trackMap, roleMap] = await Promise.all([getTrackMap(collection.id), getRoleMap(collection.id)]);
+      setMap(trackMap);
+      setRoles(roleMap);
       setLoading(false);
     }
     load();
@@ -77,6 +82,33 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
     setMap(next);
     await setTrackMap(collection.id, next);
   }
+
+  async function applyRoles(next: RoleMap) {
+    setRoles(next);
+    await setRoleMap(collection.id, next);
+  }
+
+  // 从 tracklist 移出时，连带清掉该曲目在本 collection 的角色。
+  async function removeFromTracklist(id: string) {
+    await apply(removeNumber(map, id));
+    await applyRoles(clearRole(roles, id));
+  }
+
+  // 角色子菜单：在当前 collection 内给某首歌设/清角色。
+  const roleSubmenu = (p: Project) => (
+    <ActionPanel.Submenu title={t.setTrackRole} icon={Icon.Tag}>
+      {TRACK_ROLES.map((role) => (
+        <Action key={role} title={role} onAction={() => applyRoles(assignRole(roles, p.id, role))} />
+      ))}
+      <Action title={t.clearRole} icon={Icon.XMarkCircle} onAction={() => applyRoles(clearRole(roles, p.id))} />
+    </ActionPanel.Submenu>
+  );
+
+  // 角色 pill（设了才显示，放在 accessories 最左）。
+  const rolePill = (p: Project): List.Item.Accessory[] => {
+    const role = roles[p.id];
+    return role ? [{ tag: { value: role, color: Color.Purple } }] : [];
+  };
 
   const tracked = members
     .filter((p) => map[p.id] !== undefined)
@@ -98,7 +130,10 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
               {tracked.map((p, i) => {
                 const num = map[p.id];
                 const dup = (counts.get(num) ?? 0) > 1;
-                const accessories: List.Item.Accessory[] = [{ text: `Track ${String(num).padStart(2, "0")}` }];
+                const accessories: List.Item.Accessory[] = [
+                  ...rolePill(p),
+                  { text: `Track ${String(num).padStart(2, "0")}` },
+                ];
                 if (dup) {
                   accessories.push({
                     icon: { source: Icon.Warning, tintColor: Color.Yellow },
@@ -119,38 +154,43 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                           target={
                             <SetTrackNumberForm
                               current={num}
-                              onSubmit={(n) => apply(n === null ? removeNumber(map, p.id) : assignNumber(map, p.id, n))}
+                              onSubmit={(n) =>
+                                n === null ? removeFromTracklist(p.id) : apply(assignNumber(map, p.id, n))
+                              }
                             />
                           }
                         />
-                        {i > 0 && (
-                          <Action
-                            title={t.swapUp}
-                            icon={Icon.ArrowUp}
-                            shortcut={Keyboard.Shortcut.Common.MoveUp}
-                            onAction={() => apply(swapNumbers(map, p.id, tracked[i - 1].id))}
-                          />
-                        )}
-                        {i < tracked.length - 1 && (
-                          <Action
-                            title={t.swapDown}
-                            icon={Icon.ArrowDown}
-                            shortcut={Keyboard.Shortcut.Common.MoveDown}
-                            onAction={() => apply(swapNumbers(map, p.id, tracked[i + 1].id))}
-                          />
-                        )}
-                        {i < tracked.length - 1 && (
-                          <Action
-                            title={t.moveToBottom}
-                            icon={Icon.ArrowDownCircle}
-                            onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
-                          />
-                        )}
+                        {roleSubmenu(p)}
                         <Action
                           title={t.removeFromTracklist}
                           icon={Icon.MinusCircle}
-                          onAction={() => apply(removeNumber(map, p.id))}
+                          onAction={() => removeFromTracklist(p.id)}
                         />
+                        <ActionPanel.Section>
+                          {i > 0 && (
+                            <Action
+                              title={t.swapUp}
+                              icon={Icon.ArrowUp}
+                              shortcut={Keyboard.Shortcut.Common.MoveUp}
+                              onAction={() => apply(swapNumbers(map, p.id, tracked[i - 1].id))}
+                            />
+                          )}
+                          {i < tracked.length - 1 && (
+                            <Action
+                              title={t.swapDown}
+                              icon={Icon.ArrowDown}
+                              shortcut={Keyboard.Shortcut.Common.MoveDown}
+                              onAction={() => apply(swapNumbers(map, p.id, tracked[i + 1].id))}
+                            />
+                          )}
+                          {i < tracked.length - 1 && (
+                            <Action
+                              title={t.moveToBottom}
+                              icon={Icon.ArrowDownCircle}
+                              onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
+                            />
+                          )}
+                        </ActionPanel.Section>
                       </ActionPanel>
                     }
                   />
@@ -166,6 +206,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                   key={p.id}
                   icon={{ source: "Project.png" }}
                   title={p.title}
+                  accessories={rolePill(p)}
                   actions={
                     <ActionPanel>
                       <Action.Push
@@ -174,7 +215,9 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                         target={
                           <SetTrackNumberForm
                             current={nextNumber(map)}
-                            onSubmit={(n) => apply(n === null ? removeNumber(map, p.id) : assignNumber(map, p.id, n))}
+                            onSubmit={(n) =>
+                              n === null ? removeFromTracklist(p.id) : apply(assignNumber(map, p.id, n))
+                            }
                           />
                         }
                       />

@@ -78,6 +78,8 @@ type TranslationKeys = {
   renamed: string;
   deleted: string;
   noCategories: string;
+  setTrackRole: string;
+  clearRole: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -160,6 +162,8 @@ const translations: Record<Language, TranslationKeys> = {
     renamed: "Renamed",
     deleted: "Deleted",
     noCategories: "Nothing here yet",
+    setTrackRole: "Set Track Role",
+    clearRole: "Clear Role",
   },
 
   "zh-CN": {
@@ -240,6 +244,8 @@ const translations: Record<Language, TranslationKeys> = {
     renamed: "已重命名",
     deleted: "已删除",
     noCategories: "还没有选项",
+    setTrackRole: "设置曲目角色",
+    clearRole: "清除角色",
   },
 };
 
