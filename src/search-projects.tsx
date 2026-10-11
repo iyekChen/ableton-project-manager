@@ -1,4 +1,15 @@
-import { ActionPanel, Action, Color, getPreferenceValues, Icon, Keyboard, List, showToast, Toast } from "@raycast/api";
+import {
+  ActionPanel,
+  Action,
+  Color,
+  getPreferenceValues,
+  Icon,
+  Keyboard,
+  List,
+  showToast,
+  Toast,
+  useNavigation,
+} from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import fs from "node:fs";
 import { getSettings } from "./settings";
@@ -44,6 +55,7 @@ function formatDate(ms: number): string {
 }
 
 export default function Command() {
+  const { push } = useNavigation();
   const [stageOptions, setStageOptions] = useState<TaxonomyOption[]>([]);
   const [genreOptions, setGenreOptions] = useState<TaxonomyOption[]>([]);
   const [collectionOptions, setCollectionOptions] = useState<TaxonomyOption[]>([]);
@@ -213,13 +225,31 @@ export default function Command() {
         }
         actions={
           <ActionPanel>
-            <Action.Push title={t.viewSets} icon={Icon.Eye} target={<Sets project={item} />} />
+            <ActionPanel.Section>
+              <Action.Push title={t.viewSets} icon={Icon.Eye} target={<Sets project={item} />} />
 
-            <Action.Push
-              title={t.previewBounces}
-              icon={Icon.Eye}
-              target={<Bounces projectName={item.title} projectPath={item.folderPath} />}
-            />
+              <Action
+                title={t.previewBounces}
+                icon={Icon.Eye}
+                onAction={async () => {
+                  if (item.bouncesCount === 0) {
+                    await showToast({
+                      style: Toast.Style.Failure,
+                      title: t.noBounces,
+                    });
+                    return;
+                  }
+
+                  push(<Bounces projectName={item.title} projectPath={item.folderPath} />);
+                }}
+              />
+
+              <Action.Push
+                title={t.browseCollections}
+                icon={Icon.Cd}
+                target={<CollectionList projects={projects} collections={collectionOptions} />}
+              />
+            </ActionPanel.Section>
 
             <Action.Push
               title={t.editInfo}
@@ -266,14 +296,6 @@ export default function Command() {
               title={t.copyProjectPath}
               shortcut={Keyboard.Shortcut.Common.CopyPath}
             />
-
-            <ActionPanel.Section>
-              <Action.Push
-                title={t.browseCollections}
-                icon={Icon.Cd}
-                target={<CollectionList projects={projects} collections={collectionOptions} />}
-              />
-            </ActionPanel.Section>
 
             <ActionPanel.Section>
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />

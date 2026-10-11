@@ -74,8 +74,15 @@
 			"description": "Create and manage genres and collections",
 			"mode": "view",
 			"subtitle": "Ableton Session Manager"
+		},
+		{
+			"name": "test",
+			"title": "Test",
+			"description": "Test Raycast API features",
+			"mode": "view",
+			"subtitle": "Ableton Session Manager"
 		}
-	],
+    ],
 	"tools": [],
 	"dependencies": {
 		"@raycast/api": "^1.104.20",
