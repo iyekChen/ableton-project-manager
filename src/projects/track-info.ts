@@ -1,3 +1,4 @@
+import { getPreferenceValues } from "@raycast/api";
 import fs from "node:fs";
 import path from "node:path";
 import type { Project } from "./types";
@@ -213,8 +214,28 @@ function normalize(value: number, range: EnergyRange): number {
   return Math.max(0, Math.min(1, t));
 }
 
-// 各能量特征的权重；缺某特征时其权重会被跳过并对剩余权重重新归一。后续加 BPM 等在此补。
-const ENERGY_WEIGHTS = { crest: 1, brightness: 1, activity: 1 };
+// 能量特征权重：从扩展偏好读取（Off/Low/Normal/High = 0/0.5/1/2），模块加载时读一次。
+// 权重是相对的：energyScore 会按总权重归一，所以只有三者之间的差值有意义；某项为 0 即关闭该特征。
+type EnergyWeightPrefs = {
+  weightCrest?: string;
+  weightBrightness?: string;
+  weightActivity?: string;
+};
+
+function readWeight(value: string | undefined): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : 1; // 缺失/非法回退到 Normal = 1
+}
+
+const energyPrefs = getPreferenceValues<EnergyWeightPrefs>();
+const ENERGY_WEIGHTS = {
+  crest: readWeight(energyPrefs.weightCrest),
+  brightness: readWeight(energyPrefs.weightBrightness),
+  activity: readWeight(energyPrefs.weightActivity),
+};
+
+// 三个权重全为 0（都设 Off）→ 能量功能整体关闭，视图里不渲染能量圆点。
+export const ENERGY_ENABLED = ENERGY_WEIGHTS.crest + ENERGY_WEIGHTS.brightness + ENERGY_WEIGHTS.activity > 0;
 
 /**
  * 综合能量分（0..1）。波峰因数越小越密、能量越高，故取反；亮度、活动量越高能量越高，不取反。

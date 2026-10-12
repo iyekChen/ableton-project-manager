@@ -58,6 +58,48 @@
 				{ "title": "Overview", "value": "overview" },
 				{ "title": "Detail", "value": "detail" }
 			]
+		},
+		{
+			"name": "weightCrest",
+			"title": "Energy Weight: Density (Crest)",
+			"description": "How much a track's density/compression counts toward its energy. Weights are relative — only the differences between the three matter.",
+			"type": "dropdown",
+			"required": false,
+			"default": "1",
+			"data": [
+				{ "title": "Off", "value": "0" },
+				{ "title": "Low", "value": "0.5" },
+				{ "title": "Normal", "value": "1" },
+				{ "title": "High", "value": "2" }
+			]
+		},
+		{
+			"name": "weightBrightness",
+			"title": "Energy Weight: Brightness (Spectral Centroid)",
+			"description": "How much a track's brightness counts toward its energy. Weights are relative — only the differences between the three matter.",
+			"type": "dropdown",
+			"required": false,
+			"default": "1",
+			"data": [
+				{ "title": "Off", "value": "0" },
+				{ "title": "Low", "value": "0.5" },
+				{ "title": "Normal", "value": "1" },
+				{ "title": "High", "value": "2" }
+			]
+		},
+		{
+			"name": "weightActivity",
+			"title": "Energy Weight: Activity (Spectral Flux)",
+			"description": "How much a track's activity counts toward its energy. Weights are relative — only the differences between the three matter.",
+			"type": "dropdown",
+			"required": false,
+			"default": "1",
+			"data": [
+				{ "title": "Off", "value": "0" },
+				{ "title": "Low", "value": "0.5" },
+				{ "title": "Normal", "value": "1" },
+				{ "title": "High", "value": "2" }
+			]
 		}
 	],
 	"commands": [

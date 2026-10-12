@@ -25,7 +25,7 @@ import {
 } from "./collection-order";
 import { TRACK_ROLES } from "./track-role";
 import { RoleMap, assignRole, clearRole, getRoleMap, setRoleMap } from "./collection-roles";
-import { TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
+import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
@@ -213,7 +213,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                     : []),
                   { text: `Track ${String(num).padStart(2, "0")}` },
                   { text: info?.duration != null ? formatDuration(info.duration) : "--:--" },
-                  ...energyAccessories(level),
+                  ...(ENERGY_ENABLED ? energyAccessories(level) : []),
                 ];
 
                 return (
