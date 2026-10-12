@@ -164,9 +164,14 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
   const counts = new Map<number, number>();
   for (const p of tracked) counts.set(map[p.id], (counts.get(map[p.id]) ?? 0) + 1);
 
-  // 能量定档的尺：所有已排序、已算出波峰因数的曲目的 min/max。
+  // 能量定档的尺：对已排序曲目的各特征分别取 min/max。
   const crests = tracked.map((p) => infos[p.id]?.crest).filter((v): v is number => typeof v === "number");
   const crestRange = { min: crests.length ? Math.min(...crests) : 0, max: crests.length ? Math.max(...crests) : 0 };
+  const brightnesses = tracked.map((p) => infos[p.id]?.brightness).filter((v): v is number => typeof v === "number");
+  const brightnessRange = {
+    min: brightnesses.length ? Math.min(...brightnesses) : 0,
+    max: brightnesses.length ? Math.max(...brightnesses) : 0,
+  };
 
   // 总时长：所有已排序曲目（含 Draft/Demo）。
   const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
@@ -187,7 +192,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
 
                 let level: number | null = null;
                 if (info) {
-                  const score = energyScore(info, crestRange);
+                  const score = energyScore(info, crestRange, brightnessRange);
                   if (score !== null) level = energyLevelFromScore(score);
                 }
 
