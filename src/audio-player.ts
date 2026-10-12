@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from "child_process";
 
-export type PlaybackStatus = "Starting" | "Playing" | "Stopping" | "Stopped" | "Failed";
+export type PlaybackStatus = "Starting" | "Playing" | "Paused" | "Stopping" | "Stopped" | "Failed";
 
 export interface AudioPlayerOptions {
   audioPath: string;
@@ -11,6 +11,10 @@ export interface AudioPlayerOptions {
 
 export interface AudioPlayerController {
   stop: () => void;
+  pause: () => void;
+  resume: () => void;
+  seek: (deltaSeconds: number) => void;
+  restart: () => void;
   cleanup: () => void;
 }
 
@@ -23,6 +27,13 @@ const PLAYER_PROTOCOL = {
   ready: "READY",
   /** 通过 stdin 写给子进程，请求淡出并停止播放。 */
   stop: "STOP",
+  /** 暂停 / 续播。 */
+  pause: "PAUSE",
+  resume: "RESUME",
+  /** 跳回开头。 */
+  restart: "SEEK0",
+  /** 相对跳转前缀，其后跟秒数（可正负），如 "SEEK 5"。 */
+  seekPrefix: "SEEK ",
 } as const;
 
 let nextInstanceId = 1;
@@ -159,6 +170,37 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
     player.stdin?.write(`${PLAYER_PROTOCOL.stop}\n`);
   }
 
+  // 给正在播放的子进程发一行命令；进程不在/已退出则忽略。
+  function sendCommand(line: string) {
+    const player = child;
+    if (!player || player.exitCode !== null || player.signalCode !== null) {
+      return;
+    }
+    player.stdin?.write(`${line}\n`);
+  }
+
+  function pause() {
+    sendCommand(PLAYER_PROTOCOL.pause);
+    if (active) {
+      onStatusChange("Paused");
+    }
+  }
+
+  function resume() {
+    sendCommand(PLAYER_PROTOCOL.resume);
+    if (active) {
+      onStatusChange("Playing");
+    }
+  }
+
+  function seek(deltaSeconds: number) {
+    sendCommand(`${PLAYER_PROTOCOL.seekPrefix}${deltaSeconds}`);
+  }
+
+  function restart() {
+    sendCommand(PLAYER_PROTOCOL.restart);
+  }
+
   function cleanup() {
     console.log(`${logPrefix} CLEANUP ${new Date().toISOString()}`);
 
@@ -191,6 +233,10 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
 
   return {
     stop,
+    pause,
+    resume,
+    seek,
+    restart,
     cleanup,
   };
 }

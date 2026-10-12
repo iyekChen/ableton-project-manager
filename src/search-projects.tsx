@@ -36,6 +36,7 @@ const t = getTranslations(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
 const PLAYER_PATH = ensureAudioPlayerBinary();
+const SEEK_STEP_SECONDS = 5;
 
 const PROJECT_SORT_OPTIONS: SortOption[] = [
   "modified-desc",
@@ -59,13 +60,11 @@ function formatDate(ms: number): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return `${year}-${month}-${day}`;
 }
 
 export default function Command() {
   const { push } = useNavigation();
-
   const [stageOptions, setStageOptions] = useState<TaxonomyOption[]>([]);
   const [genreOptions, setGenreOptions] = useState<TaxonomyOption[]>([]);
   const [collectionOptions, setCollectionOptions] = useState<TaxonomyOption[]>([]);
@@ -73,12 +72,16 @@ export default function Command() {
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
   const baseProjectsRef = useRef<Project[]>([]);
 
-  const { playbackStatus, playingId, play, stop } = useAudioPlayer({
+  const { playbackStatus, playingId, play, pause, resume, seek, restart } = useAudioPlayer({
     playerPath: PLAYER_PATH,
   });
+
+  // 常驻 Toast：播放时 title=Playing Latest Bounce / 暂停时 title=Paused，message=曲名（次级灰）。
+  const toastRef = useRef<Toast | null>(null);
+  const toastBusyRef = useRef(false);
+  const toastActiveRef = useRef(false);
 
   useEffect(() => {
     void stageTaxonomy.get().then(setStageOptions);
@@ -89,11 +92,9 @@ export default function Command() {
   const applyMetadata = useCallback(async () => {
     const metadataStore = await getAllProjectMetadata();
     const useNoteFile = getNotesFolder() !== "";
-
     const updatedProjects = baseProjectsRef.current.map((project) => {
       const metadata = metadataStore[project.id];
       const notes = SHOW_DETAIL ? (useNoteFile ? readNoteFile(project.id) : (metadata?.notes ?? "")) : "";
-
       return {
         ...project,
         stageId: metadata?.stageId ?? null,
@@ -104,7 +105,6 @@ export default function Command() {
         pinOrder: metadata?.pinOrder ?? null,
       };
     });
-
     setProjects(updatedProjects);
   }, []);
 
@@ -115,7 +115,6 @@ export default function Command() {
     } catch (error) {
       console.error("[Ableton Session Manager] Failed to load projects:", error);
       setProjects([]);
-
       await showToast({
         style: Toast.Style.Failure,
         title: "Failed to load projects",
@@ -129,14 +128,58 @@ export default function Command() {
       await reloadProjects();
       setIsLoading(false);
     }
-
     void load();
   }, [reloadProjects]);
+
+  // 根据播放状态维护常驻 Toast。
+  useEffect(() => {
+    const playingProject = projects.find((p) => p.id === playingId);
+    const name = playingProject?.title ?? "";
+    const isActive =
+      playingId !== null && (playbackStatus === "Starting" || playbackStatus === "Playing");
+    toastActiveRef.current = isActive;
+
+    if (isActive) {
+      const title = t.playingLatestBounce;
+      if (toastRef.current) {
+        toastRef.current.title = title;
+        toastRef.current.message = name;
+      } else if (!toastBusyRef.current) {
+        toastBusyRef.current = true;
+        void showToast({ style: Toast.Style.Animated, title, message: name }).then((toast) => {
+          toastBusyRef.current = false;
+          if (!toastActiveRef.current) {
+            void toast.hide();
+            return;
+          }
+          toastRef.current = toast;
+        });
+      }
+    } else if (toastRef.current) {
+      void toastRef.current.hide();
+      toastRef.current = null;
+    }
+  }, [playbackStatus, playingId, projects]);
+
+  const playProjectBounce = useCallback(
+    (project: Project) => {
+      const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
+      if (!latestBouncePath) {
+        void showToast({ style: Toast.Style.Failure, title: t.noBounces });
+        return;
+      }
+      play(project.id, latestBouncePath, {
+        onError: (message) => {
+          void showToast({ style: Toast.Style.Failure, title: t.playbackFailed, message });
+        },
+      });
+    },
+    [play],
+  );
 
   const handlePinToggle = async (project: Project) => {
     await setProjectPinned(project.id, !project.pinned);
     await applyMetadata();
-
     await showToast({
       style: Toast.Style.Success,
       title: project.pinned ? t.projectUnpinned : t.projectPinned,
@@ -170,14 +213,20 @@ export default function Command() {
     const genreNames = namesFor(item.genreIds, genreOptions);
     const collectionNames = namesFor(item.collectionIds, collectionOptions);
     const stagePill = stage ? [{ tag: { value: stage.name, color: stage.color ?? Color.SecondaryText } }] : [];
-
     const noteFile = noteFilePath(item.id);
     const canOpenNote = noteFile !== null && fs.existsSync(noteFile);
 
-    // 只有「正在播放的那一行」显示 Stop，其余行显示 Play。
     const isThisPlaying = playingId === item.id;
-    const isThisActive =
-      isThisPlaying && (playbackStatus === "Starting" || playbackStatus === "Playing" || playbackStatus === "Stopping");
+    const isAnythingPlaying = playingId !== null;
+    // 主操作：未播→播；播放中→暂停；暂停→续播。
+    const toggleIsPause = isThisPlaying && (playbackStatus === "Playing" || playbackStatus === "Starting");
+    const toggleTitle = isThisPlaying
+      ? playbackStatus === "Paused"
+        ? t.resumePlayback
+        : playbackStatus === "Stopping"
+          ? t.stoppingPlayback
+          : t.pausePlayback
+      : t.playLatestBounce;
 
     return (
       <List.Item
@@ -211,7 +260,6 @@ export default function Command() {
                   ) : (
                     <List.Item.Detail.Metadata.Label title="Stage" text="—" />
                   )}
-
                   {genreNames.length > 0 ? (
                     <List.Item.Detail.Metadata.TagList title="Genre">
                       {genreNames.map((genreName) => (
@@ -221,9 +269,8 @@ export default function Command() {
                   ) : (
                     <List.Item.Detail.Metadata.Label title="Genre" text="—" />
                   )}
-
                   {collectionNames.length > 0 ? (
-                    <List.Item.Detail.Metadata.TagList title="Collection">
+                    <List.Item.Detail. Metadata.TagList title="Collection">
                       {collectionNames.map((collectionName) => (
                         <List.Item.Detail.Metadata.TagList.Item key={collectionName} text={collectionName} />
                       ))}
@@ -231,14 +278,10 @@ export default function Command() {
                   ) : (
                     <List.Item.Detail.Metadata.Label title="Collection" text="—" />
                   )}
-
                   <List.Item.Detail.Metadata.Separator />
-
                   <List.Item.Detail.Metadata.Label title="Bounces" text={String(item.bouncesCount)} />
                   <List.Item.Detail.Metadata.Label title="Sets" text={String(item.setsCount)} />
-
                   <List.Item.Detail.Metadata.Separator />
-
                   <List.Item.Detail.Metadata.Label title="Created" text={formatDate(item.createdAt)} />
                   <List.Item.Detail.Metadata.Label title="Modified" text={formatDate(item.modifiedAt)} />
                 </List.Item.Detail.Metadata>
@@ -250,55 +293,24 @@ export default function Command() {
           <ActionPanel>
             <ActionPanel.Section>
               <Action.Push title={t.viewSets} icon={Icon.Eye} target={<Sets project={item} />} />
-
               <Action
-                title={
-                  isThisActive
-                    ? playbackStatus === "Stopping"
-                      ? t.stoppingPlayback
-                      : t.stopPlayback
-                    : t.playLatestBounce
-                }
-                icon={isThisActive ? Icon.Stop : Icon.Play}
-                onAction={async () => {
-                  if (isThisPlaying && playbackStatus === "Stopping") {
+                title={toggleTitle}
+                icon={toggleIsPause ? Icon.Pause : Icon.Play}
+                onAction={() => {
+                  if (isThisPlaying) {
+                    if (playbackStatus === "Stopping") {
+                      return;
+                    }
+                    if (playbackStatus === "Paused") {
+                      resume();
+                    } else {
+                      pause();
+                    }
                     return;
                   }
-
-                  if (isThisPlaying && (playbackStatus === "Starting" || playbackStatus === "Playing")) {
-                    stop();
-                    return;
-                  }
-
-                  const latestBouncePath = findLatestBounce(resolveBouncesFolder(item.folderPath));
-
-                  if (!latestBouncePath) {
-                    await showToast({
-                      style: Toast.Style.Failure,
-                      title: t.noBounces,
-                    });
-                    return;
-                  }
-
-                  play(item.id, latestBouncePath, {
-                    onPlaying: () => {
-                      void showToast({
-                        style: Toast.Style.Success,
-                        title: t.playingLatestBounce,
-                        message: item.title,
-                      });
-                    },
-                    onError: (message) => {
-                      void showToast({
-                        style: Toast.Style.Failure,
-                        title: t.playbackFailed,
-                        message,
-                      });
-                    },
-                  });
+                  playProjectBounce(item);
                 }}
               />
-
               <Action
                 title={t.browseBounces}
                 icon={Icon.Eye}
@@ -311,11 +323,9 @@ export default function Command() {
                     });
                     return;
                   }
-
                   push(<Bounces projectName={item.title} projectPath={item.folderPath} />);
                 }}
               />
-
               <Action.Push
                 title={t.browseCollections}
                 icon={Icon.Cd}
@@ -323,54 +333,89 @@ export default function Command() {
                 target={<CollectionList projects={projects} collections={collectionOptions} />}
               />
             </ActionPanel.Section>
-
-            <Action.Push
-              title={t.editInfo}
-              icon={Icon.Pencil}
-              shortcut={Keyboard.Shortcut.Common.Edit}
-              target={<EditInfo project={item} onSaved={reloadProjects} />}
-            />
-
-            <Action.Push
-              title={t.editNote}
-              icon={Icon.Pencil}
-              target={<EditNote project={item} onSaved={reloadProjects} />}
-            />
-
-            {canOpenNote && <Action.Open title={t.openNote} icon={Icon.Document} target={noteFile} />}
-
-            <Action.Open title={t.openInFinder} icon={Icon.Finder} target={item.folderPath} />
-
-            <Action
-              title={item.pinned ? t.unpinProject : t.pinProject}
-              icon={item.pinned ? Icon.TackDisabled : Icon.Tack}
-              shortcut={Keyboard.Shortcut.Common.Pin}
-              onAction={() => handlePinToggle(item)}
-            />
-
-            {item.pinned && (
-              <>
-                <Action title={t.moveUp} icon={Icon.ArrowUp} onAction={() => handleMovePinnedProject(item, "up")} />
+            <ActionPanel.Section>
+              <Action.Push
+                title={t.editInfo}
+                icon={Icon.Pencil}
+                shortcut={Keyboard.Shortcut.Common.Edit}
+                target={<EditInfo project={item} onSaved={reloadProjects} />}
+              />
+              <Action.Push
+                title={t.editNote}
+                icon={Icon.Pencil}
+                target={<EditNote project={item} onSaved={reloadProjects} />}
+              />
+              {canOpenNote && <Action.Open title={t.openNote} icon={Icon.Document} target={noteFile} />}
+            </ActionPanel.Section>
+            {isAnythingPlaying && (
+              <ActionPanel.Section>
                 <Action
-                  title={t.moveDown}
-                  icon={Icon.ArrowDown}
-                  onAction={() => handleMovePinnedProject(item, "down")}
+                  title={t.seekBackward}
+                  icon={Icon.ArrowLeft}
+                  shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
+                  onAction={() => seek(-SEEK_STEP_SECONDS)}
                 />
-              </>
+                <Action
+                  title={t.seekForward}
+                  icon={Icon.ArrowRight}
+                  shortcut={{ modifiers: ["opt"], key: "arrowRight" }}
+                  onAction={() => seek(SEEK_STEP_SECONDS)}
+                />
+                <Action
+                  title={t.restartTrack}
+                  icon={Icon.ArrowCounterClockwise}
+                  shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
+                  onAction={() => {
+                    restart();
+                    if (playbackStatus === "Paused") {
+                      resume();
+                    }
+                  }}
+                />
+              </ActionPanel. Section>
             )}
-
-            <Action.CopyToClipboard
-              content={item.title}
-              title={t.copyProjectName}
-              shortcut={{ modifiers: ["cmd"], key: "c" }}
-            />
-
-            <Action.CopyToClipboard
-              content={item.folderPath}
-              title={t.copyProjectPath}
-              shortcut={Keyboard.Shortcut.Common.CopyPath}
-            />
-
+            <ActionPanel.Section>
+              <Action.Open
+                title={t.openInFinder}
+                icon={Icon.Finder}
+                shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+                target={item.folderPath}
+              />
+              <Action.CopyToClipboard
+                content={item.title}
+                title={t.copyProjectName}
+                shortcut={{ modifiers: ["cmd"], key: "c" }}
+              />
+              <Action.CopyToClipboard
+                content={item.folderPath}
+                title={t.copyProjectPath}
+                shortcut={Keyboard.Shortcut.Common.CopyPath}
+              />
+            </ActionPanel.Section>
+            <ActionPanel.Section>
+              <Action
+                title={item.pinned ? t.unpinProject : t.pinProject}
+                icon={item.pinned ? Icon.TackDisabled : Icon.Tack}
+                shortcut={Keyboard.Shortcut.Common.Pin}
+                onAction={() => handlePinToggle(item)}
+              />
+              {item.pinned && (
+                <>
+                  <Action
+                    title={t.moveUp}
+                    icon={Icon.ArrowUp}
+                    shortcut={{ modifiers: ["cmd", "opt"], key: "arrowUp" }}
+                    onAction={() => handleMovePinnedProject(item, "up")}
+                  />
+                  <Action
+                    title={t.moveDown}
+                    icon={Icon.ArrowDown}
+                    shortcut={{ modifiers: ["cmd", "opt"], key: "arrowDown" }}
+                    onAction={() => handleMovePinnedProject(item, "down")}
+                  />
+                </>
+              )}
+            </ActionPanel.Section>
             <ActionPanel.Section>
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
             </ActionPanel.Section>
@@ -390,9 +435,8 @@ export default function Command() {
       searchBarAccessory={
         <List.Dropdown tooltip={t.filterByStage} value={selectedStage} onChange={setSelectedStage}>
           <List.Dropdown.Section title="">
-            <List.Dropdown.Item title={t.allStages} value="all" icon={Icon.CircleProgress100} />
+            <List.Dropdown. Item title={t.allStages} value="all" icon={Icon.CircleProgress100} />
           </List.Dropdown.Section>
-
           <List.Dropdown.Section title="">
             {stageOptions.map((option) => (
               <List.Dropdown.Item
@@ -407,7 +451,6 @@ export default function Command() {
       }
     >
       {pinnedProjects.length > 0 && <List.Section title={t.pinned}>{pinnedProjects.map(renderProject)}</List.Section>}
-
       <List.Section title={currentSortTitle}>{unpinnedProjects.map(renderProject)}</List.Section>
     </List>
   );

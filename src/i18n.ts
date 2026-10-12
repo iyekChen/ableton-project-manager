@@ -63,7 +63,6 @@ type TranslationKeys = {
   playLatestBounce: string;
   playingLatestBounce: string;
   playbackFailed: string;
-  stopPlayback: string;
   stoppingPlayback: string;
   nothingIsPlaying: string;
   playbackStopped: string;
@@ -81,6 +80,11 @@ type TranslationKeys = {
   setTrackRole: string;
   clearRole: string;
   tracklistDuration: string;
+  pausePlayback: string;
+  resumePlayback: string;
+  seekBackward: string;
+  seekForward: string;
+  restartTrack: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -90,8 +94,8 @@ const translations: Record<Language, TranslationKeys> = {
     openInAbletonLive: "Open in Ableton Live",
     editInfo: "Edit Info",
     save: "Save",
-    pinProject: "Pin Project",
-    unpinProject: "Unpin Project",
+    pinProject: "Pin",
+    unpinProject: "Unpin",
     moveUp: "Move Up",
     moveDown: "Move Down",
     copyProjectName: "Copy Project Name",
@@ -148,7 +152,6 @@ const translations: Record<Language, TranslationKeys> = {
     playLatestBounce: "Play Latest Bounce",
     playingLatestBounce: "Playing Latest Bounce",
     playbackFailed: "Playback Failed",
-    stopPlayback: "Stop Playback",
     stoppingPlayback: "Stopping Playback",
     nothingIsPlaying: "Nothing Is Playing",
     playbackStopped: "Playback Stopped",
@@ -166,6 +169,11 @@ const translations: Record<Language, TranslationKeys> = {
     setTrackRole: "Set Track Role",
     clearRole: "Clear Role",
     tracklistDuration: "Tracklist Duration",
+    pausePlayback: "Pause",
+    resumePlayback: "Resume",
+    seekBackward: "Backward",
+    seekForward: "Forward",
+    restartTrack: "Restart Track",
   },
 
   "zh-CN": {
@@ -174,8 +182,8 @@ const translations: Record<Language, TranslationKeys> = {
     openInAbletonLive: "在 Ableton Live 中打开",
     editInfo: "编辑信息",
     save: "保存",
-    pinProject: "固定项目",
-    unpinProject: "取消固定项目",
+    pinProject: "固定",
+    unpinProject: "取消固定",
     moveUp: "上移",
     moveDown: "下移",
     copyProjectName: "复制项目名",
@@ -231,7 +239,6 @@ const translations: Record<Language, TranslationKeys> = {
     playLatestBounce: "播放最新 Bounce",
     playingLatestBounce: "正在播放最新 Bounce",
     playbackFailed: "播放失败",
-    stopPlayback: "停止播放",
     stoppingPlayback: "正在停止播放",
     nothingIsPlaying: "当前没有正在播放的音频",
     playbackStopped: "已停止播放",
@@ -249,6 +256,11 @@ const translations: Record<Language, TranslationKeys> = {
     setTrackRole: "设置曲目角色",
     clearRole: "清除角色",
     tracklistDuration: "曲目列表时长",
+    pausePlayback: "暂停",
+    resumePlayback: "继续播放",
+    seekBackward: "后退",
+    seekForward: "前进",
+    restartTrack: "从头播放",
   },
 };
 

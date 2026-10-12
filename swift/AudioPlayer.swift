@@ -7,6 +7,10 @@ import Foundation
 // 这是跨语言契约：修改任一端的字符串时，另一端必须同步更新。
 let readyMessage = "READY"  // 经 stdout 输出 = 已开始播放
 let stopCommand = "STOP"    // 经 stdin 收到 = 请求淡出停止
+let pauseCommand = "PAUSE"   // 经 stdin 收到 = 暂停
+let resumeCommand = "RESUME" // 经 stdin 收到 = 续播
+let restartCommand = "SEEK0" // 经 stdin 收到 = 跳回开头
+let seekCommandPrefix = "SEEK " // 其后跟秒数（可正负），如 "SEEK 5" / "SEEK -5" = 相对跳转
 
 // analyze 模式：与 src/projects/audio-analysis.ts 约定。
 // 调用 `AudioPlayer analyze <path>`，向 stdout 输出一行 JSON：
@@ -239,21 +243,42 @@ do {
     }
   }
 
-  DispatchQueue.global(qos: .userInitiated).async {
-    while let line = readLine() {
-      if line.trimmingCharacters(in: .whitespacesAndNewlines) == stopCommand {
-        DispatchQueue.main.async {
-          stopPlayback()
+        DispatchQueue.global(qos: .userInitiated).async {
+            while let line = readLine() {
+                let command = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                if command == stopCommand {
+                    DispatchQueue.main.async {
+                        stopPlayback()
+                    }
+                    return
+                } else if command == pauseCommand {
+                    DispatchQueue.main.async {
+                        player.pause()
+                    }
+                } else if command == resumeCommand {
+                    DispatchQueue.main.async {
+                        player.play()
+                    }
+                } else if command == restartCommand {
+                    DispatchQueue.main.async {
+                        player.currentTime = 0
+                    }
+                } else if command.hasPrefix(seekCommandPrefix) {
+                    let arg = String(command.dropFirst(seekCommandPrefix.count)).trimmingCharacters(in: .whitespaces)
+                    if let delta = Double(arg) {
+                        DispatchQueue.main.async {
+                            let target = player.currentTime + delta
+                            player.currentTime = max(0, min(player.duration, target))
+                        }
+                    }
+                }
+                // 未知命令忽略
+            }
+            // 父进程关闭标准输入时，也执行淡出停止。
+            DispatchQueue.main.async {
+                stopPlayback()
+            }
         }
-        return
-      }
-    }
-
-    // 父进程关闭标准输入时，也执行淡出停止。
-    DispatchQueue.main.async {
-      stopPlayback()
-    }
-  }
 
   RunLoop.main.run()
 } catch {

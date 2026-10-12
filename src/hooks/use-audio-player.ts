@@ -102,6 +102,22 @@ export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
     activePlayer.controller.stop();
   }, [updatePlaybackStatus]);
 
+  const pause = useCallback(() => {
+    activePlayerRef.current?.controller.pause();
+  }, []);
+
+  const resume = useCallback(() => {
+    activePlayerRef.current?.controller.resume();
+  }, []);
+
+  const seek = useCallback((deltaSeconds: number) => {
+    activePlayerRef.current?.controller.seek(deltaSeconds);
+  }, []);
+
+  const restart = useCallback(() => {
+    activePlayerRef.current?.controller.restart();
+  }, []);
+
   useEffect(() => {
     return () => {
       // 先让当前会话失效，再清理进程。
@@ -119,5 +135,9 @@ export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
     playingId,
     play,
     stop,
+    pause,
+    resume,
+    seek,
+    restart,
   };
 }
