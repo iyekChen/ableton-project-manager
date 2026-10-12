@@ -20,7 +20,8 @@ import type { CachedAlsMetadata } from "./als-cache";
 
 export type TrackInfo = {
   duration: number | null; // 秒，来自最新 bounce
-  rms: number | null; // 0..1，能量近似
+  rms: number | null; // 0..1，整体响度
+  crest: number | null; // 波峰因数 peak/rms，≥1，越小越密、能量越高
   bpm: number | null;
   key: string | null;
   timeSignature: string | null;
@@ -56,9 +57,16 @@ function latestAlsFile(folderPath: string): string | null {
   return latestPath;
 }
 
-async function loadAudioPart(project: Project): Promise<{ duration: number | null; rms: number | null }> {
+/** 波峰因数 = 峰值 / RMS（≥1）；RMS 为 0 时无意义，返回 null。 */
+function crestFactor(rms: number, peak: number): number | null {
+  return rms > 0 ? peak / rms : null;
+}
+
+async function loadAudioPart(
+  project: Project,
+): Promise<{ duration: number | null; rms: number | null; crest: number | null }> {
   const bouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
-  if (!bouncePath) return { duration: null, rms: null };
+  if (!bouncePath) return { duration: null, rms: null, crest: null };
 
   await loadPersistentAudioAnalysisCache();
 
@@ -66,12 +74,13 @@ async function loadAudioPart(project: Project): Promise<{ duration: number | nul
   try {
     signature = audioFileSignature(fs.statSync(bouncePath));
   } catch {
-    return { duration: null, rms: null };
+    return { duration: null, rms: null, crest: null };
   }
 
   const cached = getCachedAudioAnalysisEntry(bouncePath);
   if (cached && cached.signature === signature) {
-    return { duration: cached.analysis.duration, rms: cached.analysis.rms };
+    const { duration, rms, peak } = cached.analysis;
+    return { duration, rms, crest: crestFactor(rms, peak) };
   }
 
   try {
@@ -83,10 +92,10 @@ async function loadAudioPart(project: Project): Promise<{ duration: number | nul
     } catch {
       // 缓存校验失败不影响返回结果
     }
-    return { duration: analysis.duration, rms: analysis.rms };
+    return { duration: analysis.duration, rms: analysis.rms, crest: crestFactor(analysis.rms, analysis.peak) };
   } catch (error) {
     console.error(`[Ableton Session Manager] Failed to analyze bounce: ${bouncePath}`, error);
-    return { duration: null, rms: null };
+    return { duration: null, rms: null, crest: null };
   }
 }
 
@@ -137,6 +146,7 @@ export async function loadTrackInfo(project: Project): Promise<TrackInfo> {
   return {
     duration: audio.duration,
     rms: audio.rms,
+    crest: audio.crest,
     bpm: als.bpm,
     key: als.key,
     timeSignature: als.timeSignature,
@@ -168,9 +178,37 @@ export async function loadTrackInfos(
   await Promise.all(Array.from({ length: Math.min(concurrency, projects.length) }, () => worker()));
 }
 
-/** 把 rms 按本专辑 min/max 线性映射到 1–5 档。 */
-export function energyLevel(rms: number, min: number, max: number): number {
-  if (!(max > min)) return 3;
-  const level = Math.round(1 + ((rms - min) / (max - min)) * 4);
-  return Math.max(1, Math.min(5, level));
+/** 本专辑某个特征的取值范围（min/max），用于把特征归一化到 0..1。 */
+export type EnergyRange = { min: number; max: number };
+
+/** 把一个值按范围线性归一到 0..1；范围无效（max<=min）时返回 0.5（居中）。 */
+function normalize(value: number, range: EnergyRange): number {
+  if (!(range.max > range.min)) return 0.5;
+  const t = (value - range.min) / (range.max - range.min);
+  return Math.max(0, Math.min(1, t));
+}
+
+// 各能量特征的权重；第 1 步只有波峰因数，后续加入 BPM、频谱特征时在此补权重。
+const ENERGY_WEIGHTS = { crest: 1 };
+
+/**
+ * 综合能量分（0..1）。波峰因数越小越密、能量越高，故取反。
+ * 参与的特征按权重加权；缺某特征就跳过并对剩余权重重新归一；全缺则返回 null。
+ */
+export function energyScore(info: Pick<TrackInfo, "crest">, crestRange: EnergyRange): number | null {
+  let sum = 0;
+  let totalWeight = 0;
+
+  if (typeof info.crest === "number") {
+    sum += ENERGY_WEIGHTS.crest * (1 - normalize(info.crest, crestRange));
+    totalWeight += ENERGY_WEIGHTS.crest;
+  }
+
+  if (totalWeight === 0) return null;
+  return sum / totalWeight;
+}
+
+/** 把 0..1 的能量分映射到 1–5 档。 */
+export function energyLevelFromScore(score: number): number {
+  return Math.max(1, Math.min(5, Math.round(1 + score * 4)));
 }

@@ -22,6 +22,7 @@ func runAnalyze(_ path: String) -> Never {
 
     var sumOfSquares = 0.0
     var sampleCount = 0
+    var peak = 0.0
 
     let chunkFrames: AVAudioFrameCount = 65536
 
@@ -50,15 +51,17 @@ func runAnalyze(_ path: String) -> Never {
             let sample = Double(samples[i])
             sumOfSquares += sample * sample
             sampleCount += 1
+            let magnitude = abs(sample)
+            if magnitude > peak { peak = magnitude }
           }
         }
       }
     }
 
     let rms = sampleCount > 0 ? (sumOfSquares / Double(sampleCount)).squareRoot() : 0
-    let clampedRms = max(0, min(1, rms))
-
-    print("{\"duration\": \(duration), \"rms\": \(clampedRms)}")
+      let clampedRms = max(0, min(1, rms))
+      let clampedPeak = max(0, min(1, peak))
+    print("{\"duration\": \(duration), \"rms\": \(clampedRms), \"peak\": \(clampedPeak)}")
     fflush(stdout)
     exit(EXIT_SUCCESS)
   } catch {

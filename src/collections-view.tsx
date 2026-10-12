@@ -25,7 +25,7 @@ import {
 } from "./collection-order";
 import { TRACK_ROLES } from "./track-role";
 import { RoleMap, assignRole, clearRole, getRoleMap, setRoleMap } from "./collection-roles";
-import { TrackInfo, energyLevel, loadTrackInfos } from "./projects/track-info";
+import { TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
@@ -164,10 +164,9 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
   const counts = new Map<number, number>();
   for (const p of tracked) counts.set(map[p.id], (counts.get(map[p.id]) ?? 0) + 1);
 
-  // 能量定档的尺：所有已排序、已分析出 rms 的曲目。
-  const scaleRms = tracked.map((p) => infos[p.id]?.rms).filter((rms): rms is number => typeof rms === "number");
-  const energyMin = scaleRms.length ? Math.min(...scaleRms) : 0;
-  const energyMax = scaleRms.length ? Math.max(...scaleRms) : 0;
+  // 能量定档的尺：所有已排序、已算出波峰因数的曲目的 min/max。
+  const crests = tracked.map((p) => infos[p.id]?.crest).filter((v): v is number => typeof v === "number");
+  const crestRange = { min: crests.length ? Math.min(...crests) : 0, max: crests.length ? Math.max(...crests) : 0 };
 
   // 总时长：所有已排序曲目（含 Draft/Demo）。
   const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
@@ -187,9 +186,9 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                 const info = infos[p.id];
 
                 let level: number | null = null;
-                const rms = info?.rms;
-                if (typeof rms === "number" && scaleRms.length > 0) {
-                  level = energyLevel(rms, energyMin, energyMax);
+                if (info) {
+                  const score = energyScore(info, crestRange);
+                  if (score !== null) level = energyLevelFromScore(score);
                 }
 
                 const accessories: List.Item.Accessory[] = [

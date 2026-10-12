@@ -9,7 +9,7 @@ export type AudioAnalysisCacheEntry = {
 
 const AUDIO_ANALYSIS_CACHE_LIMIT = 300;
 const AUDIO_ANALYSIS_STORAGE_KEY = "audio-analysis-cache-v1";
-const AUDIO_ANALYZER_VERSION = 1;
+const AUDIO_ANALYZER_VERSION = 2;
 
 const audioAnalysisCache = new Map<string, AudioAnalysisCacheEntry>();
 
@@ -44,7 +44,8 @@ export async function loadPersistentAudioAnalysisCache() {
           if (
             typeof entry?.signature !== "string" ||
             typeof entry?.analysis?.duration !== "number" ||
-            typeof entry?.analysis?.rms !== "number"
+            typeof entry?.analysis?.rms !== "number" ||
+            typeof entry?.analysis?.peak !== "number"
           ) {
             continue;
           }
