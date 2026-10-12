@@ -48,18 +48,6 @@
 			"required": false
 		},
 		{
-			"name": "projectView",
-			"title": "Projects View",
-			"description": "How the Search Projects list is displayed",
-			"type": "dropdown",
-			"required": false,
-			"default": "overview",
-			"data": [
-				{ "title": "Overview", "value": "overview" },
-				{ "title": "Detail", "value": "detail" }
-			]
-		},
-		{
 			"name": "weightCrest",
 			"title": "Energy Weight: Density (Crest)",
 			"description": "How much a track's density/compression counts toward its energy. Weights are relative — only the differences between the three matter.",

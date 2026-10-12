@@ -85,6 +85,8 @@ type TranslationKeys = {
   seekBackward: string;
   seekForward: string;
   restartTrack: string;
+  showDetail: string;
+  showOverview: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -174,6 +176,8 @@ const translations: Record<Language, TranslationKeys> = {
     seekBackward: "Backward",
     seekForward: "Forward",
     restartTrack: "Restart Track",
+    showDetail: "Show Detail",
+    showOverview: "Show Overview",
   },
 
   "zh-CN": {
@@ -261,6 +265,8 @@ const translations: Record<Language, TranslationKeys> = {
     seekBackward: "后退",
     seekForward: "前进",
     restartTrack: "从头播放",
+    showDetail: "显示详情",
+    showOverview: "显示概览",
   },
 };
 

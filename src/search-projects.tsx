@@ -2,10 +2,10 @@ import {
   ActionPanel,
   Action,
   Color,
-  getPreferenceValues,
   Icon,
   Keyboard,
   List,
+  LocalStorage,
   showToast,
   Toast,
   useNavigation,
@@ -35,6 +35,7 @@ const settings = getSettings();
 const t = getTranslations(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
+const VIEW_MODE_STORAGE_KEY = "view-mode:projects";
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
 
@@ -46,8 +47,6 @@ const PROJECT_SORT_OPTIONS: SortOption[] = [
   "name-asc",
   "name-desc",
 ];
-
-const SHOW_DETAIL = getPreferenceValues<{ projectView?: string }>().projectView === "detail";
 
 function namesFor(ids: string[], options: TaxonomyOption[]): string[] {
   return ids
@@ -72,6 +71,7 @@ export default function Command() {
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDetail, setShowDetail] = useState(true);
   const baseProjectsRef = useRef<Project[]>([]);
 
   const { playbackStatus, playingId, play, pause, resume, seek, restart } = useAudioPlayer({
@@ -89,12 +89,30 @@ export default function Command() {
     void collectionTaxonomy.get().then(setCollectionOptions);
   }, []);
 
+  useEffect(() => {
+    void LocalStorage.getItem<string>(VIEW_MODE_STORAGE_KEY).then((stored) => {
+      if (stored === "overview") {
+        setShowDetail(false);
+      } else if (stored === "detail") {
+        setShowDetail(true);
+      }
+    });
+  }, []);
+
+  const toggleDetail = useCallback(() => {
+    setShowDetail((prev) => {
+      const next = !prev;
+      void LocalStorage.setItem(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
+      return next;
+    });
+  }, []);
+
   const applyMetadata = useCallback(async () => {
     const metadataStore = await getAllProjectMetadata();
     const useNoteFile = getNotesFolder() !== "";
     const updatedProjects = baseProjectsRef.current.map((project) => {
       const metadata = metadataStore[project.id];
-      const notes = SHOW_DETAIL ? (useNoteFile ? readNoteFile(project.id) : (metadata?.notes ?? "")) : "";
+      const notes = showDetail ? (useNoteFile ? readNoteFile(project.id) : (metadata?.notes ?? "")) : "";
       return {
         ...project,
         stageId: metadata?.stageId ?? null,
@@ -234,7 +252,7 @@ export default function Command() {
         icon="Project.png"
         title={item.title}
         accessories={
-          SHOW_DETAIL
+          showDetail
             ? []
             : [
                 ...stagePill,
@@ -245,7 +263,7 @@ export default function Command() {
               ]
         }
         detail={
-          SHOW_DETAIL ? (
+          showDetail ? (
             <List.Item.Detail
               markdown={item.notes.trim() ? item.notes : "_No notes yet_"}
               metadata={
@@ -331,6 +349,11 @@ export default function Command() {
                 icon={Icon.Cd}
                 shortcut={{ modifiers: ["ctrl"], key: "return" }}
                 target={<CollectionList projects={projects} collections={collectionOptions} />}
+              />
+              <Action
+                title={showDetail ? t.showOverview : t.showDetail}
+                icon={Icon.AppWindowSidebarRight}
+                onAction={toggleDetail}
               />
             </ActionPanel.Section>
             <ActionPanel.Section>
@@ -430,7 +453,7 @@ export default function Command() {
   return (
     <List
       isLoading={isLoading}
-      isShowingDetail={SHOW_DETAIL}
+      isShowingDetail={showDetail}
       searchBarPlaceholder={t.searchProjects}
       searchBarAccessory={
         <List.Dropdown tooltip={t.filterByStage} value={selectedStage} onChange={setSelectedStage}>
