@@ -25,10 +25,35 @@ import {
 } from "./collection-order";
 import { TRACK_ROLES } from "./track-role";
 import { RoleMap, assignRole, clearRole, getRoleMap, setRoleMap } from "./collection-roles";
+import { TrackInfo, energyLevel, loadTrackInfos } from "./projects/track-info";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
 type Collection = { id: string; name: string };
+
+// 固定的冷→暖位置色模板：每个圆点槽位颜色固定，所有 Project 一致。
+// 槽位 1→5：最冷 → 次冷 → 中性 → 次暖 → 最暖。
+const ENERGY_SLOT_COLORS: Color[] = [Color.Blue, Color.Green, Color.Yellow, Color.Orange, Color.Red];
+
+function formatDuration(totalSeconds: number): string {
+  const s = Math.round(totalSeconds);
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+// 返回 5 个圆点 accessory：槽位 i < level 的点亮（显示该槽位的冷→暖色），其余留空（无色）。
+// level 为 null（无数据 / 分析中 / 本专辑暂无可定尺的曲目）→ 全部空点占位，保持右侧列对齐。
+function energyAccessories(level: number | null): List.Item.Accessory[] {
+  return ENERGY_SLOT_COLORS.map((color, i) => {
+    const filled = level !== null && i < level;
+    return filled ? { text: { value: "●", color } } : { text: { value: "○", color: Color.SecondaryText } };
+  });
+}
 
 export function CollectionList({ projects, collections }: { projects: Project[]; collections: Collection[] }) {
   return (
@@ -66,17 +91,37 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
 
   const [map, setMap] = useState<TrackMap>({});
   const [roles, setRoles] = useState<RoleMap>({});
+  const [infos, setInfos] = useState<Record<string, TrackInfo>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    const memberList = projects.filter((p) => p.collectionIds.includes(collection.id));
+
     async function load() {
       const [trackMap, roleMap] = await Promise.all([getTrackMap(collection.id), getRoleMap(collection.id)]);
+      if (cancelled) return;
+
       setMap(trackMap);
       setRoles(roleMap);
       setLoading(false);
+
+      await loadTrackInfos(
+        memberList,
+        (projectId, info) => {
+          if (cancelled) return;
+          setInfos((prev) => ({ ...prev, [projectId]: info }));
+        },
+        () => cancelled,
+      );
     }
-    load();
-  }, [collection.id]);
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [collection.id, projects]);
 
   async function apply(next: TrackMap) {
     setMap(next);
@@ -107,7 +152,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
   // 角色 pill（设了才显示，放在 accessories 最左）。
   const rolePill = (p: Project): List.Item.Accessory[] => {
     const role = roles[p.id];
-    return role ? [{ tag: { value: role, color: Color.Purple } }] : [];
+    return role ? [{ tag: { value: role, color: Color.SecondaryText } }] : [];
   };
 
   const tracked = members
@@ -119,6 +164,15 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
   const counts = new Map<number, number>();
   for (const p of tracked) counts.set(map[p.id], (counts.get(map[p.id]) ?? 0) + 1);
 
+  // 能量定档的尺：所有已排序、已分析出 rms 的曲目。
+  const scaleRms = tracked.map((p) => infos[p.id]?.rms).filter((rms): rms is number => typeof rms === "number");
+  const energyMin = scaleRms.length ? Math.min(...scaleRms) : 0;
+  const energyMax = scaleRms.length ? Math.max(...scaleRms) : 0;
+
+  // 总时长：所有已排序曲目（含 Draft/Demo）。
+  const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
+  const tracklistTitle = totalSeconds > 0 ? `${t.tracklistDuration} ${formatDuration(totalSeconds)}` : t.tracklist;
+
   return (
     <List navigationTitle={collection.name} isLoading={loading}>
       {tracked.length === 0 && unsorted.length === 0 ? (
@@ -126,20 +180,33 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
       ) : (
         <>
           {tracked.length > 0 && (
-            <List.Section title={t.tracklist}>
+            <List.Section title={tracklistTitle}>
               {tracked.map((p, i) => {
                 const num = map[p.id];
                 const dup = (counts.get(num) ?? 0) > 1;
+                const info = infos[p.id];
+
+                let level: number | null = null;
+                const rms = info?.rms;
+                if (typeof rms === "number" && scaleRms.length > 0) {
+                  level = energyLevel(rms, energyMin, energyMax);
+                }
+
                 const accessories: List.Item.Accessory[] = [
                   ...rolePill(p),
+                  ...(dup
+                    ? [
+                        {
+                          icon: { source: Icon.Warning, tintColor: Color.Yellow },
+                          tooltip: t.duplicateTrack,
+                        } as List.Item.Accessory,
+                      ]
+                    : []),
                   { text: `Track ${String(num).padStart(2, "0")}` },
+                  { text: info?.duration != null ? formatDuration(info.duration) : "--:--" },
+                  ...energyAccessories(level),
                 ];
-                if (dup) {
-                  accessories.push({
-                    icon: { source: Icon.Warning, tintColor: Color.Yellow },
-                    tooltip: t.duplicateTrack,
-                  });
-                }
+
                 return (
                   <List.Item
                     key={p.id}
@@ -206,7 +273,6 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                   key={p.id}
                   icon={{ source: "Project.png" }}
                   title={p.title}
-                  accessories={rolePill(p)}
                   actions={
                     <ActionPanel>
                       <Action.Push

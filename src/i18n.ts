@@ -80,6 +80,7 @@ type TranslationKeys = {
   noCategories: string;
   setTrackRole: string;
   clearRole: string;
+  tracklistDuration: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -164,6 +165,7 @@ const translations: Record<Language, TranslationKeys> = {
     noCategories: "Nothing here yet",
     setTrackRole: "Set Track Role",
     clearRole: "Clear Role",
+    tracklistDuration: "Tracklist Duration",
   },
 
   "zh-CN": {
@@ -246,6 +248,7 @@ const translations: Record<Language, TranslationKeys> = {
     noCategories: "还没有选项",
     setTrackRole: "设置曲目角色",
     clearRole: "清除角色",
+    tracklistDuration: "曲目列表时长",
   },
 };
 
