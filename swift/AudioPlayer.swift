@@ -10,7 +10,7 @@ let stopCommand = "STOP"    // 经 stdin 收到 = 请求淡出停止
 
 // analyze 模式：与 src/projects/audio-analysis.ts 约定。
 // 调用 `AudioPlayer analyze <path>`，向 stdout 输出一行 JSON：
-//   {"duration": 秒(Double), "rms": 0..1(Double), "peak": 0..1(Double), "centroid": 0..1 或 -1(Double)}
+//   {"duration": 秒(Double), "rms": 0..1(Double), "peak": 0..1(Double), "centroid": 0..1 或 -1(Double), "flux": 0..1 或 -1(Double)}
 // 修改字段名或格式时，audio-analysis.ts 必须同步更新。
 func runAnalyze(_ path: String) -> Never {
     let url = URL(fileURLWithPath: path)
@@ -62,8 +62,8 @@ func runAnalyze(_ path: String) -> Never {
         let rms = sampleCount > 0 ? (sumOfSquares / Double(sampleCount)).squareRoot() : 0
         let clampedRms = max(0, min(1, rms))
         let clampedPeak = max(0, min(1, peak))
-        let centroid = spectralCentroid(mono: mono, sampleRate: sampleRate)
-        print("{\"duration\": \(duration), \"rms\": \(clampedRms), \"peak\": \(clampedPeak), \"centroid\": \(centroid)}")
+        let features = spectralFeatures(mono: mono, sampleRate: sampleRate)
+        print("{\"duration\": \(duration), \"rms\": \(clampedRms), \"peak\": \(clampedPeak), \"centroid\": \(features.centroid), \"flux\": \(features.flux)}")
         fflush(stdout)
         exit(EXIT_SUCCESS)
     } catch {
@@ -72,16 +72,18 @@ func runAnalyze(_ path: String) -> Never {
     }
 }
 
-// 加窗 STFT 求“功率加权频谱质心”，再除以 Nyquist 归一到 0..1（亮度）。
-// 实数 FFT 的 2 倍缩放在质心这个比值里会上下约掉，故无需额外缩放。
-// 样本不足一帧 / 全静音 / FFT 初始化失败时返回 -1（表示 n/a）。
-func spectralCentroid(mono: [Float], sampleRate: Double) -> Double {
+// 加窗 STFT，一趟算出两个频谱特征：
+//  - centroid（亮度）：功率加权频谱质心 / Nyquist，归一到 0..1。
+//    实数 FFT 的 2 倍缩放在这个比值里会上下约掉，故无需额外缩放。
+//  - flux（活动量）：相邻帧“L1 归一化幅度谱”的半波正向差之和，逐帧平均；对响度不敏感，落在 0..1。
+// 样本不足一帧 / 全静音 / FFT 初始化失败 → centroid 返回 -1；不足两帧 → flux 返回 -1（n/a）。
+func spectralFeatures(mono: [Float], sampleRate: Double) -> (centroid: Double, flux: Double) {
     let log2n: vDSP_Length = 11
     let fftSize = 1 << Int(log2n) // 2048
     let halfSize = fftSize / 2
     guard mono.count >= fftSize, sampleRate > 0,
           let setup = vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2)) else {
-        return -1
+        return (-1, -1)
     }
     defer { vDSP_destroy_fftsetup(setup) }
 
@@ -92,14 +94,20 @@ func spectralCentroid(mono: [Float], sampleRate: Double) -> Double {
     var realp = [Float](repeating: 0, count: halfSize)
     var imagp = [Float](repeating: 0, count: halfSize)
     var magsSquared = [Float](repeating: 0, count: halfSize)
+    var mags = [Float](repeating: 0, count: halfSize)
 
     var weightedFreqSum = 0.0
     var powerSum = 0.0
-    let hop = fftSize // 不重叠
 
+    // flux：保存上一帧的 L1 归一化幅度谱（下标 1..<halfSize，bin0 不计）。
+    var prevNorm = [Double](repeating: 0, count: halfSize)
+    var hasPrev = false
+    var fluxSum = 0.0
+    var fluxFrames = 0
+
+    let hop = fftSize // 不重叠
     var start = 0
     while start + fftSize <= mono.count {
-        // 加 Hann 窗
         mono.withUnsafeBufferPointer { mptr in
             vDSP_vmul(mptr.baseAddress! + start, 1, window, 1, &windowed, 1, vDSP_Length(fftSize))
         }
@@ -113,22 +121,52 @@ func spectralCentroid(mono: [Float], sampleRate: Double) -> Double {
                     }
                 }
                 vDSP_fft_zrip(setup, &split, 1, log2n, FFTDirection(FFT_FORWARD))
-                // 幅度平方；bin0 把 DC 与 Nyquist 混在实/虚部里，循环时跳过。
-                vDSP_zvmags(&split, 1, &magsSquared, 1, vDSP_Length(halfSize))
+                vDSP_zvmags(&split, 1, &magsSquared, 1, vDSP_Length(halfSize)) // 功率，用于 centroid
+                vDSP_zvabs(&split, 1, &mags, 1, vDSP_Length(halfSize)) // 幅度，用于 flux
             }
         }
+
+        // centroid：功率加权（跳过 bin0）
         for k in 1..<halfSize {
             let power = Double(magsSquared[k])
             let freq = Double(k) * sampleRate / Double(fftSize)
             weightedFreqSum += freq * power
             powerSum += power
         }
+
+        // flux：本帧幅度谱按 L1 归一化（跳过 bin0），与上一帧做半波正向差
+        var magSum = 0.0
+        for k in 1..<halfSize { magSum += Double(mags[k]) }
+        if magSum > 0 {
+            var frameFlux = 0.0
+            for k in 1..<halfSize {
+                let norm = Double(mags[k]) / magSum
+                if hasPrev {
+                    let diff = norm - prevNorm[k]
+                    if diff > 0 { frameFlux += diff }
+                }
+                prevNorm[k] = norm
+            }
+            if hasPrev {
+                fluxSum += frameFlux
+                fluxFrames += 1
+            }
+            hasPrev = true
+        }
+
         start += hop
     }
 
-    guard powerSum > 0 else { return -1 }
-    let nyquist = sampleRate / 2
-    return max(0, min(1, (weightedFreqSum / powerSum) / nyquist))
+    let centroid: Double
+    if powerSum > 0 {
+        let nyquist = sampleRate / 2
+        centroid = max(0, min(1, (weightedFreqSum / powerSum) / nyquist))
+    } else {
+        centroid = -1
+    }
+
+    let flux = fluxFrames > 0 ? max(0, min(1, fluxSum / Double(fluxFrames))) : -1
+    return (centroid, flux)
 }
 
 let arguments = CommandLine.arguments

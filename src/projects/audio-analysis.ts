@@ -6,6 +6,7 @@ export type AudioAnalysis = {
   rms: number; // 0..1，整体响度
   peak: number; // 0..1，峰值绝对值，用于算波峰因数
   centroid: number; // 0..1，频谱亮度；-1 表示无有效帧
+  flux: number; // 0..1，spectral flux（活动量）；-1 表示 n/a
 };
 
 /**
@@ -28,12 +29,19 @@ export function analyzeAudio(audioPath: string): Promise<AudioAnalysis> {
           typeof parsed.duration !== "number" ||
           typeof parsed.rms !== "number" ||
           typeof parsed.peak !== "number" ||
-          typeof parsed.centroid !== "number"
+          typeof parsed.centroid !== "number" ||
+          typeof parsed.flux !== "number"
         ) {
           reject(new Error(`Unexpected analyze output: ${stdout.trim()}`));
           return;
         }
-        resolve({ duration: parsed.duration, rms: parsed.rms, peak: parsed.peak, centroid: parsed.centroid });
+        resolve({
+          duration: parsed.duration,
+          rms: parsed.rms,
+          peak: parsed.peak,
+          centroid: parsed.centroid,
+          flux: parsed.flux,
+        });
       } catch (parseError) {
         reject(parseError instanceof Error ? parseError : new Error(String(parseError)));
       }

@@ -172,6 +172,11 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
     min: brightnesses.length ? Math.min(...brightnesses) : 0,
     max: brightnesses.length ? Math.max(...brightnesses) : 0,
   };
+  const activities = tracked.map((p) => infos[p.id]?.activity).filter((v): v is number => typeof v === "number");
+  const activityRange = {
+    min: activities.length ? Math.min(...activities) : 0,
+    max: activities.length ? Math.max(...activities) : 0,
+  };
 
   // 总时长：所有已排序曲目（含 Draft/Demo）。
   const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
@@ -192,7 +197,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
 
                 let level: number | null = null;
                 if (info) {
-                  const score = energyScore(info, crestRange, brightnessRange);
+                  const score = energyScore(info, crestRange, brightnessRange, activityRange);
                   if (score !== null) level = energyLevelFromScore(score);
                 }
 
