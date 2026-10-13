@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { startAudioPlayer } from "../audio-player";
 import type { AudioPlayerController, PlaybackStatus } from "../audio-player";
 
@@ -11,133 +11,167 @@ interface PlaybackCallbacks {
   onError?: (message: string) => void;
 }
 
-interface ActivePlayer {
-  sessionId: number;
-  controller: AudioPlayerController;
+// ---- 全局单例：整个扩展共享同一个播放器 ----
+// 所有视图（Search Projects / Collection 等）通过本模块共享播放状态与进程，
+// 保证同一时间只有一个 bounce 在播：切视图不打断，也不会重叠出声。
+
+let playbackStatus: PlaybackStatus = "Stopped";
+let playingId: string | null = null;
+let activeController: AudioPlayerController | null = null;
+let activeSessionId = 0;
+
+// useSyncExternalStore 要求 getSnapshot 在未变化时返回稳定引用，这里缓存快照。
+let snapshot: { playbackStatus: PlaybackStatus; playingId: string | null } = {
+  playbackStatus,
+  playingId,
+};
+
+const listeners = new Set<() => void>();
+
+function emit() {
+  snapshot = { playbackStatus, playingId };
+  for (const listener of listeners) {
+    listener();
+  }
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function getSnapshot() {
+  return snapshot;
+}
+
+function setPlaybackStatus(status: PlaybackStatus) {
+  if (playbackStatus !== status) {
+    playbackStatus = status;
+    emit();
+  }
+}
+
+function setPlayingId(id: string | null) {
+  if (playingId !== id) {
+    playingId = id;
+    emit();
+  }
+}
+
+function play(id: string, audioPath: string, playerPath: string, callbacks?: PlaybackCallbacks) {
+  // 先切换会话编号，使旧播放器的回调失效。
+  const sessionId = ++activeSessionId;
+
+  const previousController = activeController;
+  activeController = null;
+
+  // 清理旧播放器，避免多个播放器同时运行。
+  previousController?.cleanup();
+
+  setPlaybackStatus("Starting");
+  setPlayingId(id);
+
+  const controller = startAudioPlayer({
+    audioPath,
+    playerPath,
+
+    onStatusChange: (status) => {
+      // 只允许当前会话更新播放状态。
+      if (activeSessionId !== sessionId) {
+        return;
+      }
+
+      setPlaybackStatus(status);
+
+      if (status === "Playing") {
+        callbacks?.onPlaying?.();
+      }
+
+      if (status === "Stopped" || status === "Failed") {
+        setPlayingId(null);
+
+        if (activeController === controller) {
+          activeController = null;
+        }
+      }
+    },
+
+    onError: (message) => {
+      // 忽略已经被新会话取代的旧播放器错误。
+      if (activeSessionId !== sessionId) {
+        return;
+      }
+
+      callbacks?.onError?.(message);
+    },
+  });
+
+  activeController = controller;
+}
+
+function stop() {
+  if (!activeController) {
+    if (playbackStatus !== "Stopped") {
+      setPlaybackStatus("Stopped");
+    }
+    setPlayingId(null);
+    return;
+  }
+
+  activeController.stop();
+}
+
+function pause() {
+  activeController?.pause();
+}
+
+function resume() {
+  activeController?.resume();
+}
+
+function seek(deltaSeconds: number) {
+  activeController?.seek(deltaSeconds);
+}
+
+function restart() {
+  activeController?.restart();
+}
+
+// 供根视图在命令关闭（根组件卸载）时调用：彻底停止并清理进程。
+// 子视图（push / pop）不应调用它，否则会打断跨视图保留的播放。
+export function cleanupAudioPlayer() {
+  activeSessionId += 1;
+  const controller = activeController;
+  activeController = null;
+  controller?.cleanup();
 }
 
 export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
-  const [playbackStatus, setPlaybackStatus] = useState<PlaybackStatus>("Stopped");
-  // 当前正在播放的身份（由调用方传入，通常是项目 id）；未播放时为 null。
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  const current = useSyncExternalStore(subscribe, getSnapshot);
 
-  const playbackStatusRef = useRef<PlaybackStatus>("Stopped");
-  const activePlayerRef = useRef<ActivePlayer | null>(null);
-  const sessionIdRef = useRef(0);
-
-  const updatePlaybackStatus = useCallback((status: PlaybackStatus) => {
-    playbackStatusRef.current = status;
-    setPlaybackStatus(status);
-  }, []);
-
-  const play = useCallback(
+  const playTrack = useCallback(
     (id: string, audioPath: string, callbacks?: PlaybackCallbacks) => {
-      // 先切换会话编号，使旧播放器的回调失效。
-      const sessionId = ++sessionIdRef.current;
-
-      const previousPlayer = activePlayerRef.current;
-      activePlayerRef.current = null;
-
-      // 清理旧播放器，避免多个播放器同时运行。
-      previousPlayer?.controller.cleanup();
-
-      updatePlaybackStatus("Starting");
-      setPlayingId(id);
-
-      const controller = startAudioPlayer({
-        audioPath,
-        playerPath,
-
-        onStatusChange: (status) => {
-          // 只允许当前会话更新播放状态。
-          if (sessionIdRef.current !== sessionId) {
-            return;
-          }
-
-          updatePlaybackStatus(status);
-
-          if (status === "Playing") {
-            callbacks?.onPlaying?.();
-          }
-
-          if (status === "Stopped" || status === "Failed") {
-            setPlayingId(null);
-
-            if (activePlayerRef.current?.sessionId === sessionId) {
-              activePlayerRef.current = null;
-            }
-          }
-        },
-
-        onError: (message) => {
-          // 忽略已经被新会话取代的旧播放器错误。
-          if (sessionIdRef.current !== sessionId) {
-            return;
-          }
-
-          callbacks?.onError?.(message);
-        },
-      });
-
-      activePlayerRef.current = {
-        sessionId,
-        controller,
-      };
+      play(id, audioPath, playerPath, callbacks);
     },
-    [playerPath, updatePlaybackStatus],
+    [playerPath],
   );
 
-  const stop = useCallback(() => {
-    const activePlayer = activePlayerRef.current;
-
-    if (!activePlayer) {
-      if (playbackStatusRef.current !== "Stopped") {
-        updatePlaybackStatus("Stopped");
-      }
-
-      setPlayingId(null);
-      return;
-    }
-
-    activePlayer.controller.stop();
-  }, [updatePlaybackStatus]);
-
-  const pause = useCallback(() => {
-    activePlayerRef.current?.controller.pause();
-  }, []);
-
-  const resume = useCallback(() => {
-    activePlayerRef.current?.controller.resume();
-  }, []);
-
-  const seek = useCallback((deltaSeconds: number) => {
-    activePlayerRef.current?.controller.seek(deltaSeconds);
-  }, []);
-
-  const restart = useCallback(() => {
-    activePlayerRef.current?.controller.restart();
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      // 先让当前会话失效，再清理进程。
-      sessionIdRef.current += 1;
-
-      const activePlayer = activePlayerRef.current;
-      activePlayerRef.current = null;
-
-      activePlayer?.controller.cleanup();
-    };
-  }, []);
+  const stopTrack = useCallback(() => stop(), []);
+  const pauseTrack = useCallback(() => pause(), []);
+  const resumeTrack = useCallback(() => resume(), []);
+  const seekTrack = useCallback((deltaSeconds: number) => seek(deltaSeconds), []);
+  const restartTrack = useCallback(() => restart(), []);
 
   return {
-    playbackStatus,
-    playingId,
-    play,
-    stop,
-    pause,
-    resume,
-    seek,
-    restart,
+    playbackStatus: current.playbackStatus,
+    playingId: current.playingId,
+    play: playTrack,
+    stop: stopTrack,
+    pause: pauseTrack,
+    resume: resumeTrack,
+    seek: seekTrack,
+    restart: restartTrack,
   };
 }

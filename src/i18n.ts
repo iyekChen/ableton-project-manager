@@ -87,6 +87,8 @@ type TranslationKeys = {
   restartTrack: string;
   showDetail: string;
   showOverview: string;
+  newLiveSet: string;
+  newLiveSetFailed: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -178,6 +180,8 @@ const translations: Record<Language, TranslationKeys> = {
     restartTrack: "Restart Track",
     showDetail: "Show Detail",
     showOverview: "Show Overview",
+    newLiveSet: "New Live Set",
+    newLiveSetFailed: "Ableton Live not found",
   },
 
   "zh-CN": {
@@ -267,6 +271,8 @@ const translations: Record<Language, TranslationKeys> = {
     restartTrack: "从头播放",
     showDetail: "显示详情",
     showOverview: "显示概览",
+    newLiveSet: "新建 Live Set",
+    newLiveSetFailed: "未找到 Ableton Live",
   },
 };
 

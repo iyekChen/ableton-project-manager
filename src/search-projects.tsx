@@ -2,17 +2,20 @@ import {
   ActionPanel,
   Action,
   Color,
+  getApplications,
   Icon,
   Keyboard,
   List,
   LocalStorage,
+  open,
   showToast,
   Toast,
   useNavigation,
+  type Application,
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import fs from "node:fs";
-import { useAudioPlayer } from "./hooks/use-audio-player";
+import { cleanupAudioPlayer, useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { getSettings } from "./settings";
 import { getAllProjectMetadata, movePinnedProject, setProjectPinned } from "./project-metadata";
@@ -72,11 +75,22 @@ export default function Command() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(true);
+  const [abletonApp, setAbletonApp] = useState<Application | null>(null);
   const baseProjectsRef = useRef<Project[]>([]);
 
   const { playbackStatus, playingId, play, pause, resume, seek, restart } = useAudioPlayer({
     playerPath: PLAYER_PATH,
   });
+
+  // 共享播放器：仅在命令关闭（根视图卸载）时真正停止；进入子视图（push）不打断。
+  useEffect(() => () => cleanupAudioPlayer(), []);
+
+  // 解析 Ableton Live，用于 New Live Set（取其图标 + 启动）。
+  useEffect(() => {
+    void getApplications().then((apps) => {
+      setAbletonApp(apps.find((app) => app.name.toLowerCase().includes("ableton live")) ?? null);
+    });
+  }, []);
 
   // 常驻 Toast：播放时 title=Playing Latest Bounce / 暂停时 title=Paused，message=曲名（次级灰）。
   const toastRef = useRef<Toast | null>(null);
@@ -153,8 +167,7 @@ export default function Command() {
   useEffect(() => {
     const playingProject = projects.find((p) => p.id === playingId);
     const name = playingProject?.title ?? "";
-    const isActive =
-      playingId !== null && (playbackStatus === "Starting" || playbackStatus === "Playing");
+    const isActive = playingId !== null && (playbackStatus === "Starting" || playbackStatus === "Playing");
     toastActiveRef.current = isActive;
 
     if (isActive) {
@@ -276,7 +289,7 @@ export default function Command() {
                       />
                     </List.Item.Detail.Metadata.TagList>
                   ) : (
-                    <List.Item.Detail.Metadata.Label title="Stage" text="—" />
+                    <List.Item.Detail.Metadata.Label title="Stage" text="" />
                   )}
                   {genreNames.length > 0 ? (
                     <List.Item.Detail.Metadata.TagList title="Genre">
@@ -285,16 +298,16 @@ export default function Command() {
                       ))}
                     </List.Item.Detail.Metadata.TagList>
                   ) : (
-                    <List.Item.Detail.Metadata.Label title="Genre" text="—" />
+                    <List.Item.Detail.Metadata.Label title="Genre" text="" />
                   )}
                   {collectionNames.length > 0 ? (
-                    <List.Item.Detail. Metadata.TagList title="Collection">
+                    <List.Item.Detail.Metadata.TagList title="Collection">
                       {collectionNames.map((collectionName) => (
                         <List.Item.Detail.Metadata.TagList.Item key={collectionName} text={collectionName} />
                       ))}
                     </List.Item.Detail.Metadata.TagList>
                   ) : (
-                    <List.Item.Detail.Metadata.Label title="Collection" text="—" />
+                    <List.Item.Detail.Metadata.Label title="Collection" text="" />
                   )}
                   <List.Item.Detail.Metadata.Separator />
                   <List.Item.Detail.Metadata.Label title="Bounces" text={String(item.bouncesCount)} />
@@ -348,7 +361,7 @@ export default function Command() {
                 title={t.browseCollections}
                 icon={Icon.Cd}
                 shortcut={{ modifiers: ["ctrl"], key: "return" }}
-                target={<CollectionList projects={projects} collections={collectionOptions} />}
+                target={<CollectionList projects={projects} collections={collectionOptions} stages={stageOptions} />}
               />
               <Action
                 title={showDetail ? t.showOverview : t.showDetail}
@@ -395,9 +408,29 @@ export default function Command() {
                     }
                   }}
                 />
-              </ActionPanel. Section>
+              </ActionPanel.Section>
             )}
             <ActionPanel.Section>
+              <Action
+                title={t.newLiveSet}
+                icon={abletonApp ? { fileIcon: abletonApp.path } : Icon.Plus}
+                shortcut={Keyboard.Shortcut.Common.New}
+                onAction={async () => {
+                  if (!abletonApp) {
+                    await showToast({ style: Toast.Style.Failure, title: t.newLiveSetFailed });
+                    return;
+                  }
+                  try {
+                    await open(abletonApp.path);
+                  } catch (error) {
+                    await showToast({
+                      style: Toast.Style.Failure,
+                      title: t.newLiveSetFailed,
+                      message: error instanceof Error ? error.message : String(error),
+                    });
+                  }
+                }}
+              />
               <Action.Open
                 title={t.openInFinder}
                 icon={Icon.Finder}
@@ -458,7 +491,7 @@ export default function Command() {
       searchBarAccessory={
         <List.Dropdown tooltip={t.filterByStage} value={selectedStage} onChange={setSelectedStage}>
           <List.Dropdown.Section title="">
-            <List.Dropdown. Item title={t.allStages} value="all" icon={Icon.CircleProgress100} />
+            <List.Dropdown.Item title={t.allStages} value="all" icon={Icon.CircleProgress100} />
           </List.Dropdown.Section>
           <List.Dropdown.Section title="">
             {stageOptions.map((option) => (

@@ -6,6 +6,7 @@ import {
   Icon,
   Keyboard,
   List,
+  LocalStorage,
   Toast,
   getPreferenceValues,
   showToast,
@@ -14,6 +15,7 @@ import {
 import { useEffect, useState } from "react";
 import { getTranslations } from "./i18n";
 import type { Project } from "./projects/types";
+import type { TaxonomyOption } from "./taxonomy";
 import {
   TrackMap,
   assignNumber,
@@ -26,10 +28,17 @@ import {
 import { TRACK_ROLES } from "./track-role";
 import { RoleMap, assignRole, clearRole, getRoleMap, setRoleMap } from "./collection-roles";
 import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
+import { useAudioPlayer } from "./hooks/use-audio-player";
+import { ensureAudioPlayerBinary } from "./audio-player-path";
+import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
 type Collection = { id: string; name: string };
+
+const VIEW_MODE_STORAGE_KEY = "view-mode:collections";
+const PLAYER_PATH = ensureAudioPlayerBinary();
+const SEEK_STEP_SECONDS = 5;
 
 // 固定的冷→暖位置色模板：每个圆点槽位颜色固定，所有 Project 一致。
 // 槽位 1→5：最冷 → 次冷 → 中性 → 次暖 → 最暖。
@@ -55,7 +64,15 @@ function energyAccessories(level: number | null): List.Item.Accessory[] {
   });
 }
 
-export function CollectionList({ projects, collections }: { projects: Project[]; collections: Collection[] }) {
+export function CollectionList({
+  projects,
+  collections,
+  stages,
+}: {
+  projects: Project[];
+  collections: Collection[];
+  stages: TaxonomyOption[];
+}) {
   return (
     <List navigationTitle={t.browseCollections}>
       {collections.length === 0 ? (
@@ -74,7 +91,7 @@ export function CollectionList({ projects, collections }: { projects: Project[];
                   <Action.Push
                     title={t.open}
                     icon={Icon.Cd}
-                    target={<CollectionPanel collection={c} projects={projects} />}
+                    target={<CollectionPanel collection={c} projects={projects} stages={stages} />}
                   />
                 </ActionPanel>
               }
@@ -86,26 +103,120 @@ export function CollectionList({ projects, collections }: { projects: Project[];
   );
 }
 
-function CollectionPanel({ collection, projects }: { collection: Collection; projects: Project[] }) {
+function CollectionPanel({
+  collection,
+  projects,
+  stages,
+}: {
+  collection: Collection;
+  projects: Project[];
+  stages: TaxonomyOption[];
+}) {
   const members = projects.filter((p) => p.collectionIds.includes(collection.id));
-
   const [map, setMap] = useState<TrackMap>({});
   const [roles, setRoles] = useState<RoleMap>({});
   const [infos, setInfos] = useState<Record<string, TrackInfo>>({});
   const [loading, setLoading] = useState(true);
+  const [showDetail, setShowDetail] = useState(true);
+  const [selectedStage, setSelectedStage] = useState("all");
+
+  const { playbackStatus, playingId, play, pause, resume, seek, restart } = useAudioPlayer({ playerPath: PLAYER_PATH });
+
+  function playProjectBounce(project: Project) {
+    const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
+    if (!latestBouncePath) {
+      void showToast({ style: Toast.Style.Failure, title: t.noBounces });
+      return;
+    }
+    play(project.id, latestBouncePath, {
+      onError: (message) => {
+        void showToast({ style: Toast.Style.Failure, title: t.playbackFailed, message });
+      },
+    });
+  }
+
+  // 主操作：未播→播；本行正在播→暂停/续播。放每个 item 的第二个 Action（拿 ⌘Enter）。
+  const renderPlayToggle = (p: Project) => {
+    const isThisPlaying = playingId === p.id;
+    const toggleIsPause = isThisPlaying && (playbackStatus === "Playing" || playbackStatus === "Starting");
+    const title = isThisPlaying
+      ? playbackStatus === "Paused"
+        ? t.resumePlayback
+        : playbackStatus === "Stopping"
+          ? t.stoppingPlayback
+          : t.pausePlayback
+      : t.playLatestBounce;
+    return (
+      <Action
+        title={title}
+        icon={toggleIsPause ? Icon.Pause : Icon.Play}
+        onAction={() => {
+          if (isThisPlaying) {
+            if (playbackStatus === "Stopping") {
+              return;
+            }
+            if (playbackStatus === "Paused") {
+              resume();
+            } else {
+              pause();
+            }
+            return;
+          }
+          playProjectBounce(p);
+        }}
+      />
+    );
+  };
+
+  // 播放时才出现的 seek / restart（作用于全局播放器），作为每个 item 的第二个 Section。
+  const renderPlaybackControls = () =>
+    playingId !== null ? (
+      <ActionPanel.Section>
+        <Action
+          title={t.seekBackward}
+          icon={Icon.ArrowLeft}
+          shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
+          onAction={() => seek(-SEEK_STEP_SECONDS)}
+        />
+        <Action
+          title={t.seekForward}
+          icon={Icon.ArrowRight}
+          shortcut={{ modifiers: ["opt"], key: "arrowRight" }}
+          onAction={() => seek(SEEK_STEP_SECONDS)}
+        />
+        <Action
+          title={t.restartTrack}
+          icon={Icon.ArrowCounterClockwise}
+          shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
+          onAction={() => {
+            restart();
+            if (playbackStatus === "Paused") {
+              resume();
+            }
+          }}
+        />
+      </ActionPanel.Section>
+    ) : null;
+
+  useEffect(() => {
+    void LocalStorage.getItem<string>(VIEW_MODE_STORAGE_KEY).then((stored) => {
+      if (stored === "overview") {
+        setShowDetail(false);
+      } else if (stored === "detail") {
+        setShowDetail(true);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     const memberList = projects.filter((p) => p.collectionIds.includes(collection.id));
-
     async function load() {
       const [trackMap, roleMap] = await Promise.all([getTrackMap(collection.id), getRoleMap(collection.id)]);
       if (cancelled) return;
-
       setMap(trackMap);
       setRoles(roleMap);
       setLoading(false);
-
       await loadTrackInfos(
         memberList,
         (projectId, info) => {
@@ -115,13 +226,19 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
         () => cancelled,
       );
     }
-
     void load();
-
     return () => {
       cancelled = true;
     };
   }, [collection.id, projects]);
+
+  function toggleDetail() {
+    setShowDetail((prev) => {
+      const next = !prev;
+      void LocalStorage.setItem(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
+      return next;
+    });
+  }
 
   async function apply(next: TrackMap) {
     setMap(next);
@@ -155,6 +272,17 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
     return role ? [{ tag: { value: role, color: Color.SecondaryText } }] : [];
   };
 
+  // 视图切换 Action（Detail / Overview，本视图独立记忆）。
+  const renderViewToggle = () => (
+    <ActionPanel.Section>
+      <Action
+        title={showDetail ? t.showOverview : t.showDetail}
+        icon={Icon.AppWindowSidebarRight}
+        onAction={toggleDetail}
+      />
+    </ActionPanel.Section>
+  );
+
   const tracked = members
     .filter((p) => map[p.id] !== undefined)
     .sort((a, b) => map[a.id] - map[b.id] || a.title.localeCompare(b.title));
@@ -182,8 +310,75 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
   const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
   const tracklistTitle = totalSeconds > 0 ? `${t.tracklistDuration} ${formatDuration(totalSeconds)}` : t.tracklist;
 
+  const matchesStage = (p: Project) => selectedStage === "all" || p.stageId === selectedStage;
+
+  // 单首曲目的 Detail 面板：Note 作 markdown 主体，其余作 metadata。缺数据的字段留标题、值空白。
+  const renderDetail = (p: Project) => {
+    const info = infos[p.id];
+    const role = roles[p.id];
+    const stage = stages.find((s) => s.id === p.stageId);
+    const isTracked = map[p.id] !== undefined;
+    let level: number | null = null;
+    if (isTracked && info) {
+      const score = energyScore(info, crestRange, brightnessRange, activityRange);
+      if (score !== null) level = energyLevelFromScore(score);
+    }
+    return (
+      <List.Item.Detail
+        markdown={p.notes?.trim() ? p.notes : "_No notes yet_"}
+        metadata={
+          <List.Item.Detail.Metadata>
+            {stage ? (
+              <List.Item.Detail.Metadata.TagList title="Stage">
+                <List.Item.Detail.Metadata.TagList.Item text={stage.name} color={stage.color ?? Color.SecondaryText} />
+              </List.Item.Detail.Metadata.TagList>
+            ) : (
+              <List.Item.Detail.Metadata.Label title="Stage" text="" />
+            )}
+            <List.Item.Detail.Metadata.Label
+              title="Duration"
+              text={info?.duration != null ? formatDuration(info.duration) : ""}
+            />
+            <List.Item.Detail.Metadata.Label title="Role" text={role ?? ""} />
+            <List.Item.Detail.Metadata.Label title="BPM" text={info?.bpm != null ? String(info.bpm) : ""} />
+            <List.Item.Detail.Metadata.Label title="Key" text={info?.key ?? ""} />
+            <List.Item.Detail.Metadata.Label title="Time Signature" text={info?.timeSignature ?? ""} />
+            {ENERGY_ENABLED && level !== null && (
+              <List.Item.Detail.Metadata.TagList title="Energy">
+                {ENERGY_SLOT_COLORS.map((color, i) => (
+                  <List.Item.Detail.Metadata.TagList.Item
+                    key={i}
+                    text="●"
+                    color={level !== null && i < level ? color : Color.SecondaryText}
+                  />
+                ))}
+              </List.Item.Detail.Metadata.TagList>
+            )}
+          </List.Item.Detail.Metadata>
+        }
+      />
+    );
+  };
+
   return (
-    <List navigationTitle={collection.name} isLoading={loading}>
+    <List
+      navigationTitle={collection.name}
+      isLoading={loading}
+      isShowingDetail={showDetail}
+      searchBarAccessory={
+        <List.Dropdown tooltip={t.filterByStage} value={selectedStage} onChange={setSelectedStage}>
+          <List.Dropdown.Item title={t.allStages} value="all" icon={Icon.CircleProgress100} />
+          {stages.map((option) => (
+            <List.Dropdown.Item
+              key={option.id}
+              title={option.name}
+              value={option.id}
+              icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
+            />
+          ))}
+        </List.Dropdown>
+      }
+    >
       {tracked.length === 0 && unsorted.length === 0 ? (
         <List.EmptyView title={t.noCategories} />
       ) : (
@@ -191,16 +386,15 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
           {tracked.length > 0 && (
             <List.Section title={tracklistTitle}>
               {tracked.map((p, i) => {
+                if (!matchesStage(p)) return null;
                 const num = map[p.id];
                 const dup = (counts.get(num) ?? 0) > 1;
                 const info = infos[p.id];
-
                 let level: number | null = null;
                 if (info) {
                   const score = energyScore(info, crestRange, brightnessRange, activityRange);
                   if (score !== null) level = energyLevelFromScore(score);
                 }
-
                 const accessories: List.Item.Accessory[] = [
                   ...rolePill(p),
                   ...(dup
@@ -215,13 +409,13 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                   { text: info?.duration != null ? formatDuration(info.duration) : "--:--" },
                   ...(ENERGY_ENABLED ? energyAccessories(level) : []),
                 ];
-
                 return (
                   <List.Item
                     key={p.id}
                     icon={{ source: "Project.png" }}
                     title={p.title}
-                    accessories={accessories}
+                    accessories={showDetail ? [] : accessories}
+                    detail={showDetail ? renderDetail(p) : undefined}
                     actions={
                       <ActionPanel>
                         <Action.Push
@@ -236,12 +430,15 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                             />
                           }
                         />
+                        {renderPlayToggle(p)}
                         {roleSubmenu(p)}
                         <Action
                           title={t.removeFromTracklist}
                           icon={Icon.MinusCircle}
+                          shortcut={Keyboard.Shortcut.Common.Pin}
                           onAction={() => removeFromTracklist(p.id)}
                         />
+                        {renderPlaybackControls()}
                         <ActionPanel.Section>
                           {i > 0 && (
                             <Action
@@ -267,6 +464,7 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
                             />
                           )}
                         </ActionPanel.Section>
+                        {renderViewToggle()}
                       </ActionPanel>
                     }
                   />
@@ -274,37 +472,44 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
               })}
             </List.Section>
           )}
-
           {unsorted.length > 0 && (
             <List.Section title={t.unsorted}>
-              {unsorted.map((p) => (
-                <List.Item
-                  key={p.id}
-                  icon={{ source: "Project.png" }}
-                  title={p.title}
-                  actions={
-                    <ActionPanel>
-                      <Action.Push
-                        title={t.setTrackNumber}
-                        icon={Icon.Hashtag}
-                        target={
-                          <SetTrackNumberForm
-                            current={nextNumber(map)}
-                            onSubmit={(n) =>
-                              n === null ? removeFromTracklist(p.id) : apply(assignNumber(map, p.id, n))
-                            }
-                          />
-                        }
-                      />
-                      <Action
-                        title={t.addToTracklist}
-                        icon={Icon.PlusCircle}
-                        onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
-                      />
-                    </ActionPanel>
-                  }
-                />
-              ))}
+              {unsorted.map((p) => {
+                if (!matchesStage(p)) return null;
+                return (
+                  <List.Item
+                    key={p.id}
+                    icon={{ source: "Project.png" }}
+                    title={p.title}
+                    detail={showDetail ? renderDetail(p) : undefined}
+                    actions={
+                      <ActionPanel>
+                        <Action.Push
+                          title={t.setTrackNumber}
+                          icon={Icon.Hashtag}
+                          target={
+                            <SetTrackNumberForm
+                              current={nextNumber(map)}
+                              onSubmit={(n) =>
+                                n === null ? removeFromTracklist(p.id) : apply(assignNumber(map, p.id, n))
+                              }
+                            />
+                          }
+                        />
+                        {renderPlayToggle(p)}
+                        <Action
+                          title={t.addToTracklist}
+                          icon={Icon.PlusCircle}
+                          shortcut={Keyboard.Shortcut.Common.Pin}
+                          onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
+                        />
+                        {renderPlaybackControls()}
+                        {renderViewToggle()}
+                      </ActionPanel>
+                    }
+                  />
+                );
+              })}
             </List.Section>
           )}
         </>
@@ -316,7 +521,6 @@ function CollectionPanel({ collection, projects }: { collection: Collection; pro
 function SetTrackNumberForm({ current, onSubmit }: { current?: number; onSubmit: (n: number | null) => void }) {
   const { pop } = useNavigation();
   const [value, setValue] = useState("");
-
   function handleSubmit() {
     const trimmed = value.trim();
     if (trimmed === "") {
@@ -332,7 +536,6 @@ function SetTrackNumberForm({ current, onSubmit }: { current?: number; onSubmit:
     onSubmit(n === 0 ? null : n); // 0 = 移出
     pop();
   }
-
   return (
     <Form
       actions={
