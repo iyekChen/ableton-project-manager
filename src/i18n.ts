@@ -33,6 +33,8 @@ type TranslationKeys = {
   allTags: string;
   allStages: string;
   filterByStage: string;
+  filter: string;
+  all: string;
   notes: string;
   openNote: string;
   editNote: string;
@@ -90,6 +92,13 @@ type TranslationKeys = {
   showOverview: string;
   newLiveSet: string;
   newLiveSetFailed: string;
+  duplicateSet: string;
+  setDuplicated: string;
+  moveToTrash: string;
+  movedToTrash: string;
+  trashProjectHint: string;
+  trashSetHint: string;
+  trashBounceHint: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -126,6 +135,8 @@ const translations: Record<Language, TranslationKeys> = {
     allTags: "All Tags",
     allStages: "All Stages",
     filterByStage: "Filter by Stage",
+    filter: "Filter",
+    all: "All",
     notes: "Notes",
     openNote: "Open Note",
     editNote: "Edit Note",
@@ -184,6 +195,13 @@ const translations: Record<Language, TranslationKeys> = {
     showOverview: "Show Overview",
     newLiveSet: "New Live Set",
     newLiveSetFailed: "Ableton Live not found",
+    duplicateSet: "Duplicate Set",
+    setDuplicated: "Set Duplicated",
+    moveToTrash: "Move to Trash",
+    movedToTrash: "Moved to Trash",
+    trashProjectHint: "This moves the entire project folder to the Trash:",
+    trashSetHint: "This moves the Set to the Trash:",
+    trashBounceHint: "This moves the bounce to the Trash:",
   },
 
   "zh-CN": {
@@ -219,6 +237,8 @@ const translations: Record<Language, TranslationKeys> = {
     allTags: "所有标签",
     allStages: "所有阶段",
     filterByStage: "按阶段筛选",
+    filter: "筛选",
+    all: "全部",
     notes: "备注",
     openNote: "打开备注",
     editNote: "编辑备注",
@@ -276,6 +296,13 @@ const translations: Record<Language, TranslationKeys> = {
     showOverview: "显示概览",
     newLiveSet: "新建 Live Set",
     newLiveSetFailed: "未找到 Ableton Live",
+    duplicateSet: "复制 Set",
+    setDuplicated: "已复制 Set",
+    moveToTrash: "移到废纸篓",
+    movedToTrash: "已移到废纸篓",
+    trashProjectHint: "这会把整个项目文件夹移到废纸篓：",
+    trashSetHint: "这会把该 Set 移到废纸篓：",
+    trashBounceHint: "这会把该 bounce 移到废纸篓：",
   },
 };
 

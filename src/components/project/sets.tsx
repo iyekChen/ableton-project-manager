@@ -1,4 +1,17 @@
-import { ActionPanel, Action, getApplications, Keyboard, List, type Application } from "@raycast/api";
+import {
+  ActionPanel,
+  Action,
+  Alert,
+  confirmAlert,
+  getApplications,
+  Icon,
+  Keyboard,
+  List,
+  showToast,
+  Toast,
+  trash,
+  type Application,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
@@ -40,11 +53,22 @@ type ProjectSet = CachedAlsMetadata & {
 
 const ALS_METADATA_CONCURRENCY = 3;
 
+function uniqueCopyPath(dir: string, baseName: string): string {
+  let candidate = path.join(dir, `${baseName} copy.als`);
+  let counter = 2;
+  while (fs.existsSync(candidate)) {
+    candidate = path.join(dir, `${baseName} copy ${counter}.als`);
+    counter++;
+  }
+  return candidate;
+}
+
 export function Sets({ project }: { project: Project }) {
   const [sets, setSets] = useState<ProjectSet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useSortOption(SETS_SORT_STORAGE_KEY, SETS_SORT_OPTIONS, "created-desc");
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   // 解析 Ableton Live，仅用于 Open in Ableton Live 的图标。
   useEffect(() => {
@@ -148,7 +172,35 @@ export function Sets({ project }: { project: Project }) {
     return () => {
       cancelled = true;
     };
-  }, [project.folderPath]);
+  }, [project.folderPath, reloadToken]);
+
+  const handleDuplicate = async (set: ProjectSet) => {
+    try {
+      const target = uniqueCopyPath(path.dirname(set.path), set.name);
+      fs.copyFileSync(set.path, target);
+      setReloadToken((n) => n + 1);
+      await showToast({ style: Toast.Style.Success, title: t.setDuplicated, message: path.basename(target) });
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: t.duplicateSet,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
+  const handleTrash = async (set: ProjectSet) => {
+    const confirmed = await confirmAlert({
+      title: t.moveToTrash,
+      icon: Icon.Trash,
+      message: `${t.trashSetHint}\n${set.name}`,
+      primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
+    });
+    if (!confirmed) return;
+    await trash(set.path);
+    setReloadToken((n) => n + 1);
+    await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: set.name });
+  };
 
   const sortedSets = sortItems(sets, sortBy, (set) => ({
     created: set.createdAt,
@@ -193,6 +245,21 @@ export function Sets({ project }: { project: Project }) {
                   title={t.copySetPath}
                   shortcut={Keyboard.Shortcut.Common.CopyPath}
                 />
+                <ActionPanel.Section>
+                  <Action
+                    title={t.duplicateSet}
+                    icon={Icon.Duplicate}
+                    shortcut={Keyboard.Shortcut.Common.Duplicate}
+                    onAction={() => handleDuplicate(set)}
+                  />
+                  <Action
+                    title={t.moveToTrash}
+                    icon={Icon.Trash}
+                    style={Action.Style.Destructive}
+                    shortcut={Keyboard.Shortcut.Common.Remove}
+                    onAction={() => handleTrash(set)}
+                  />
+                </ActionPanel.Section>
                 <ActionPanel.Section>
                   <SortBySubmenu allowed={SETS_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
                 </ActionPanel.Section>

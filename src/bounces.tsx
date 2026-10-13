@@ -1,4 +1,4 @@
-import { List, ActionPanel, Action, Icon, Keyboard } from "@raycast/api";
+import { List, ActionPanel, Action, Icon, Keyboard, Alert, confirmAlert, showToast, Toast, trash } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
@@ -37,11 +37,25 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
   const [bounces, setBounces] = useState<Bounce[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useSortOption(BOUNCES_SORT_STORAGE_KEY, BOUNCES_SORT_OPTIONS, "created-desc");
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     setBounces(listBounces(resolveBouncesFolder(props.projectPath)));
     setIsLoading(false);
-  }, [props.projectPath]);
+  }, [props.projectPath, reloadToken]);
+
+  const handleTrash = async (bounce: Bounce) => {
+    const confirmed = await confirmAlert({
+      title: t.moveToTrash,
+      icon: Icon.Trash,
+      message: `${t.trashBounceHint}\n${bounce.name}`,
+      primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
+    });
+    if (!confirmed) return;
+    await trash(bounce.path);
+    setReloadToken((n) => n + 1);
+    await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: bounce.name });
+  };
 
   const sorted = sortItems(bounces, sortBy, (b) => ({
     created: b.createdAt,
@@ -73,6 +87,15 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
                       shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                     />
                     <Action.Open title={t.openInDefaultApp} target={b.path} shortcut={Keyboard.Shortcut.Common.Open} />
+                  </ActionPanel.Section>
+                  <ActionPanel.Section>
+                    <Action
+                      title={t.moveToTrash}
+                      icon={Icon.Trash}
+                      style={Action.Style.Destructive}
+                      shortcut={Keyboard.Shortcut.Common.Remove}
+                      onAction={() => handleTrash(b)}
+                    />
                   </ActionPanel.Section>
                   <ActionPanel.Section>
                     <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />

@@ -10,7 +10,10 @@ import {
   open,
   showToast,
   Toast,
+  trash,
   useNavigation,
+  Alert,
+  confirmAlert,
   type Application,
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -70,7 +73,7 @@ export default function Command() {
   const [stageOptions, setStageOptions] = useState<TaxonomyOption[]>([]);
   const [genreOptions, setGenreOptions] = useState<TaxonomyOption[]>([]);
   const [collectionOptions, setCollectionOptions] = useState<TaxonomyOption[]>([]);
-  const [selectedStage, setSelectedStage] = useState("all");
+  const [selectedFilter, setSelectedFilter] = useState("all");
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -222,8 +225,28 @@ export default function Command() {
     await applyMetadata();
   };
 
-  const filteredProjects =
-    selectedStage === "all" ? projects : projects.filter((project) => project.stageId === selectedStage);
+  const handleTrashProject = async (project: Project) => {
+    const confirmed = await confirmAlert({
+      title: t.moveToTrash,
+      icon: Icon.Trash,
+      message: `${t.trashProjectHint}\n${project.title}`,
+      primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
+    });
+    if (!confirmed) return;
+    await trash(project.folderPath);
+    await reloadProjects();
+    await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: project.title });
+  };
+
+  const filteredProjects = (() => {
+    if (selectedFilter === "all") return projects;
+    const separator = selectedFilter.indexOf(":");
+    const dimension = selectedFilter.slice(0, separator);
+    const id = selectedFilter.slice(separator + 1);
+    if (dimension === "stage") return projects.filter((project) => project.stageId === id);
+    if (dimension === "genre") return projects.filter((project) => project.genreIds.includes(id));
+    return projects;
+  })();
 
   const pinnedProjects = filteredProjects
     .filter((project) => project.pinned)
@@ -469,6 +492,15 @@ export default function Command() {
             </ActionPanel.Section>
             <ActionPanel.Section>
               <Action
+                title={t.moveToTrash}
+                icon={Icon.Trash}
+                style={Action.Style.Destructive}
+                shortcut={Keyboard.Shortcut.Common.Remove}
+                onAction={() => handleTrashProject(item)}
+              />
+            </ActionPanel.Section>
+            <ActionPanel.Section>
+              <Action
                 title={showDetail ? t.showOverview : t.showDetail}
                 icon={Icon.AppWindowSidebarRight}
                 onAction={toggleDetail}
@@ -489,17 +521,29 @@ export default function Command() {
       isShowingDetail={showDetail}
       searchBarPlaceholder={t.searchProjects}
       searchBarAccessory={
-        <List.Dropdown tooltip={t.filterByStage} value={selectedStage} onChange={setSelectedStage}>
+        <List.Dropdown tooltip={t.filter} value={selectedFilter} onChange={setSelectedFilter}>
           <List.Dropdown.Section title="">
-            <List.Dropdown.Item title={t.allStages} value="all" icon={Icon.CircleProgress100} />
+            <List.Dropdown.Item title={t.all} value="all" icon={Icon.CircleProgress100} />
           </List.Dropdown.Section>
-          <List.Dropdown.Section title="">
+          <List.Dropdown.Section title={t.stage}>
             {stageOptions.map((option) => (
               <List.Dropdown.Item
-                key={option.id}
+                key={`stage:${option.id}`}
                 title={option.name}
-                value={option.id}
+                value={`stage:${option.id}`}
+                keywords={["stage", "stages", t.stage]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
+              />
+            ))}
+          </List.Dropdown.Section>
+          <List.Dropdown.Section title={t.genre}>
+            {genreOptions.map((option) => (
+              <List.Dropdown.Item
+                key={`genre:${option.id}`}
+                title={option.name}
+                value={`genre:${option.id}`}
+                keywords={["genre", "genres", t.genre]}
+                icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Tag}
               />
             ))}
           </List.Dropdown.Section>
