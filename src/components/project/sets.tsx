@@ -1,4 +1,4 @@
-import { ActionPanel, Action, Keyboard, List } from "@raycast/api";
+import { ActionPanel, Action, getApplications, Keyboard, List, type Application } from "@raycast/api";
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
@@ -44,6 +44,14 @@ export function Sets({ project }: { project: Project }) {
   const [sets, setSets] = useState<ProjectSet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useSortOption(SETS_SORT_STORAGE_KEY, SETS_SORT_OPTIONS, "created-desc");
+  const [abletonApp, setAbletonApp] = useState<Application | null>(null);
+
+  // 解析 Ableton Live，仅用于 Open in Ableton Live 的图标。
+  useEffect(() => {
+    void getApplications().then((apps) => {
+      setAbletonApp(apps.find((app) => app.name.toLowerCase().includes("ableton live")) ?? null);
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -169,7 +177,11 @@ export function Sets({ project }: { project: Project }) {
             }
             actions={
               <ActionPanel>
-                <Action.Open title={t.openInAbletonLive} target={set.path} />
+                <Action.Open
+                  title={t.openInAbletonLive}
+                  icon={abletonApp ? { fileIcon: abletonApp.path } : undefined}
+                  target={set.path}
+                />
                 <Action.ShowInFinder path={set.path} title={t.showInFinder} />
                 <Action.CopyToClipboard
                   content={set.path.split("/").pop() ?? ""}

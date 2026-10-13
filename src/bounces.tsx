@@ -1,4 +1,4 @@
-import { List, ActionPanel, Action, Icon } from "@raycast/api";
+import { List, ActionPanel, Action, Icon, Keyboard } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
@@ -65,7 +65,15 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
               quickLook={{ path: b.path, name: b.name }}
               actions={
                 <ActionPanel>
-                  <Action.ToggleQuickLook />
+                  <ActionPanel.Section>
+                    <Action.ToggleQuickLook />
+                    <Action.ShowInFinder
+                      title={t.showInFinder}
+                      path={b.path}
+                      shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+                    />
+                    <Action.Open title={t.openInDefaultApp} target={b.path} shortcut={Keyboard.Shortcut.Common.Open} />
+                  </ActionPanel.Section>
                   <ActionPanel.Section>
                     <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
                   </ActionPanel.Section>

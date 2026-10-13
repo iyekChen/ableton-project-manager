@@ -16,6 +16,7 @@ type TranslationKeys = {
   copySetPath: string;
   openInFinder: string;
   showInFinder: string;
+  openInDefaultApp: string;
   browseCollections: string;
   open: string;
   tracklist: string;
@@ -108,6 +109,7 @@ const translations: Record<Language, TranslationKeys> = {
     copySetPath: "Copy Set Path",
     openInFinder: "Open in Finder",
     showInFinder: "Show in Finder",
+    openInDefaultApp: "Open in Default App",
     browseCollections: "Browse Collections",
     open: "Open",
     tracklist: "Tracklist",
@@ -200,6 +202,7 @@ const translations: Record<Language, TranslationKeys> = {
     copySetPath: "复制 Set 路径",
     openInFinder: "在 Finder 中打开",
     showInFinder: "在 Finder 中显示",
+    openInDefaultApp: "用默认 App 打开",
     browseCollections: "浏览合集",
     open: "打开",
     tracklist: "曲目列表",

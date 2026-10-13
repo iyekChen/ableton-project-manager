@@ -363,11 +363,6 @@ export default function Command() {
                 shortcut={{ modifiers: ["ctrl"], key: "return" }}
                 target={<CollectionList projects={projects} collections={collectionOptions} stages={stageOptions} />}
               />
-              <Action
-                title={showDetail ? t.showOverview : t.showDetail}
-                icon={Icon.AppWindowSidebarRight}
-                onAction={toggleDetail}
-              />
             </ActionPanel.Section>
             <ActionPanel.Section>
               <Action.Push
@@ -473,6 +468,11 @@ export default function Command() {
               )}
             </ActionPanel.Section>
             <ActionPanel.Section>
+              <Action
+                title={showDetail ? t.showOverview : t.showDetail}
+                icon={Icon.AppWindowSidebarRight}
+                onAction={toggleDetail}
+              />
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
             </ActionPanel.Section>
           </ActionPanel>
