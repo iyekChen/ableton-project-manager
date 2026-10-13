@@ -1,6 +1,7 @@
 import {
   ActionPanel,
   Action,
+  Clipboard,
   Color,
   getApplications,
   Icon,
@@ -210,6 +211,19 @@ export default function Command() {
     },
     [play],
   );
+  const copyLatestBounce = useCallback(async (project: Project) => {
+    const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
+    if (!latestBouncePath) {
+      await showToast({ style: Toast.Style.Failure, title: t.noBounces });
+      return;
+    }
+    await Clipboard.copy({ file: latestBouncePath });
+    await showToast({
+      style: Toast.Style.Success,
+      title: t.bounceCopied,
+      message: latestBouncePath.split("/").pop() ?? "",
+    });
+  }, []);
 
   const handlePinToggle = async (project: Project) => {
     await setProjectPinned(project.id, !project.pinned);
@@ -460,6 +474,7 @@ export default function Command() {
                 title={t.copyProjectName}
                 shortcut={{ modifiers: ["cmd"], key: "c" }}
               />
+              <Action title={t.copyLatestBounce} icon={Icon.CopyClipboard} onAction={() => copyLatestBounce(item)} />
               <Action.CopyToClipboard
                 content={item.folderPath}
                 title={t.copyProjectPath}

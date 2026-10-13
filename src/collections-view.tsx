@@ -1,6 +1,7 @@
 import {
   Action,
   ActionPanel,
+  Clipboard,
   Color,
   Form,
   Icon,
@@ -136,6 +137,19 @@ function CollectionPanel({
   }
 
   // 主操作：未播→播；本行正在播→暂停/续播。放每个 item 的第二个 Action（拿 ⌘Enter）。
+  async function copyLatestBounce(project: Project) {
+    const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
+    if (!latestBouncePath) {
+      void showToast({ style: Toast.Style.Failure, title: t.noBounces });
+      return;
+    }
+    await Clipboard.copy({ file: latestBouncePath });
+    void showToast({
+      style: Toast.Style.Success,
+      title: t.bounceCopied,
+      message: latestBouncePath.split("/").pop() ?? "",
+    });
+  }
   const renderPlayToggle = (p: Project) => {
     const isThisPlaying = playingId === p.id;
     const toggleIsPause = isThisPlaying && (playbackStatus === "Playing" || playbackStatus === "Starting");
@@ -431,6 +445,11 @@ function CollectionPanel({
                           }
                         />
                         {renderPlayToggle(p)}
+                        <Action
+                          title={t.copyLatestBounce}
+                          icon={Icon.CopyClipboard}
+                          onAction={() => copyLatestBounce(p)}
+                        />
                         {roleSubmenu(p)}
                         <Action
                           title={t.removeFromTracklist}
@@ -497,6 +516,11 @@ function CollectionPanel({
                           }
                         />
                         {renderPlayToggle(p)}
+                        <Action
+                          title={t.copyLatestBounce}
+                          icon={Icon.CopyClipboard}
+                          onAction={() => copyLatestBounce(p)}
+                        />
                         <Action
                           title={t.addToTracklist}
                           icon={Icon.PlusCircle}

@@ -14,6 +14,9 @@ type TranslationKeys = {
   copyProjectPath: string;
   copySetName: string;
   copySetPath: string;
+  copyLatestBounce: string;
+  copyBounce: string;
+  bounceCopied: string;
   openInFinder: string;
   showInFinder: string;
   openInDefaultApp: string;
@@ -116,6 +119,9 @@ const translations: Record<Language, TranslationKeys> = {
     copyProjectPath: "Copy Project Path",
     copySetName: "Copy Set Name",
     copySetPath: "Copy Set Path",
+    copyLatestBounce: "Copy Latest Bounce",
+    copyBounce: "Copy Bounce",
+    bounceCopied: "Bounce Copied",
     openInFinder: "Open in Finder",
     showInFinder: "Show in Finder",
     openInDefaultApp: "Open in Default App",
@@ -214,10 +220,13 @@ const translations: Record<Language, TranslationKeys> = {
     unpinProject: "取消固定",
     moveUp: "上移",
     moveDown: "下移",
-    copyProjectName: "复制项目名",
-    copyProjectPath: "复制项目路径",
-    copySetName: "复制 Set 名",
-    copySetPath: "复制 Set 路径",
+    copyProjectName: "拷贝项目名",
+    copyProjectPath: "拷贝项目路径",
+    copySetName: "拷贝 Set 名",
+    copySetPath: "拷贝 Set 路径",
+    copyLatestBounce: "拷贝最新 Bounce",
+    copyBounce: "拷贝 Bounce",
+    bounceCopied: "已拷贝 Bounce",
     openInFinder: "在 Finder 中打开",
     showInFinder: "在 Finder 中显示",
     openInDefaultApp: "用默认 App 打开",

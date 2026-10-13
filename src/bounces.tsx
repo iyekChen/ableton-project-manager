@@ -1,4 +1,16 @@
-import { List, ActionPanel, Action, Icon, Keyboard, Alert, confirmAlert, showToast, Toast, trash } from "@raycast/api";
+import {
+  List,
+  ActionPanel,
+  Action,
+  Icon,
+  Keyboard,
+  Alert,
+  Clipboard,
+  confirmAlert,
+  showToast,
+  Toast,
+  trash,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
@@ -56,6 +68,10 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
     setReloadToken((n) => n + 1);
     await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: bounce.name });
   };
+  const handleCopy = async (bounce: Bounce) => {
+    await Clipboard.copy({ file: bounce.path });
+    await showToast({ style: Toast.Style.Success, title: t.bounceCopied, message: bounce.name });
+  };
 
   const sorted = sortItems(bounces, sortBy, (b) => ({
     created: b.createdAt,
@@ -87,6 +103,7 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
                       shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                     />
                     <Action.Open title={t.openInDefaultApp} target={b.path} shortcut={Keyboard.Shortcut.Common.Open} />
+                    <Action title={t.copyBounce} icon={Icon.CopyClipboard} onAction={() => handleCopy(b)} />
                   </ActionPanel.Section>
                   <ActionPanel.Section>
                     <Action
