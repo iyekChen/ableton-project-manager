@@ -21,8 +21,14 @@
 			"required": false,
 			"default": "en",
 			"data": [
-				{ "title": "English", "value": "en" },
-				{ "title": "简体中文", "value": "zh-CN" }
+				{
+					"title": "English",
+					"value": "en"
+				},
+				{
+					"title": "简体中文",
+					"value": "zh-CN"
+				}
 			]
 		},
 		{
@@ -76,10 +82,22 @@
 			"required": false,
 			"default": "1",
 			"data": [
-				{ "title": "Off", "value": "0" },
-				{ "title": "Low", "value": "0.5" },
-				{ "title": "Normal", "value": "1" },
-				{ "title": "High", "value": "2" }
+				{
+					"title": "Off",
+					"value": "0"
+				},
+				{
+					"title": "Low",
+					"value": "0.5"
+				},
+				{
+					"title": "Normal",
+					"value": "1"
+				},
+				{
+					"title": "High",
+					"value": "2"
+				}
 			]
 		},
 		{
@@ -90,10 +108,22 @@
 			"required": false,
 			"default": "1",
 			"data": [
-				{ "title": "Off", "value": "0" },
-				{ "title": "Low", "value": "0.5" },
-				{ "title": "Normal", "value": "1" },
-				{ "title": "High", "value": "2" }
+				{
+					"title": "Off",
+					"value": "0"
+				},
+				{
+					"title": "Low",
+					"value": "0.5"
+				},
+				{
+					"title": "Normal",
+					"value": "1"
+				},
+				{
+					"title": "High",
+					"value": "2"
+				}
 			]
 		},
 		{
@@ -104,10 +134,22 @@
 			"required": false,
 			"default": "1",
 			"data": [
-				{ "title": "Off", "value": "0" },
-				{ "title": "Low", "value": "0.5" },
-				{ "title": "Normal", "value": "1" },
-				{ "title": "High", "value": "2" }
+				{
+					"title": "Off",
+					"value": "0"
+				},
+				{
+					"title": "Low",
+					"value": "0.5"
+				},
+				{
+					"title": "Normal",
+					"value": "1"
+				},
+				{
+					"title": "High",
+					"value": "2"
+				}
 			]
 		}
 	],
@@ -133,7 +175,7 @@
 			"mode": "view",
 			"subtitle": "Ableton Session Manager"
 		}
-    ],
+	],
 	"tools": [],
 	"dependencies": {
 		"@raycast/api": "^1.104.20",
@@ -149,13 +191,13 @@
 		"prettier": "^3.8.5",
 		"typescript": "^6.0.3"
 	},
-  "scripts": {
-    "build": "ray build",
-    "build:player": "bash ./scripts/build-audio-player.sh",
-    "dev": "ray develop",
-    "fix-lint": "ray lint --fix",
-    "lint": "ray lint",
-    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the `prepublishOnly` script and rerun `npm publish` again.\\nIf you wanted to publish the Raycast Store instead, use `npm run publish` instead.\\n\\n\" && exit 1",
-    "publish": "npx @raycast/api@latest publish"
-  }
+	"scripts": {
+		"build": "ray build",
+		"build:player": "bash ./scripts/build-audio-player.sh",
+		"dev": "ray develop",
+		"fix-lint": "ray lint --fix",
+		"lint": "ray lint",
+		"prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the `prepublishOnly` script and rerun `npm publish` again.\\nIf you wanted to publish the Raycast Store instead, use `npm run publish` instead.\\n\\n\" && exit 1",
+		"publish": "npx @raycast/api@latest publish"
+	}
 }
