@@ -115,15 +115,21 @@ export default function Command() {
   }, [kind]);
 
   async function createOption(name: string) {
-    const option: TaxonomyOption = { id: slugify(name), name };
+    const hasCustomOrder = options.some((option) => option.order !== undefined);
+    const maxOrder = Math.max(0, ...options.map((option) => option.order ?? 0));
+
+    const option: TaxonomyOption = {
+      id: slugify(name),
+      name,
+      ...(hasCustomOrder ? { order: maxOrder + 1 } : {}),
+    };
 
     if (options.some((o) => o.id === option.id)) {
       await showToast({ style: Toast.Style.Failure, title: t.nameExists });
       return;
     }
 
-    const next = [...options, option];
-    await TAXONOMIES[kind].save(next);
+    const next = [...options, option];    await TAXONOMIES[kind].save(next);
     setOptions(next);
     await showToast({ style: Toast.Style.Success, title: t.created });
   }

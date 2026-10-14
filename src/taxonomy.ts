@@ -43,12 +43,12 @@ export function createTaxonomy(storageKey: string, defaults: TaxonomyOption[]): 
   return { get, save, reset };
 }
 
-// 有 order 的按 order 排(Stage);没 order 的按名字排(Genre/Collection)。
+// 有 order 的优先按用户顺序排列；没有 order 的按名称排列并置于末尾。
 function sortOptions(options: TaxonomyOption[]): TaxonomyOption[] {
   return [...options].sort((a, b) => {
-    if (a.order !== undefined && b.order !== undefined) {
-      return a.order - b.order;
-    }
-    return a.name.localeCompare(b.name);
+    const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+    const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+
+    return orderA - orderB || a.name.localeCompare(b.name);
   });
 }
