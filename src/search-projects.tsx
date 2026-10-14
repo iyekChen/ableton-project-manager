@@ -479,12 +479,17 @@ export default function Command() {
                 shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                 target={item.folderPath}
               />
+              <Action
+                title={t.copyLatestBounce}
+                icon={Icon.CopyClipboard}
+                shortcut={{ modifiers: ["cmd"], key: "c" }}
+                onAction={() => copyLatestBounce(item)}
+              />
               <Action.CopyToClipboard
                 content={item.title}
                 title={t.copyProjectName}
-                shortcut={{ modifiers: ["cmd"], key: "c" }}
+                shortcut={Keyboard.Shortcut.Common.CopyName}
               />
-              <Action title={t.copyLatestBounce} icon={Icon.CopyClipboard} onAction={() => copyLatestBounce(item)} />
               <Action.CopyToClipboard
                 content={item.folderPath}
                 title={t.copyProjectPath}

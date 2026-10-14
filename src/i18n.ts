@@ -16,6 +16,8 @@ type TranslationKeys = {
   copySetPath: string;
   copyLatestBounce: string;
   copyBounce: string;
+  copyBounceName: string;
+  copyBouncePath: string;
   bounceCopied: string;
   openInFinder: string;
   showInFinder: string;
@@ -121,6 +123,8 @@ const translations: Record<Language, TranslationKeys> = {
     copySetPath: "Copy Set Path",
     copyLatestBounce: "Copy Latest Bounce",
     copyBounce: "Copy Bounce",
+    copyBounceName: "Copy Bounce Name",
+    copyBouncePath: "Copy Bounce Path",
     bounceCopied: "Bounce Copied",
     openInFinder: "Open in Finder",
     showInFinder: "Show in Finder",
@@ -226,6 +230,8 @@ const translations: Record<Language, TranslationKeys> = {
     copySetPath: "拷贝 Set 路径",
     copyLatestBounce: "拷贝最新 Bounce",
     copyBounce: "拷贝 Bounce",
+    copyBounceName: "拷贝 Bounce 名",
+    copyBouncePath: "拷贝 Bounce 路径",
     bounceCopied: "已拷贝 Bounce",
     openInFinder: "在 Finder 中打开",
     showInFinder: "在 Finder 中显示",

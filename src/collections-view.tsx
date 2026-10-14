@@ -448,6 +448,7 @@ function CollectionPanel({
                         <Action
                           title={t.copyLatestBounce}
                           icon={Icon.CopyClipboard}
+                          shortcut={{ modifiers: ["cmd"], key: "c" }}
                           onAction={() => copyLatestBounce(p)}
                         />
                         {roleSubmenu(p)}

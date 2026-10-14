@@ -103,7 +103,22 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
                       shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                     />
                     <Action.Open title={t.openInDefaultApp} target={b.path} shortcut={Keyboard.Shortcut.Common.Open} />
-                    <Action title={t.copyBounce} icon={Icon.CopyClipboard} onAction={() => handleCopy(b)} />
+                    <Action
+                      title={t.copyBounce}
+                      icon={Icon.CopyClipboard}
+                      shortcut={{ modifiers: ["cmd"], key: "c" }}
+                      onAction={() => handleCopy(b)}
+                    />
+                    <Action.CopyToClipboard
+                      content={b.name}
+                      title={t.copyBounceName}
+                      shortcut={Keyboard.Shortcut.Common.CopyName}
+                    />
+                    <Action.CopyToClipboard
+                      content={b.path}
+                      title={t.copyBouncePath}
+                      shortcut={Keyboard.Shortcut.Common.CopyPath}
+                    />
                   </ActionPanel.Section>
                   <ActionPanel.Section>
                     <Action
