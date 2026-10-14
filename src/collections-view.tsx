@@ -37,6 +37,8 @@ import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
 import { ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
 import { getPinnedCollections, movePinnedCollection, togglePinnedCollection } from "./collection-pins";
 import { collectionTaxonomy, roleTaxonomy } from "./taxonomies";
+import { getAllProjectMetadata } from "./project-metadata";
+import { EditInfo } from "./components/project/edit-info";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
@@ -287,7 +289,8 @@ function CollectionPanel({
   projects: Project[];
   stages: TaxonomyOption[];
 }) {
-  const members = projects.filter((p) => p.collectionIds.includes(collection.id));
+  const [projectList, setProjectList] = useState<Project[]>(projects);
+  const members = projectList.filter((p) => p.collectionIds.includes(collection.id));
   const [map, setMap] = useState<TrackMap>({});
   const [roles, setRoles] = useState<RoleMap>({});
   const [infos, setInfos] = useState<Record<string, TrackInfo>>({});
@@ -460,6 +463,24 @@ function CollectionPanel({
   async function applyRoles(next: RoleMap) {
     setRoles(next);
     await setRoleMap(collection.id, next);
+  }
+
+  // Edit Info 存盘后：从 LocalStorage 重读成员的 Stage/Genre/Collection（含成员增减）。
+  async function reloadMetadata() {
+    const store = await getAllProjectMetadata();
+    setProjectList((prev) =>
+      prev.map((p) => {
+        const meta = store[p.id];
+        return meta
+          ? {
+              ...p,
+              stageId: meta.stageId ?? null,
+              genreIds: meta.genreIds ?? [],
+              collectionIds: meta.collectionIds ?? [],
+            }
+          : p;
+      }),
+    );
   }
 
   // 从 tracklist 移出时，连带清掉该曲目在本 collection 的角色。
@@ -681,6 +702,12 @@ function CollectionPanel({
                           onAction={() => copyLatestBounce(p)}
                         />
                         {roleSubmenu(p)}
+                        <Action.Push
+                          title={t.editInfo}
+                          icon={Icon.Pencil}
+                          shortcut={Keyboard.Shortcut.Common.Edit}
+                          target={<EditInfo project={p} onSaved={reloadMetadata} />}
+                        />
                         <Action
                           title={t.removeFromTracklist}
                           icon={Icon.MinusCircle}
@@ -751,6 +778,12 @@ function CollectionPanel({
                           title={t.copyLatestBounce}
                           icon={Icon.CopyClipboard}
                           onAction={() => copyLatestBounce(p)}
+                        />
+                        <Action.Push
+                          title={t.editInfo}
+                          icon={Icon.Pencil}
+                          shortcut={Keyboard.Shortcut.Common.Edit}
+                          target={<EditInfo project={p} onSaved={reloadMetadata} />}
                         />
                         <Action
                           title={t.addToTracklist}
