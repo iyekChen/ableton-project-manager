@@ -131,6 +131,16 @@ export default function Command() {
     await showToast({ style: Toast.Style.Success, title: t.deleted });
   }
 
+  // 重新排序并把 order 写成 1..N 持久化。
+  async function reorder(from: number, to: number) {
+    const next = [...options];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    const ordered = next.map((o, index) => ({ ...o, order: index + 1 }));
+    await TAXONOMIES[kind].save(ordered);
+    setOptions(ordered);
+  }
+
   const createAction = (
     <Action.Push
       title={t.create}
@@ -153,7 +163,7 @@ export default function Command() {
     >
       <List.EmptyView title={t.noCategories} icon={Icon.Tag} actions={<ActionPanel>{createAction}</ActionPanel>} />
 
-      {options.map((option) => (
+      {options.map((option, index) => (
         <List.Item
           key={option.id}
           title={option.name}
@@ -173,6 +183,32 @@ export default function Command() {
                 }
               />
               {createAction}
+              <ActionPanel.Section>
+                {index > 0 && (
+                  <Action
+                    title={t.moveUp}
+                    icon={Icon.ArrowUp}
+                    shortcut={Keyboard.Shortcut.Common.MoveUp}
+                    onAction={() => reorder(index, index - 1)}
+                  />
+                )}
+                {index < options.length - 1 && (
+                  <Action
+                    title={t.moveDown}
+                    icon={Icon.ArrowDown}
+                    shortcut={Keyboard.Shortcut.Common.MoveDown}
+                    onAction={() => reorder(index, index + 1)}
+                  />
+                )}
+                {index < options.length - 1 && (
+                  <Action
+                    title={t.moveToBottom}
+                    icon={Icon.ArrowDownCircle}
+                    shortcut={{ modifiers: ["cmd"], key: "/" }}
+                    onAction={() => reorder(index, options.length - 1)}
+                  />
+                )}
+              </ActionPanel.Section>
               <Action
                 title={t.delete}
                 icon={Icon.Trash}
