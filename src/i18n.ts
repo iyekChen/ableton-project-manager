@@ -84,6 +84,7 @@ type TranslationKeys = {
   collections: string;
   deleteCollectionHint: string;
   category: string;
+  role: string;
   create: string;
   delete: string;
   created: string;
@@ -197,6 +198,7 @@ const translations: Record<Language, TranslationKeys> = {
     collections: "Collections",
     deleteCollectionHint: "This only removes the collection. Your projects are not deleted.",
     category: "Category",
+    role: "Role",
     create: "Create",
     delete: "Delete",
     created: "Created",
@@ -308,6 +310,7 @@ const translations: Record<Language, TranslationKeys> = {
     collections: "合集",
     deleteCollectionHint: "这只会删除该合集分组，不会删除里面的项目。",
     category: "类别",
+    role: "角色",
     create: "新建",
     delete: "删除",
     created: "已创建",

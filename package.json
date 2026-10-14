@@ -121,8 +121,8 @@
 		},
 		{
 			"name": "manage-categories",
-			"title": "Manage Categories",
-			"description": "Create and manage genres and collections",
+			"title": "Manage Tags",
+			"description": "Create and manage Stages, Genres, and Track Roles",
 			"mode": "view",
 			"subtitle": "Ableton Session Manager"
 		},

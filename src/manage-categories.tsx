@@ -14,17 +14,19 @@ import {
 } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { Taxonomy, TaxonomyOption } from "./taxonomy";
-import { genreTaxonomy, collectionTaxonomy } from "./taxonomies";
+import { stageTaxonomy, genreTaxonomy, roleTaxonomy } from "./taxonomies";
+import { deleteRoleEverywhere, renameRoleEverywhere } from "./collection-roles";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
 
 const t = getTranslations(getSettings().language);
 
-type CategoryKind = "genre" | "collection";
+type CategoryKind = "stage" | "genre" | "role";
 
 const TAXONOMIES: Record<CategoryKind, Taxonomy> = {
+  stage: stageTaxonomy,
   genre: genreTaxonomy,
-  collection: collectionTaxonomy,
+  role: roleTaxonomy,
 };
 
 function slugify(name: string): string {
@@ -36,9 +38,9 @@ function slugify(name: string): string {
   return slug || name.trim().toLowerCase();
 }
 
-function CategoryForm(props: { title: string; initialName?: string; onSubmit: (name: string) => Promise<void> }) {
+function CategoryForm(props: { title: string; currentName?: string; onSubmit: (name: string) => Promise<void> }) {
   const { pop } = useNavigation();
-  const [name, setName] = useState(props.initialName ?? "");
+  const [name, setName] = useState("");
 
   return (
     <Form
@@ -50,6 +52,10 @@ function CategoryForm(props: { title: string; initialName?: string; onSubmit: (n
             onSubmit={async () => {
               const trimmed = name.trim();
               if (trimmed === "") {
+                if (props.currentName !== undefined) {
+                  pop();
+                  return;
+                }
                 await showToast({ style: Toast.Style.Failure, title: t.invalidName });
                 return;
               }
@@ -60,13 +66,13 @@ function CategoryForm(props: { title: string; initialName?: string; onSubmit: (n
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
+      <Form.TextField id="name" title={t.name} placeholder={props.currentName} value={name} onChange={setName} />
     </Form>
   );
 }
 
 export default function Command() {
-  const [kind, setKind] = useState<CategoryKind>("genre");
+  const [kind, setKind] = useState<CategoryKind>("stage");
   const [options, setOptions] = useState<TaxonomyOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -95,9 +101,13 @@ export default function Command() {
   }
 
   async function renameOption(id: string, name: string) {
+    const existing = options.find((o) => o.id === id);
     const next = options.map((o) => (o.id === id ? { ...o, name } : o));
     await TAXONOMIES[kind].save(next);
     setOptions(next);
+    if (kind === "role" && existing && existing.name !== name) {
+      await renameRoleEverywhere(existing.name, name);
+    }
     await showToast({ style: Toast.Style.Success, title: t.renamed });
   }
 
@@ -115,6 +125,9 @@ export default function Command() {
     const next = options.filter((o) => o.id !== option.id);
     await TAXONOMIES[kind].save(next);
     setOptions(next);
+    if (kind === "role") {
+      await deleteRoleEverywhere(option.name);
+    }
     await showToast({ style: Toast.Style.Success, title: t.deleted });
   }
 
@@ -131,9 +144,10 @@ export default function Command() {
     <List
       isLoading={isLoading}
       searchBarAccessory={
-        <List.Dropdown tooltip={t.category} value={kind} onChange={(value) => setKind(value as CategoryKind)}>
+        <List.Dropdown tooltip={t.tag} value={kind} onChange={(value) => setKind(value as CategoryKind)}>
+          <List.Dropdown.Item title={t.stage} value="stage" />
           <List.Dropdown.Item title={t.genre} value="genre" />
-          <List.Dropdown.Item title={t.collection} value="collection" />
+          <List.Dropdown.Item title={t.role} value="role" />
         </List.Dropdown>
       }
     >
@@ -149,10 +163,11 @@ export default function Command() {
               <Action.Push
                 title={t.rename}
                 icon={Icon.Pencil}
+                shortcut={Keyboard.Shortcut.Common.Edit}
                 target={
                   <CategoryForm
                     title={t.rename}
-                    initialName={option.name}
+                    currentName={option.name}
                     onSubmit={(name) => renameOption(option.id, name)}
                   />
                 }
@@ -162,7 +177,7 @@ export default function Command() {
                 title={t.delete}
                 icon={Icon.Trash}
                 style={Action.Style.Destructive}
-                shortcut={{ modifiers: ["ctrl"], key: "x" }}
+                shortcut={Keyboard.Shortcut.Common.Remove}
                 onAction={() => deleteOption(option)}
               />
             </ActionPanel>
