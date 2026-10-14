@@ -18,7 +18,6 @@ import {
   type Application,
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
-import fs from "node:fs";
 import { cleanupAudioPlayer, useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { getSettings } from "./settings";
@@ -29,7 +28,7 @@ import type { SortOption } from "./sorting";
 import { Bounces } from "./bounces";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "./taxonomies";
 import type { TaxonomyOption } from "./taxonomy";
-import { getNotesFolder, readNoteFile, noteFilePath } from "./notes";
+import { docFileExists, docFilePath, ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
 import { CollectionList } from "./collections-view";
 import { EditInfo } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
@@ -43,6 +42,7 @@ const t = getTranslations(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
 const VIEW_MODE_STORAGE_KEY = "view-mode:projects";
+const DETAIL_DOC_STORAGE_KEY = "detail-doc:projects";
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
 
@@ -86,6 +86,7 @@ export default function Command() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(true);
+  const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
   const baseProjectsRef = useRef<Project[]>([]);
 
@@ -125,6 +126,16 @@ export default function Command() {
     });
   }, []);
 
+  useEffect(() => {
+    void LocalStorage.getItem<string>(DETAIL_DOC_STORAGE_KEY).then((stored) => {
+      if (stored === "lyrics") {
+        setDetailDoc("lyrics");
+      } else if (stored === "notes") {
+        setDetailDoc("notes");
+      }
+    });
+  }, []);
+
   const toggleDetail = useCallback(() => {
     setShowDetail((prev) => {
       const next = !prev;
@@ -133,12 +144,19 @@ export default function Command() {
     });
   }, []);
 
+  const toggleDetailDoc = useCallback(() => {
+    setDetailDoc((prev) => {
+      const next = prev === "notes" ? "lyrics" : "notes";
+      void LocalStorage.setItem(DETAIL_DOC_STORAGE_KEY, next);
+      return next;
+    });
+  }, []);
+
   const applyMetadata = useCallback(async () => {
     const metadataStore = await getAllProjectMetadata();
-    const useNoteFile = getNotesFolder() !== "";
     const updatedProjects = baseProjectsRef.current.map((project) => {
       const metadata = metadataStore[project.id];
-      const notes = showDetail ? (useNoteFile ? readNoteFile(project.id) : (metadata?.notes ?? "")) : "";
+      const notes = showDetail ? stripFrontmatter(readDocFile(project, "notes")) : "";
       return {
         ...project,
         stageId: metadata?.stageId ?? null,
@@ -291,8 +309,14 @@ export default function Command() {
     const genreNames = namesFor(item.genreIds, genreOptions);
     const collectionNames = namesFor(item.collectionIds, collectionOptions);
     const stagePill = stage ? [{ tag: { value: stage.name, color: stage.color ?? Color.SecondaryText } }] : [];
-    const noteFile = noteFilePath(item.id);
-    const canOpenNote = noteFile !== null && fs.existsSync(noteFile);
+    const noteFile = docFilePath(item, "notes");
+    const canOpenNote = docFileExists(item, "notes");
+    const detailBody = !showDetail
+      ? ""
+      : detailDoc === "notes"
+        ? item.notes
+        : stripFrontmatter(readDocFile(item, "lyrics"));
+    const detailPlaceholder = detailDoc === "notes" ? "_No notes yet_" : "_No lyrics yet_";
 
     const isThisPlaying = playingId === item.id;
     const isAnythingPlaying = playingId !== null;
@@ -325,7 +349,7 @@ export default function Command() {
         detail={
           showDetail ? (
             <List.Item.Detail
-              markdown={item.notes.trim() ? item.notes : "_No notes yet_"}
+              markdown={detailBody.trim() ? detailBody : detailPlaceholder}
               metadata={
                 <List.Item.Detail.Metadata>
                   {stage ? (
@@ -423,7 +447,22 @@ export default function Command() {
                 icon={Icon.Pencil}
                 target={<EditNote project={item} onSaved={reloadProjects} />}
               />
-              {canOpenNote && <Action.Open title={t.openNote} icon={Icon.Document} target={noteFile} />}
+              {canOpenNote && (
+                <Action.Open
+                  title={t.openNote}
+                  icon={Icon.Document}
+                  target={noteFile}
+                  shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
+                />
+              )}
+              <Action
+                title={t.openLyrics}
+                icon={Icon.Music}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
+                onAction={async () => {
+                  await open(ensureDocFile(item, "lyrics"));
+                }}
+              />
             </ActionPanel.Section>
             {isAnythingPlaying && (
               <ActionPanel.Section>
@@ -535,6 +574,13 @@ export default function Command() {
                 icon={Icon.AppWindowSidebarRight}
                 onAction={toggleDetail}
               />
+              {showDetail && (
+                <Action
+                  title={detailDoc === "notes" ? t.showLyrics : t.showNotes}
+                  icon={Icon.Text}
+                  onAction={toggleDetailDoc}
+                />
+              )}
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
             </ActionPanel.Section>
           </ActionPanel>

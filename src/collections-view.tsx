@@ -10,6 +10,7 @@ import {
   LocalStorage,
   Toast,
   getPreferenceValues,
+  open,
   showToast,
   useNavigation,
 } from "@raycast/api";
@@ -32,12 +33,14 @@ import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrack
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
+import { docFileExists, docFilePath, ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
 type Collection = { id: string; name: string };
 
 const VIEW_MODE_STORAGE_KEY = "view-mode:collections";
+const DETAIL_DOC_STORAGE_KEY = "detail-doc:collections";
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
 
@@ -119,6 +122,7 @@ function CollectionPanel({
   const [infos, setInfos] = useState<Record<string, TrackInfo>>({});
   const [loading, setLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(true);
+  const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
   const [selectedStage, setSelectedStage] = useState("all");
 
   const { playbackStatus, playingId, play, pause, resume, seek, restart } = useAudioPlayer({ playerPath: PLAYER_PATH });
@@ -223,6 +227,16 @@ function CollectionPanel({
   }, []);
 
   useEffect(() => {
+    void LocalStorage.getItem<string>(DETAIL_DOC_STORAGE_KEY).then((stored) => {
+      if (stored === "lyrics") {
+        setDetailDoc("lyrics");
+      } else if (stored === "notes") {
+        setDetailDoc("notes");
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     const memberList = projects.filter((p) => p.collectionIds.includes(collection.id));
     async function load() {
@@ -250,6 +264,14 @@ function CollectionPanel({
     setShowDetail((prev) => {
       const next = !prev;
       void LocalStorage.setItem(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
+      return next;
+    });
+  }
+
+  function toggleDetailDoc() {
+    setDetailDoc((prev) => {
+      const next = prev === "notes" ? "lyrics" : "notes";
+      void LocalStorage.setItem(DETAIL_DOC_STORAGE_KEY, next);
       return next;
     });
   }
@@ -286,6 +308,28 @@ function CollectionPanel({
     return role ? [{ tag: { value: role, color: Color.SecondaryText } }] : [];
   };
 
+  // 打开 Note / Lyrics 的外部编辑动作。Note 文件存在才出现；Lyrics 打开即建（可套模板）。
+  const renderDocActions = (p: Project) => (
+    <ActionPanel.Section>
+      {docFileExists(p, "notes") && (
+        <Action.Open
+          title={t.openNote}
+          icon={Icon.Document}
+          target={docFilePath(p, "notes")}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
+        />
+      )}
+      <Action
+        title={t.openLyrics}
+        icon={Icon.Music}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
+        onAction={async () => {
+          await open(ensureDocFile(p, "lyrics"));
+        }}
+      />
+    </ActionPanel.Section>
+  );
+
   // 视图切换 Action（Detail / Overview，本视图独立记忆）。
   const renderViewToggle = () => (
     <ActionPanel.Section>
@@ -294,6 +338,13 @@ function CollectionPanel({
         icon={Icon.AppWindowSidebarRight}
         onAction={toggleDetail}
       />
+      {showDetail && (
+        <Action
+          title={detailDoc === "notes" ? t.showLyrics : t.showNotes}
+          icon={Icon.Text}
+          onAction={toggleDetailDoc}
+        />
+      )}
     </ActionPanel.Section>
   );
 
@@ -337,9 +388,11 @@ function CollectionPanel({
       const score = energyScore(info, crestRange, brightnessRange, activityRange);
       if (score !== null) level = energyLevelFromScore(score);
     }
+    const detailBody = detailDoc === "notes" ? (p.notes ?? "") : stripFrontmatter(readDocFile(p, "lyrics"));
+    const detailPlaceholder = detailDoc === "notes" ? "_No notes yet_" : "_No lyrics yet_";
     return (
       <List.Item.Detail
-        markdown={p.notes?.trim() ? p.notes : "_No notes yet_"}
+        markdown={detailBody.trim() ? detailBody : detailPlaceholder}
         metadata={
           <List.Item.Detail.Metadata>
             {stage ? (
@@ -484,6 +537,7 @@ function CollectionPanel({
                             />
                           )}
                         </ActionPanel.Section>
+                        {renderDocActions(p)}
                         {renderViewToggle()}
                       </ActionPanel>
                     }
@@ -529,6 +583,7 @@ function CollectionPanel({
                           onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
                         />
                         {renderPlaybackControls()}
+                        {renderDocActions(p)}
                         {renderViewToggle()}
                       </ActionPanel>
                     }

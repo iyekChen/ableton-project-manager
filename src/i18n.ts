@@ -42,6 +42,9 @@ type TranslationKeys = {
   all: string;
   notes: string;
   openNote: string;
+  openLyrics: string;
+  showNotes: string;
+  showLyrics: string;
   editNote: string;
   none: string;
   pinned: string;
@@ -149,6 +152,9 @@ const translations: Record<Language, TranslationKeys> = {
     all: "All",
     notes: "Notes",
     openNote: "Open Note",
+    openLyrics: "Open Lyrics",
+    showNotes: "Show Notes",
+    showLyrics: "Show Lyrics",
     editNote: "Edit Note",
     none: "None",
     pinned: "Pinned",
@@ -256,6 +262,9 @@ const translations: Record<Language, TranslationKeys> = {
     all: "全部",
     notes: "备注",
     openNote: "打开备注",
+    openLyrics: "打开歌词",
+    showNotes: "显示备注",
+    showLyrics: "显示歌词",
     editNote: "编辑备注",
     none: "无",
     pinned: "已固定",

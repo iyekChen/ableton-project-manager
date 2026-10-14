@@ -16,7 +16,7 @@ import path from "node:path";
 import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "../../project-metadata";
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
-import { renameNoteFile } from "../../notes";
+import { renameDocFiles } from "../../docs";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "../../taxonomies";
 import type { TaxonomyOption } from "../../taxonomy";
 import type { Project } from "../../projects/types";
@@ -98,7 +98,7 @@ export function EditInfo({ project, onSaved }: { project: Project; onSaved: () =
       }
 
       await renameProjectMetadata(project.id, trimmedName);
-      renameNoteFile(project.id, trimmedName);
+      renameDocFiles(project.title, trimmedName);
       targetId = trimmedName;
     }
 

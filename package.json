@@ -43,8 +43,29 @@
 		{
 			"name": "notesFolder",
 			"title": "Notes Folder",
-			"description": "Store project notes as .md files in this folder (e.g. an Obsidian vault). Leave empty to store notes inside the extension.",
+			"description": "Store Notes as .md files in this folder (e.g. an Obsidian vault). Leave empty to store Notes.md inside each project folder.",
 			"type": "directory",
+			"required": false
+		},
+		{
+			"name": "lyricsFolder",
+			"title": "Lyrics Folder",
+			"description": "Store Lyrics as .md files in this folder. Leave empty to store Lyrics.md inside each project folder.",
+			"type": "directory",
+			"required": false
+		},
+		{
+			"name": "notesTemplateFile",
+			"title": "Notes Template",
+			"description": "Optional .md file used as the template when a Notes file is first created. Supports {{title}} and {{date}}. Leave empty for a blank file.",
+			"type": "file",
+			"required": false
+		},
+		{
+			"name": "lyricsTemplateFile",
+			"title": "Lyrics Template",
+			"description": "Optional .md file used as the template when a Lyrics file is first created. Supports {{title}} and {{date}}. Leave empty for a blank file.",
+			"type": "file",
 			"required": false
 		},
 		{
