@@ -1,5 +1,6 @@
 import { Color } from "@raycast/api";
 import { createTaxonomy, TaxonomyOption } from "./taxonomy";
+import { TRACK_ROLES } from "./track-role";
 
 // Stage 默认 7 档流水线(有序 + 配色)。
 export const STAGE_DEFAULTS: TaxonomyOption[] = [
@@ -18,3 +19,11 @@ export const stageTaxonomy = createTaxonomy("stage-options", STAGE_DEFAULTS);
 // Genre / Collection:无色、无序、空种子(用户打字创建)。
 export const genreTaxonomy = createTaxonomy("genre-options", []);
 export const collectionTaxonomy = createTaxonomy("collection-options", []);
+
+// Track Role：有序，默认取现有预设（Intro/Skit/Interlude/Outro），用户可增删改。
+export const ROLE_DEFAULTS: TaxonomyOption[] = TRACK_ROLES.map((name, index) => ({
+  id: name.toLowerCase(),
+  name,
+  order: index + 1,
+}));
+export const roleTaxonomy = createTaxonomy("role-options", ROLE_DEFAULTS);

@@ -29,7 +29,6 @@ import {
   setTrackMap,
   swapNumbers,
 } from "./collection-order";
-import { TRACK_ROLES } from "./track-role";
 import { RoleMap, assignRole, clearRole, getRoleMap, setRoleMap } from "./collection-roles";
 import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
 import { useAudioPlayer } from "./hooks/use-audio-player";
@@ -37,7 +36,7 @@ import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
 import { ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
 import { getPinnedCollections, movePinnedCollection, togglePinnedCollection } from "./collection-pins";
-import { collectionTaxonomy } from "./taxonomies";
+import { collectionTaxonomy, roleTaxonomy } from "./taxonomies";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
@@ -296,6 +295,7 @@ function CollectionPanel({
   const [showDetail, setShowDetail] = useState(true);
   const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
   const [selectedStage, setSelectedStage] = useState("all");
+  const [roleOptions, setRoleOptions] = useState<string[]>([]);
 
   const { playbackStatus, playingId, play, pause, resume, seek, restart } = useAudioPlayer({ playerPath: PLAYER_PATH });
 
@@ -409,6 +409,10 @@ function CollectionPanel({
   }, []);
 
   useEffect(() => {
+    void roleTaxonomy.get().then((options) => setRoleOptions(options.map((o) => o.name)));
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     const memberList = projects.filter((p) => p.collectionIds.includes(collection.id));
     async function load() {
@@ -467,7 +471,7 @@ function CollectionPanel({
   // 角色子菜单：在当前 collection 内给某首歌设/清角色。
   const roleSubmenu = (p: Project) => (
     <ActionPanel.Submenu title={t.setTrackRole} icon={Icon.Tag}>
-      {TRACK_ROLES.map((role) => (
+      {roleOptions.map((role) => (
         <Action key={role} title={role} onAction={() => applyRoles(assignRole(roles, p.id, role))} />
       ))}
       <Action title={t.clearRole} icon={Icon.XMarkCircle} onAction={() => applyRoles(clearRole(roles, p.id))} />
