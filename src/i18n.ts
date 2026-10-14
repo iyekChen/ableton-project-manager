@@ -81,6 +81,8 @@ type TranslationKeys = {
   stage: string;
   genre: string;
   collection: string;
+  collections: string;
+  deleteCollectionHint: string;
   category: string;
   create: string;
   delete: string;
@@ -192,6 +194,8 @@ const translations: Record<Language, TranslationKeys> = {
     stage: "Stage",
     genre: "Genre",
     collection: "Collection",
+    collections: "Collections",
+    deleteCollectionHint: "This only removes the collection. Your projects are not deleted.",
     category: "Category",
     create: "Create",
     delete: "Delete",
@@ -301,6 +305,8 @@ const translations: Record<Language, TranslationKeys> = {
     stage: "阶段",
     genre: "风格",
     collection: "合集",
+    collections: "合集",
+    deleteCollectionHint: "这只会删除该合集分组，不会删除里面的项目。",
     category: "类别",
     create: "新建",
     delete: "删除",

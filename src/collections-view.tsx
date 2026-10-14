@@ -1,6 +1,7 @@
 import {
   Action,
   ActionPanel,
+  Alert,
   Clipboard,
   Color,
   Form,
@@ -9,6 +10,7 @@ import {
   List,
   LocalStorage,
   Toast,
+  confirmAlert,
   getPreferenceValues,
   open,
   showToast,
@@ -34,6 +36,8 @@ import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
 import { docFileExists, docFilePath, ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
+import { getPinnedCollections, movePinnedCollection, togglePinnedCollection } from "./collection-pins";
+import { collectionTaxonomy } from "./taxonomies";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
@@ -68,40 +72,203 @@ function energyAccessories(level: number | null): List.Item.Accessory[] {
   });
 }
 
+function slugify(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+  return slug || name.trim().toLowerCase();
+}
+
+function CollectionNameForm(props: { title: string; initialName?: string; onSubmit: (name: string) => Promise<void> }) {
+  const { pop } = useNavigation();
+  const [name, setName] = useState(props.initialName ?? "");
+
+  return (
+    <Form
+      navigationTitle={props.title}
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm
+            title={t.save}
+            onSubmit={async () => {
+              const trimmed = name.trim();
+              if (trimmed === "") {
+                await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+                return;
+              }
+              await props.onSubmit(trimmed);
+              pop();
+            }}
+          />
+        </ActionPanel>
+      }
+    >
+      <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
+    </Form>
+  );
+}
+
 export function CollectionList({
   projects,
-  collections,
+  collections: initialCollections,
   stages,
 }: {
   projects: Project[];
   collections: Collection[];
   stages: TaxonomyOption[];
 }) {
+  const [collections, setCollections] = useState<Collection[]>(initialCollections);
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    void getPinnedCollections().then(setPinnedIds);
+  }, []);
+
+  async function reloadCollections() {
+    setCollections(await collectionTaxonomy.get());
+  }
+
+  async function togglePin(id: string) {
+    setPinnedIds(await togglePinnedCollection(id));
+  }
+
+  async function movePin(id: string, direction: "up" | "down") {
+    setPinnedIds(await movePinnedCollection(id, direction));
+  }
+
+  async function createCollection(name: string) {
+    const current = await collectionTaxonomy.get();
+    const option: TaxonomyOption = { id: slugify(name), name };
+    if (current.some((o) => o.id === option.id)) {
+      await showToast({ style: Toast.Style.Failure, title: t.nameExists });
+      return;
+    }
+    await collectionTaxonomy.save([...current, option]);
+    await reloadCollections();
+    await showToast({ style: Toast.Style.Success, title: t.created });
+  }
+
+  async function renameCollection(id: string, name: string) {
+    const current = await collectionTaxonomy.get();
+    await collectionTaxonomy.save(current.map((o) => (o.id === id ? { ...o, name } : o)));
+    await reloadCollections();
+    await showToast({ style: Toast.Style.Success, title: t.renamed });
+  }
+
+  async function deleteCollection(c: Collection) {
+    const confirmed = await confirmAlert({
+      icon: { source: Icon.Trash, tintColor: Color.Red },
+      title: `${t.delete} “${c.name}”?`,
+      message: t.deleteCollectionHint,
+      primaryAction: { title: t.delete, style: Alert.ActionStyle.Destructive },
+    });
+    if (!confirmed) return;
+    const current = await collectionTaxonomy.get();
+    await collectionTaxonomy.save(current.filter((o) => o.id !== c.id));
+    await reloadCollections();
+    await showToast({ style: Toast.Style.Success, title: t.deleted });
+  }
+
+  const createAction = (
+    <Action.Push
+      title={t.create}
+      icon={Icon.Plus}
+      shortcut={Keyboard.Shortcut.Common.New}
+      target={<CollectionNameForm title={t.create} onSubmit={createCollection} />}
+    />
+  );
+
+  const pinnedCollections = pinnedIds
+    .map((id) => collections.find((c) => c.id === id))
+    .filter((c): c is Collection => c !== undefined);
+  const unpinnedCollections = collections.filter((c) => !pinnedIds.includes(c.id));
+
+  const renderItem = (c: Collection, options: { isPinned: boolean; index: number; total: number }) => {
+    const count = projects.filter((p) => p.collectionIds.includes(c.id)).length;
+    return (
+      <List.Item
+        key={c.id}
+        icon={Icon.Cd}
+        title={c.name}
+        accessories={[{ text: count === 1 ? "1 Track(s)" : `${count} Track(s)` }]}
+        actions={
+          <ActionPanel>
+            <Action.Push
+              title={t.open}
+              icon={Icon.Cd}
+              target={<CollectionPanel collection={c} projects={projects} stages={stages} />}
+            />
+            <Action.Push
+              title={t.rename}
+              icon={Icon.Pencil}
+              shortcut={Keyboard.Shortcut.Common.Edit}
+              target={
+                <CollectionNameForm
+                  title={t.rename}
+                  initialName={c.name}
+                  onSubmit={(name) => renameCollection(c.id, name)}
+                />
+              }
+            />
+            {createAction}
+            <Action
+              title={options.isPinned ? t.unpinProject : t.pinProject}
+              icon={options.isPinned ? Icon.TackDisabled : Icon.Tack}
+              shortcut={Keyboard.Shortcut.Common.Pin}
+              onAction={() => togglePin(c.id)}
+            />
+            {options.isPinned && options.index > 0 && (
+              <Action
+                title={t.moveUp}
+                icon={Icon.ArrowUp}
+                shortcut={Keyboard.Shortcut.Common.MoveUp}
+                onAction={() => movePin(c.id, "up")}
+              />
+            )}
+            {options.isPinned && options.index < options.total - 1 && (
+              <Action
+                title={t.moveDown}
+                icon={Icon.ArrowDown}
+                shortcut={Keyboard.Shortcut.Common.MoveDown}
+                onAction={() => movePin(c.id, "down")}
+              />
+            )}
+            <ActionPanel.Section>
+              <Action
+                title={t.delete}
+                icon={Icon.Trash}
+                style={Action.Style.Destructive}
+                shortcut={Keyboard.Shortcut.Common.Remove}
+                onAction={() => deleteCollection(c)}
+              />
+            </ActionPanel.Section>
+          </ActionPanel>
+        }
+      />
+    );
+  };
+
   return (
     <List navigationTitle={t.browseCollections}>
       {collections.length === 0 ? (
-        <List.EmptyView title={t.noCategories} />
+        <List.EmptyView title={t.noCategories} actions={<ActionPanel>{createAction}</ActionPanel>} />
       ) : (
-        collections.map((c) => {
-          const count = projects.filter((p) => p.collectionIds.includes(c.id)).length;
-          return (
-            <List.Item
-              key={c.id}
-              icon={Icon.Cd}
-              title={c.name}
-              accessories={[{ text: `${count}` }]}
-              actions={
-                <ActionPanel>
-                  <Action.Push
-                    title={t.open}
-                    icon={Icon.Cd}
-                    target={<CollectionPanel collection={c} projects={projects} stages={stages} />}
-                  />
-                </ActionPanel>
-              }
-            />
-          );
-        })
+        <>
+          {pinnedCollections.length > 0 && (
+            <List.Section title={t.pinned}>
+              {pinnedCollections.map((c, index) =>
+                renderItem(c, { isPinned: true, index, total: pinnedCollections.length }),
+              )}
+            </List.Section>
+          )}
+          <List.Section title={t.collections}>
+            {unpinnedCollections.map((c) =>
+              renderItem(c, { isPinned: false, index: 0, total: unpinnedCollections.length }),
+            )}
+          </List.Section>
+        </>
       )}
     </List>
   );
