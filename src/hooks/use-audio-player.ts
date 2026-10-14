@@ -17,19 +17,28 @@ interface PlaybackCallbacks {
 
 let playbackStatus: PlaybackStatus = "Stopped";
 let playingId: string | null = null;
+let positionSeconds = 0;
+let durationSeconds = 0;
 let activeController: AudioPlayerController | null = null;
 let activeSessionId = 0;
 
 // useSyncExternalStore 要求 getSnapshot 在未变化时返回稳定引用，这里缓存快照。
-let snapshot: { playbackStatus: PlaybackStatus; playingId: string | null } = {
+let snapshot: {
+  playbackStatus: PlaybackStatus;
+  playingId: string | null;
+  positionSeconds: number;
+  durationSeconds: number;
+} = {
   playbackStatus,
   playingId,
+  positionSeconds,
+  durationSeconds,
 };
 
 const listeners = new Set<() => void>();
 
 function emit() {
-  snapshot = { playbackStatus, playingId };
+  snapshot = { playbackStatus, playingId, positionSeconds, durationSeconds };
   for (const listener of listeners) {
     listener();
   }
@@ -60,6 +69,14 @@ function setPlayingId(id: string | null) {
   }
 }
 
+function setProgress(position: number, duration: number) {
+  if (positionSeconds !== position || durationSeconds !== duration) {
+    positionSeconds = position;
+    durationSeconds = duration;
+    emit();
+  }
+}
+
 function play(id: string, audioPath: string, playerPath: string, callbacks?: PlaybackCallbacks) {
   // 先切换会话编号，使旧播放器的回调失效。
   const sessionId = ++activeSessionId;
@@ -72,10 +89,20 @@ function play(id: string, audioPath: string, playerPath: string, callbacks?: Pla
 
   setPlaybackStatus("Starting");
   setPlayingId(id);
+  setProgress(0, 0);
 
   const controller = startAudioPlayer({
     audioPath,
     playerPath,
+
+    onProgress: (position, duration) => {
+      // 只允许当前会话更新播放进度。
+      if (activeSessionId !== sessionId) {
+        return;
+      }
+
+      setProgress(position, duration);
+    },
 
     onStatusChange: (status) => {
       // 只允许当前会话更新播放状态。
@@ -91,6 +118,7 @@ function play(id: string, audioPath: string, playerPath: string, callbacks?: Pla
 
       if (status === "Stopped" || status === "Failed") {
         setPlayingId(null);
+        setProgress(0, 0);
 
         if (activeController === controller) {
           activeController = null;
@@ -167,6 +195,8 @@ export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
   return {
     playbackStatus: current.playbackStatus,
     playingId: current.playingId,
+    positionSeconds: current.positionSeconds,
+    durationSeconds: current.durationSeconds,
     play: playTrack,
     stop: stopTrack,
     pause: pauseTrack,

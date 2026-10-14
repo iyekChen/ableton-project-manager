@@ -69,6 +69,13 @@ function formatDate(ms: number): string {
   return `${year}-${month}-${day}`;
 }
 
+function formatTime(totalSeconds: number): string {
+  const safe = Number.isFinite(totalSeconds) && totalSeconds > 0 ? totalSeconds : 0;
+  const minutes = Math.floor(safe / 60);
+  const seconds = Math.floor(safe % 60);
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
 export default function Command() {
   const { push } = useNavigation();
   const [stageOptions, setStageOptions] = useState<TaxonomyOption[]>([]);
@@ -82,9 +89,10 @@ export default function Command() {
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
   const baseProjectsRef = useRef<Project[]>([]);
 
-  const { playbackStatus, playingId, play, pause, resume, seek, restart } = useAudioPlayer({
-    playerPath: PLAYER_PATH,
-  });
+  const { playbackStatus, playingId, positionSeconds, durationSeconds, play, pause, resume, seek, restart } =
+    useAudioPlayer({
+      playerPath: PLAYER_PATH,
+    });
 
   // 共享播放器：仅在命令关闭（根视图卸载）时真正停止；进入子视图（push）不打断。
   useEffect(() => () => cleanupAudioPlayer(), []);
@@ -176,12 +184,14 @@ export default function Command() {
 
     if (isActive) {
       const title = t.playingLatestBounce;
+      const time = durationSeconds > 0 ? `${formatTime(positionSeconds)} / ${formatTime(durationSeconds)}` : "";
+      const message = time ? `${name} ${time}` : name;
       if (toastRef.current) {
         toastRef.current.title = title;
-        toastRef.current.message = name;
+        toastRef.current.message = message;
       } else if (!toastBusyRef.current) {
         toastBusyRef.current = true;
-        void showToast({ style: Toast.Style.Animated, title, message: name }).then((toast) => {
+        void showToast({ style: Toast.Style.Animated, title, message }).then((toast) => {
           toastBusyRef.current = false;
           if (!toastActiveRef.current) {
             void toast.hide();
@@ -194,7 +204,7 @@ export default function Command() {
       void toastRef.current.hide();
       toastRef.current = null;
     }
-  }, [playbackStatus, playingId, projects]);
+  }, [playbackStatus, playingId, projects, positionSeconds, durationSeconds]);
 
   const playProjectBounce = useCallback(
     (project: Project) => {

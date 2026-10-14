@@ -11,6 +11,7 @@ let pauseCommand = "PAUSE"   // 经 stdin 收到 = 暂停
 let resumeCommand = "RESUME" // 经 stdin 收到 = 续播
 let restartCommand = "SEEK0" // 经 stdin 收到 = 跳回开头
 let seekCommandPrefix = "SEEK " // 其后跟秒数（可正负），如 "SEEK 5" / "SEEK -5" = 相对跳转
+let positionPrefix = "POS " // 经 stdout 输出，其后跟 "<当前秒> <总秒>" = 播放进度
 
 // analyze 模式：与 src/projects/audio-analysis.ts 约定。
 // 调用 `AudioPlayer analyze <path>`，向 stdout 输出一行 JSON：
@@ -228,6 +229,13 @@ do {
 
   print(readyMessage)
   fflush(stdout)
+
+  // 定时向 stdout 汇报播放进度：POS <当前秒> <总秒>，上层据此显示 "已播放 / 总时长"。
+  let progressTimer = Timer(timeInterval: 0.5, repeats: true) { _ in
+    print("\(positionPrefix)\(player.currentTime) \(player.duration)")
+    fflush(stdout)
+  }
+  RunLoop.main.add(progressTimer, forMode: .common)
 
   var isStopping = false
 

@@ -7,6 +7,7 @@ export interface AudioPlayerOptions {
   playerPath: string;
   onStatusChange: (status: PlaybackStatus) => void;
   onError: (message: string) => void;
+  onProgress?: (positionSeconds: number, durationSeconds: number) => void;
 }
 
 export interface AudioPlayerController {
@@ -34,6 +35,8 @@ const PLAYER_PROTOCOL = {
   restart: "SEEK0",
   /** 相对跳转前缀，其后跟秒数（可正负），如 "SEEK 5"。 */
   seekPrefix: "SEEK ",
+  /** 子进程通过 stdout 输出播放进度，其后跟 "<当前秒> <总秒>"，如 "POS 12.3 210.5"。 */
+  posPrefix: "POS ",
 } as const;
 
 let nextInstanceId = 1;
@@ -45,7 +48,7 @@ let nextInstanceId = 1;
  * 本模块负责进程启动、输出监听、停止和退出清理。
  */
 export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerController {
-  const { audioPath, playerPath, onStatusChange, onError } = options;
+  const { audioPath, playerPath, onStatusChange, onError, onProgress } = options;
 
   const instanceId = nextInstanceId++;
   const logPrefix = `[ASM Audio Player][Instance ${instanceId}]`;
@@ -96,8 +99,20 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
         stdoutBuffer = lines.pop() ?? "";
 
         for (const line of lines) {
-          if (line.trim() === PLAYER_PROTOCOL.ready && active) {
+          const trimmed = line.trim();
+
+          if (trimmed === PLAYER_PROTOCOL.ready && active) {
             onStatusChange("Playing");
+            continue;
+          }
+
+          if (trimmed.startsWith(PLAYER_PROTOCOL.posPrefix) && active) {
+            const [posText, durText] = trimmed.slice(PLAYER_PROTOCOL.posPrefix.length).split(" ");
+            const position = Number(posText);
+            const duration = Number(durText);
+            if (Number.isFinite(position) && Number.isFinite(duration)) {
+              onProgress?.(position, duration);
+            }
           }
         }
       });
