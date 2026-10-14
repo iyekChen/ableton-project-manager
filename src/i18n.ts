@@ -69,6 +69,8 @@ type TranslationKeys = {
   renameConfirmTitle: string;
   renameConfirmMessage: string;
   rename: string;
+  edit: string;
+  color: string;
   sizeLargest: string;
   sizeSmallest: string;
   browseBounces: string;
@@ -184,6 +186,8 @@ const translations: Record<Language, TranslationKeys> = {
     renameConfirmMessage:
       "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
     rename: "Rename",
+    edit: "Edit",
+    color: "Color",
     sizeLargest: "Size — Largest",
     sizeSmallest: "Size — Smallest",
     browseBounces: "Browse Bounces",
@@ -297,6 +301,8 @@ const translations: Record<Language, TranslationKeys> = {
     renameConfirmTitle: "重命名项目?",
     renameConfirmMessage: "请确认该项目已在 Ableton Live 中关闭。开着时重命名可能让工程与文件失联。",
     rename: "重命名",
+    edit: "编辑",
+    color: "颜色",
     sizeLargest: "大小 — 最大",
     sizeSmallest: "大小 — 最小",
     browseBounces: "浏览 Bounces",

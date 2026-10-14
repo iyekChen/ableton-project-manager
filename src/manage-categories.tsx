@@ -38,9 +38,28 @@ function slugify(name: string): string {
   return slug || name.trim().toLowerCase();
 }
 
-function CategoryForm(props: { title: string; currentName?: string; onSubmit: (name: string) => Promise<void> }) {
+const COLOR_CHOICES: { label: string; value: Color }[] = [
+  { label: "Blue", value: Color.Blue },
+  { label: "Green", value: Color.Green },
+  { label: "Yellow", value: Color.Yellow },
+  { label: "Orange", value: Color.Orange },
+  { label: "Red", value: Color.Red },
+  { label: "Magenta", value: Color.Magenta },
+  { label: "Purple", value: Color.Purple },
+  { label: "Primary", value: Color.PrimaryText },
+  { label: "Secondary", value: Color.SecondaryText },
+];
+
+function CategoryForm(props: {
+  title: string;
+  currentName?: string;
+  showColor?: boolean;
+  currentColor?: Color;
+  onSubmit: (name: string, color?: Color) => Promise<void>;
+}) {
   const { pop } = useNavigation();
   const [name, setName] = useState("");
+  const [color, setColor] = useState<Color>(props.currentColor ?? Color.Blue);
 
   return (
     <Form
@@ -51,15 +70,12 @@ function CategoryForm(props: { title: string; currentName?: string; onSubmit: (n
             title={t.save}
             onSubmit={async () => {
               const trimmed = name.trim();
-              if (trimmed === "") {
-                if (props.currentName !== undefined) {
-                  pop();
-                  return;
-                }
+              const finalName = trimmed === "" ? (props.currentName ?? "") : trimmed;
+              if (finalName === "") {
                 await showToast({ style: Toast.Style.Failure, title: t.invalidName });
                 return;
               }
-              await props.onSubmit(trimmed);
+              await props.onSubmit(finalName, props.showColor ? color : undefined);
               pop();
             }}
           />
@@ -67,6 +83,18 @@ function CategoryForm(props: { title: string; currentName?: string; onSubmit: (n
       }
     >
       <Form.TextField id="name" title={t.name} placeholder={props.currentName} value={name} onChange={setName} />
+      {props.showColor && (
+        <Form.Dropdown id="color" title={t.color} value={color} onChange={(value) => setColor(value as Color)}>
+          {COLOR_CHOICES.map((choice) => (
+            <Form.Dropdown.Item
+              key={choice.value}
+              value={choice.value}
+              title={choice.label}
+              icon={{ source: Icon.Circle, tintColor: choice.value }}
+            />
+          ))}
+        </Form.Dropdown>
+      )}
     </Form>
   );
 }
@@ -100,15 +128,18 @@ export default function Command() {
     await showToast({ style: Toast.Style.Success, title: t.created });
   }
 
-  async function renameOption(id: string, name: string) {
+  async function editOption(id: string, name: string, color?: Color) {
     const existing = options.find((o) => o.id === id);
-    const next = options.map((o) => (o.id === id ? { ...o, name } : o));
+    const next = options.map((o) => {
+      if (o.id !== id) return o;
+      return kind === "stage" ? { ...o, name, color } : { ...o, name };
+    });
     await TAXONOMIES[kind].save(next);
     setOptions(next);
     if (kind === "role" && existing && existing.name !== name) {
       await renameRoleEverywhere(existing.name, name);
     }
-    await showToast({ style: Toast.Style.Success, title: t.renamed });
+    await showToast({ style: Toast.Style.Success, title: t.infoUpdated });
   }
 
   async function deleteOption(option: TaxonomyOption) {
@@ -167,18 +198,20 @@ export default function Command() {
         <List.Item
           key={option.id}
           title={option.name}
-          icon={Icon.Tag}
+          icon={kind === "stage" ? { source: Icon.Circle, tintColor: option.color ?? Color.SecondaryText } : Icon.Tag}
           actions={
             <ActionPanel>
               <Action.Push
-                title={t.rename}
+                title={t.edit}
                 icon={Icon.Pencil}
                 shortcut={Keyboard.Shortcut.Common.Edit}
                 target={
                   <CategoryForm
-                    title={t.rename}
+                    title={t.edit}
                     currentName={option.name}
-                    onSubmit={(name) => renameOption(option.id, name)}
+                    showColor={kind === "stage"}
+                    currentColor={option.color}
+                    onSubmit={(name, color) => editOption(option.id, name, color)}
                   />
                 }
               />
