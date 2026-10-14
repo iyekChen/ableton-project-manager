@@ -129,7 +129,8 @@ export default function Command() {
       return;
     }
 
-    const next = [...options, option];    await TAXONOMIES[kind].save(next);
+    const next = [...options, option];
+    await TAXONOMIES[kind].save(next);
     setOptions(next);
     await showToast({ style: Toast.Style.Success, title: t.created });
   }

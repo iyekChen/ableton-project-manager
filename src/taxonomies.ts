@@ -1,5 +1,6 @@
 import { Color, LocalStorage } from "@raycast/api";
-import { createTaxonomy, Taxonomy, TaxonomyOption } from "./taxonomy";import { TRACK_ROLES } from "./track-role";
+import { createTaxonomy, Taxonomy, TaxonomyOption } from "./taxonomy";
+import { TRACK_ROLES } from "./track-role";
 
 // Stage 默认 7 档流水线(有序 + 配色)。
 export const STAGE_DEFAULTS: TaxonomyOption[] = [
