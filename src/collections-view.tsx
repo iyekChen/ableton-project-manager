@@ -35,7 +35,7 @@ import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrack
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
-import { docFileExists, docFilePath, ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
+import { ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
 import { getPinnedCollections, movePinnedCollection, togglePinnedCollection } from "./collection-pins";
 import { collectionTaxonomy } from "./taxonomies";
 
@@ -81,9 +81,9 @@ function slugify(name: string): string {
   return slug || name.trim().toLowerCase();
 }
 
-function CollectionNameForm(props: { title: string; initialName?: string; onSubmit: (name: string) => Promise<void> }) {
+function CollectionNameForm(props: { title: string; currentName?: string; onSubmit: (name: string) => Promise<void> }) {
   const { pop } = useNavigation();
-  const [name, setName] = useState(props.initialName ?? "");
+  const [name, setName] = useState("");
 
   return (
     <Form
@@ -95,6 +95,11 @@ function CollectionNameForm(props: { title: string; initialName?: string; onSubm
             onSubmit={async () => {
               const trimmed = name.trim();
               if (trimmed === "") {
+                // 留空：重命名时视为不改动直接返回；新建时提示名称无效。
+                if (props.currentName !== undefined) {
+                  pop();
+                  return;
+                }
                 await showToast({ style: Toast.Style.Failure, title: t.invalidName });
                 return;
               }
@@ -105,7 +110,7 @@ function CollectionNameForm(props: { title: string; initialName?: string; onSubm
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
+      <Form.TextField id="name" title={t.name} placeholder={props.currentName} value={name} onChange={setName} />
     </Form>
   );
 }
@@ -207,7 +212,7 @@ export function CollectionList({
               target={
                 <CollectionNameForm
                   title={t.rename}
-                  initialName={c.name}
+                  currentName={c.name}
                   onSubmit={(name) => renameCollection(c.id, name)}
                 />
               }
@@ -478,14 +483,14 @@ function CollectionPanel({
   // 打开 Note / Lyrics 的外部编辑动作。Note 文件存在才出现；Lyrics 打开即建（可套模板）。
   const renderDocActions = (p: Project) => (
     <ActionPanel.Section>
-      {docFileExists(p, "notes") && (
-        <Action.Open
-          title={t.openNote}
-          icon={Icon.Document}
-          target={docFilePath(p, "notes")}
-          shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
-        />
-      )}
+      <Action
+        title={t.openNote}
+        icon={Icon.Document}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
+        onAction={async () => {
+          await open(ensureDocFile(p, "notes"));
+        }}
+      />
       <Action
         title={t.openLyrics}
         icon={Icon.Music}

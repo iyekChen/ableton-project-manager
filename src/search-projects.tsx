@@ -28,7 +28,7 @@ import type { SortOption } from "./sorting";
 import { Bounces } from "./bounces";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "./taxonomies";
 import type { TaxonomyOption } from "./taxonomy";
-import { docFileExists, docFilePath, ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
+import { ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
 import { CollectionList } from "./collections-view";
 import { EditInfo } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
@@ -309,8 +309,6 @@ export default function Command() {
     const genreNames = namesFor(item.genreIds, genreOptions);
     const collectionNames = namesFor(item.collectionIds, collectionOptions);
     const stagePill = stage ? [{ tag: { value: stage.name, color: stage.color ?? Color.SecondaryText } }] : [];
-    const noteFile = docFilePath(item, "notes");
-    const canOpenNote = docFileExists(item, "notes");
     const detailBody = !showDetail
       ? ""
       : detailDoc === "notes"
@@ -447,14 +445,14 @@ export default function Command() {
                 icon={Icon.Pencil}
                 target={<EditNote project={item} onSaved={reloadProjects} />}
               />
-              {canOpenNote && (
-                <Action.Open
-                  title={t.openNote}
-                  icon={Icon.Document}
-                  target={noteFile}
-                  shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
-                />
-              )}
+              <Action
+                title={t.openNote}
+                icon={Icon.Document}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
+                onAction={async () => {
+                  await open(ensureDocFile(item, "notes"));
+                }}
+              />
               <Action
                 title={t.openLyrics}
                 icon={Icon.Music}
