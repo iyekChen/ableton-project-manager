@@ -18,8 +18,7 @@ import {
   type Application,
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { cleanupAudioPlayer, useAudioPlayer } from "./hooks/use-audio-player";
-import { ensureAudioPlayerBinary } from "./audio-player-path";
+import { useAudioPlayer } from "./hooks/use-audio-player";import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { getSettings } from "./settings";
 import { getAllProjectMetadata, movePinnedProject, setProjectPinned } from "./project-metadata";
 import { getTranslations } from "./i18n";
@@ -90,13 +89,10 @@ export default function Command() {
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
   const baseProjectsRef = useRef<Project[]>([]);
 
-  const { playbackStatus, playingId, positionSeconds, durationSeconds, play, pause, resume, seek, restart } =
+  const { playbackStatus, playingId, positionSeconds, durationSeconds, play, pause, resume, stop, seek, restart } =
     useAudioPlayer({
       playerPath: PLAYER_PATH,
     });
-
-  // 共享播放器：仅在命令关闭（根视图卸载）时真正停止；进入子视图（push）不打断。
-  useEffect(() => () => cleanupAudioPlayer(), []);
 
   // 解析 Ableton Live，用于 New Live Set（取其图标 + 启动）。
   useEffect(() => {
@@ -465,9 +461,14 @@ export default function Command() {
             {isAnythingPlaying && (
               <ActionPanel.Section>
                 <Action
+                  title={t.stopPlayback}
+                  icon={Icon.Stop}
+                  shortcut={{ modifiers: ["cmd"], key: "-" }}
+                  onAction={stop}
+                />
+                <Action
                   title={t.seekBackward}
-                  icon={Icon.ArrowLeft}
-                  shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
+                  icon={Icon.ArrowLeft}                  shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
                   onAction={() => seek(-SEEK_STEP_SECONDS)}
                 />
                 <Action

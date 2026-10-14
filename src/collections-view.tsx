@@ -298,8 +298,7 @@ function CollectionPanel({
   const [showDetail, setShowDetail] = useState(true);
   const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
   const [selectedStage, setSelectedStage] = useState("all");
-  const { playbackStatus, playingId, play, pause, resume, seek, restart } = useAudioPlayer({ playerPath: PLAYER_PATH });
-
+  const { playbackStatus, playingId, play, pause, resume, stop, seek, restart } = useAudioPlayer({ playerPath: PLAYER_PATH });
   function playProjectBounce(project: Project) {
     const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
     if (!latestBouncePath) {
@@ -359,13 +358,18 @@ function CollectionPanel({
     );
   };
 
-  // 播放时才出现的 seek / restart（作用于全局播放器），作为每个 item 的第二个 Section。
+  // 播放时才出现的停止、seek / restart 控制，作用于全局播放器。
   const renderPlaybackControls = () =>
     playingId !== null ? (
       <ActionPanel.Section>
         <Action
-          title={t.seekBackward}
-          icon={Icon.ArrowLeft}
+          title={t.stopPlayback}
+          icon={Icon.Stop}
+          shortcut={{ modifiers: ["cmd"], key: "-" }}
+          onAction={stop}
+        />
+        <Action
+          title={t.seekBackward}          icon={Icon.ArrowLeft}
           shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
           onAction={() => seek(-SEEK_STEP_SECONDS)}
         />

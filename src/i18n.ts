@@ -99,10 +99,10 @@ type TranslationKeys = {
   tracklistDuration: string;
   pausePlayback: string;
   resumePlayback: string;
+  stopPlayback: string;
   seekBackward: string;
   seekForward: string;
-  restartTrack: string;
-  showDetail: string;
+  restartTrack: string;  showDetail: string;
   showOverview: string;
   newLiveSet: string;
   newLiveSetFailed: string;
@@ -216,6 +216,7 @@ const translations: Record<Language, TranslationKeys> = {
     tracklistDuration: "Tracklist Duration",
     pausePlayback: "Pause",
     resumePlayback: "Resume",
+    stopPlayback: "Stop Playback",
     seekBackward: "Backward",
     seekForward: "Forward",
     restartTrack: "Restart Track",
@@ -331,6 +332,7 @@ const translations: Record<Language, TranslationKeys> = {
     tracklistDuration: "曲目列表时长",
     pausePlayback: "暂停",
     resumePlayback: "继续播放",
+    stopPlayback: "停止播放",
     seekBackward: "后退",
     seekForward: "前进",
     restartTrack: "从头播放",
