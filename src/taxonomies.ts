@@ -1,5 +1,5 @@
 import { Color, LocalStorage } from "@raycast/api";
-import { createTaxonomy, Taxonomy, TaxonomyOption } from "./taxonomy";
+import { createTaxonomy, type Taxonomy, type TaxonomyOption } from "./taxonomy";
 import { TRACK_ROLES } from "./track-role";
 
 // Stage 默认 7 档流水线(有序 + 配色)。
@@ -38,15 +38,18 @@ const genreTaxonomyBase = createTaxonomy("genre-options", []);
 export const genreTaxonomy: Taxonomy = {
   async get() {
     const options = await genreTaxonomyBase.get();
-    const seeded = await LocalStorage.getItem<boolean>(GENRE_SEED_KEY);
+    const seeded = await LocalStorage.getItem<string>(GENRE_SEED_KEY);
 
-    if (seeded) {
+    if (seeded === "true") {
       return options;
     }
 
     const existingIds = new Set(options.map((option) => option.id));
-    const missingGenres = GENRE_DEFAULTS.filter((option) => !existingIds.has(option.id));
+    const existingNames = new Set(options.map((option) => option.name.trim().toLowerCase()));
 
+    const missingGenres = GENRE_DEFAULTS.filter(
+      (option) => !existingIds.has(option.id) && !existingNames.has(option.name.trim().toLowerCase()),
+    );
     // 已有明确顺序时，将新增预设追加到末尾，不打乱用户的排序。
     const hasCustomOrder = options.some((option) => option.order !== undefined);
     const maxOrder = Math.max(0, ...options.map((option) => option.order ?? 0));
@@ -56,8 +59,7 @@ export const genreTaxonomy: Taxonomy = {
     );
 
     await genreTaxonomyBase.save([...options, ...additions]);
-    await LocalStorage.setItem(GENRE_SEED_KEY, true);
-
+    await LocalStorage.setItem(GENRE_SEED_KEY, "true");
     return genreTaxonomyBase.get();
   },
 
@@ -65,7 +67,7 @@ export const genreTaxonomy: Taxonomy = {
 
   async reset() {
     await genreTaxonomyBase.save([]);
-    await LocalStorage.setItem(GENRE_SEED_KEY, false);
+    await LocalStorage.setItem(GENRE_SEED_KEY, "false");
   },
 };
 

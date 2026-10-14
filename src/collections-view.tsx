@@ -36,7 +36,7 @@ import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
 import { ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
 import { getPinnedCollections, movePinnedCollection, togglePinnedCollection } from "./collection-pins";
-import { collectionTaxonomy, roleTaxonomy } from "./taxonomies";
+import { collectionTaxonomy } from "./taxonomies";
 import { getAllProjectMetadata } from "./project-metadata";
 import { EditInfo } from "./components/project/edit-info";
 
@@ -298,8 +298,6 @@ function CollectionPanel({
   const [showDetail, setShowDetail] = useState(true);
   const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
   const [selectedStage, setSelectedStage] = useState("all");
-  const [roleOptions, setRoleOptions] = useState<string[]>([]);
-
   const { playbackStatus, playingId, play, pause, resume, seek, restart } = useAudioPlayer({ playerPath: PLAYER_PATH });
 
   function playProjectBounce(project: Project) {
@@ -412,10 +410,6 @@ function CollectionPanel({
   }, []);
 
   useEffect(() => {
-    void roleTaxonomy.get().then((options) => setRoleOptions(options.map((o) => o.name)));
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
     const memberList = projects.filter((p) => p.collectionIds.includes(collection.id));
     async function load() {
@@ -488,16 +482,6 @@ function CollectionPanel({
     await apply(removeNumber(map, id));
     await applyRoles(clearRole(roles, id));
   }
-
-  // 角色子菜单：在当前 collection 内给某首歌设/清角色。
-  const roleSubmenu = (p: Project) => (
-    <ActionPanel.Submenu title={t.setTrackRole} icon={Icon.Tag}>
-      {roleOptions.map((role) => (
-        <Action key={role} title={role} onAction={() => applyRoles(assignRole(roles, p.id, role))} />
-      ))}
-      <Action title={t.clearRole} icon={Icon.XMarkCircle} onAction={() => applyRoles(clearRole(roles, p.id))} />
-    </ActionPanel.Submenu>
-  );
 
   // 角色 pill（设了才显示，放在 accessories 最左）。
   const rolePill = (p: Project): List.Item.Accessory[] => {
@@ -701,13 +685,22 @@ function CollectionPanel({
                           shortcut={{ modifiers: ["cmd"], key: "c" }}
                           onAction={() => copyLatestBounce(p)}
                         />
-                        {roleSubmenu(p)}
                         <Action.Push
                           title={t.editInfo}
                           icon={Icon.Pencil}
                           shortcut={Keyboard.Shortcut.Common.Edit}
-                          target={<EditInfo project={p} onSaved={reloadMetadata} />}
-                        />
+                          target={
+                            <EditInfo
+                              project={p}
+                              onSaved={reloadMetadata}
+                              collectionId={collection.id}
+                              currentRole={roles[p.id]}
+                              onRoleChanged={(nextRole) =>
+                                applyRoles(nextRole ? assignRole(roles, p.id, nextRole) : clearRole(roles, p.id))
+                              }
+                            />
+                          }
+                        />{" "}
                         <Action
                           title={t.removeFromTracklist}
                           icon={Icon.MinusCircle}
@@ -783,8 +776,18 @@ function CollectionPanel({
                           title={t.editInfo}
                           icon={Icon.Pencil}
                           shortcut={Keyboard.Shortcut.Common.Edit}
-                          target={<EditInfo project={p} onSaved={reloadMetadata} />}
-                        />
+                          target={
+                            <EditInfo
+                              project={p}
+                              onSaved={reloadMetadata}
+                              collectionId={collection.id}
+                              currentRole={roles[p.id]}
+                              onRoleChanged={(nextRole) =>
+                                applyRoles(nextRole ? assignRole(roles, p.id, nextRole) : clearRole(roles, p.id))
+                              }
+                            />
+                          }
+                        />{" "}
                         <Action
                           title={t.addToTracklist}
                           icon={Icon.PlusCircle}

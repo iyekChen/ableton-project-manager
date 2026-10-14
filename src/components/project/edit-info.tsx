@@ -10,6 +10,7 @@ import {
   Toast,
   useNavigation,
 } from "@raycast/api";
+import type { TaxonomyOption } from "../../taxonomy";
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
@@ -17,14 +18,25 @@ import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
 import { renameDocFiles } from "../../docs";
-import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "../../taxonomies";
-import type { TaxonomyOption } from "../../taxonomy";
+import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "../../taxonomies";
 import type { Project } from "../../projects/types";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
 
-export function EditInfo({ project, onSaved }: { project: Project; onSaved: () => void }) {
+export function EditInfo({
+  project,
+  onSaved,
+  collectionId,
+  currentRole,
+  onRoleChanged,
+}: {
+  project: Project;
+  onSaved: () => void;
+  collectionId?: string;
+  currentRole?: string;
+  onRoleChanged?: (role: string | null) => Promise<void>;
+}) {
   const { pop } = useNavigation();
   const [name, setName] = useState(project.title);
 
@@ -35,7 +47,8 @@ export function EditInfo({ project, onSaved }: { project: Project; onSaved: () =
   const [stageId, setStageId] = useState("none");
   const [genreIds, setGenreIds] = useState<string[]>([]);
   const [collectionIds, setCollectionIds] = useState<string[]>([]);
-
+  const [roleOptions, setRoleOptions] = useState<TaxonomyOption[]>([]);
+  const [role, setRole] = useState(currentRole ?? "none");
   useEffect(() => {
     async function load() {
       const [stages, genres, collections, metadata] = await Promise.all([
@@ -51,11 +64,15 @@ export function EditInfo({ project, onSaved }: { project: Project; onSaved: () =
       setStageId(metadata.stageId ?? "none");
       setGenreIds(metadata.genreIds);
       setCollectionIds(metadata.collectionIds);
+
+      if (collectionId) {
+        setRoleOptions(await roleTaxonomy.get());
+        setRole(currentRole ?? "none");
+      }
     }
 
     void load();
-  }, [project.id]);
-
+  }, [project.id, collectionId, currentRole]);
   async function handleSubmit() {
     const trimmedName = name.trim();
     const nameChanged = trimmedName !== "" && trimmedName !== project.title;
@@ -110,8 +127,15 @@ export function EditInfo({ project, onSaved }: { project: Project; onSaved: () =
       collectionIds,
     });
 
-    onSaved();
+    if (collectionId && onRoleChanged) {
+      const nextRole = role === "none" ? null : role;
 
+      if (nextRole !== (currentRole ?? null)) {
+        await onRoleChanged(nextRole);
+      }
+    }
+
+    onSaved();
     await showToast({
       style: Toast.Style.Success,
       title: t.infoUpdated,
@@ -130,7 +154,6 @@ export function EditInfo({ project, onSaved }: { project: Project; onSaved: () =
       }
     >
       <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
-
       <Form.Dropdown id="stage" title={t.stage} value={stageId} onChange={setStageId}>
         <Form.Dropdown.Item value="none" title={t.none} icon={Icon.Circle} />
         {stageOptions.map((option) => (
@@ -142,18 +165,28 @@ export function EditInfo({ project, onSaved }: { project: Project; onSaved: () =
           />
         ))}
       </Form.Dropdown>
-
       <Form.TagPicker id="genre" title={t.genre} value={genreIds} onChange={setGenreIds}>
         {genreOptions.map((option) => (
           <Form.TagPicker.Item key={option.id} value={option.id} title={option.name} />
         ))}
       </Form.TagPicker>
-
       <Form.TagPicker id="collection" title={t.collection} value={collectionIds} onChange={setCollectionIds}>
         {collectionOptions.map((option) => (
           <Form.TagPicker.Item key={option.id} value={option.id} title={option.name} />
         ))}
       </Form.TagPicker>
+      {collectionId && (
+        <Form.TagPicker
+          id="role"
+          title="Track Role"
+          value={role === "none" ? [] : [role]}
+          onChange={(values) => setRole(values[0] ?? "none")}
+        >
+          {roleOptions.map((option) => (
+            <Form.TagPicker.Item key={option.id} value={option.name} title={option.name} />
+          ))}
+        </Form.TagPicker>
+      )}{" "}
     </Form>
   );
 }
