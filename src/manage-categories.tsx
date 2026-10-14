@@ -186,6 +186,15 @@ export default function Command() {
               <ActionPanel.Section>
                 {index > 0 && (
                   <Action
+                    title={t.moveToTop}
+                    icon={Icon.ArrowUpCircle}
+                    // eslint-disable-next-line @raycast/prefer-common-shortcut
+                    shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
+                    onAction={() => reorder(index, 0)}
+                  />
+                )}
+                {index > 0 && (
+                  <Action
                     title={t.moveUp}
                     icon={Icon.ArrowUp}
                     shortcut={Keyboard.Shortcut.Common.MoveUp}
@@ -204,7 +213,8 @@ export default function Command() {
                   <Action
                     title={t.moveToBottom}
                     icon={Icon.ArrowDownCircle}
-                    shortcut={{ modifiers: ["cmd"], key: "/" }}
+                    // eslint-disable-next-line @raycast/prefer-common-shortcut
+                    shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
                     onAction={() => reorder(index, options.length - 1)}
                   />
                 )}

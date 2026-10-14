@@ -31,6 +31,7 @@ type TranslationKeys = {
   swapDown: string;
   duplicateTrack: string;
   moveToBottom: string;
+  moveToTop: string;
   addToTracklist: string;
   removeFromTracklist: string;
   trackNumber: string;
@@ -144,6 +145,7 @@ const translations: Record<Language, TranslationKeys> = {
     swapDown: "Swap Down",
     duplicateTrack: "Duplicate track number",
     moveToBottom: "Move to Bottom",
+    moveToTop: "Move to Top",
     addToTracklist: "Add to Tracklist",
     removeFromTracklist: "Remove from Tracklist",
     trackNumber: "Track Number",
@@ -257,6 +259,7 @@ const translations: Record<Language, TranslationKeys> = {
     swapDown: "与下一首对调",
     duplicateTrack: "轨号重复",
     moveToBottom: "移到末尾",
+    moveToTop: "移到顶部",
     addToTracklist: "加入曲目列表",
     removeFromTracklist: "移出曲目列表",
     trackNumber: "轨号",
