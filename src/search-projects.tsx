@@ -335,8 +335,7 @@ export default function Command() {
     return (
       <List.Item
         key={item.id}
-        icon="Project.png"
-        title={item.title}
+        icon="icon.png"        title={item.title}
         accessories={
           showDetail
             ? []

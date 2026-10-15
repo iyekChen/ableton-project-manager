@@ -92,8 +92,7 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
             <List.Item
               key={b.path}
               title={b.name}
-              icon={Icon.Music}
-              accessories={[{ text: formatSize(b.size) }]}
+              icon="bounce.png"              accessories={[{ text: formatSize(b.size) }]}
               quickLook={{ path: b.path, name: b.name }}
               actions={
                 <ActionPanel>

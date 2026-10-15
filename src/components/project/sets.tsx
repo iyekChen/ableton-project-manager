@@ -214,8 +214,7 @@ export function Sets({ project }: { project: Project }) {
         {sortedSets.map((set) => (
           <List.Item
             key={set.path}
-            icon="Set.png"
-            title={set.name}
+        icon="set.png"            title={set.name}
             detail={
               <List.Item.Detail
                 metadata={

@@ -3,8 +3,7 @@
 	"name": "ableton-session-manager",
 	"title": "Ableton Session Manager",
 	"description": "Manage and search Ableton Live projects",
-	"icon": "Project (Apple).png",
-	"author": "iyek",
+	"icon": "Project (Apple).png",	"author": "iyek",
 	"platforms": [
 		"macOS"
 	],
