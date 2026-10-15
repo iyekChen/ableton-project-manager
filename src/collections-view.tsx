@@ -225,7 +225,8 @@ export function CollectionList({
       <List.Item
         key={c.id}
         icon="collection.png"
-        title={c.name}        accessories={[{ text: count === 1 ? "1 Track(s)" : `${count} Track(s)` }]}
+        title={c.name}
+        accessories={[{ text: count === 1 ? "1 Track(s)" : `${count} Track(s)` }]}
         actions={
           <ActionPanel>
             <Action.Push
@@ -789,7 +790,8 @@ function CollectionPanel({
                 return (
                   <List.Item
                     key={p.id}
-                    icon="icon.png"                    title={p.title}
+                    icon="icon.png"
+                    title={p.title}
                     accessories={showDetail ? [] : accessories}
                     detail={showDetail ? renderDetail(p) : undefined}
                     actions={
