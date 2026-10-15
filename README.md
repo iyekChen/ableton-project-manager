@@ -8,11 +8,12 @@ A Raycast extension to browse, organize, and preview your Ableton Live projects 
 
 - **Search & browse projects** — fuzzy-search your Projects folder, sort by name / created / modified, pin favorites to the top, and switch between a compact Overview and a rich Detail view.
 - **Tag & organize** — assign each project a **Stage** (idea → mixing → released), **Genre**, and **Collection**, then filter the list by Stage or Genre.
-- **Collections view** — group projects into EPs / albums, order the tracklist, assign per-track roles, and see an automatic **energy** scale derived from each bounce's audio.
-- **Inline bounce playback** — play the latest bounce of any project with a global, shared player (play / pause / resume, seek ±5s, restart) that keeps playing as you move between views.
+- **Collections view** — group projects into EPs / albums, order the tracklist, assign per-track roles, edit a track's info and notes inline, and see an automatic **energy** scale derived from each bounce's audio.
+- **Queue a whole collection** — send every project's latest bounce, in track order, to your default player as an `.m3u` playlist for back-to-back listening.
+- **Inline bounce playback** — play the latest bounce of any project with a global, shared player (play / pause / resume, seek ±5s, restart). Playback keeps going as you switch views **and after you close the Raycast window** — it only stops on natural end, Stop, or quitting Raycast (⌘Q).
 - **Browse bounces** — list every bounce for a project, preview with Quick Look (scrubbable), reveal in Finder, or open in the default app.
 - **View sets** — list the `.als` sets in a project with parsed **BPM**, **key**, and **time signature**; open directly in Ableton Live.
-- **Notes** — write Markdown notes per project, stored inside the extension or as `.md` files in a folder of your choice (e.g. an Obsidian vault).
+- **Notes & lyrics** — write Markdown notes and lyrics per project, stored inside the extension or as `.md` files in a folder of your choice (e.g. an Obsidian vault).
 - **New Live Set** — launch Ableton Live for a fresh set.
 - **Bilingual UI** — English and 简体中文.
 
@@ -68,30 +69,38 @@ Set these in Raycast → Extensions → **Ableton Session Manager**:
 ## How it works
 
 - **`.als` parsing** — sets are gzipped XML; BPM / key / time-signature are read with `fast-xml-parser` and `saxes`.
-- **Audio playback** — a small bundled Swift AVFoundation binary plays bounces; it runs as a single shared process so playback persists across views.
+- **Audio playback** — a small bundled Swift AVFoundation binary plays bounces; it runs as a single detached process so playback persists across views and after the window closes, controlled cross-process via small command / status files.
 - **Storage** — taxonomies, pins, per-project metadata, and view preferences are kept in Raycast LocalStorage; notes are Markdown (optionally in your own folder).
 
 ## Keyboard shortcuts
 
 Most actions are discoverable via the Action Panel (`⌘K`). A few highlights:
 
-| Action             | Shortcut |
-| ------------------ | -------- |
-| Play latest bounce | `⌘↵`     |
-| Browse Bounces     | `⌥↵`     |
-| Browse Collections | `⌃↵`     |
-| New Live Set       | `⌘N`     |
-| Open in Finder     | `⌘⌥O`    |
+| Action                        | Shortcut                                       |
+| ----------------------------- | ---------------------------------------------- |
+| Play / pause latest bounce    | `⌘↵`                                           |
+| Stop playback                 | `⌘-`                                           |
+| Seek backward / forward (±5s) | `⌥←` / `⌥→`                                    |
+| Restart track                 | `⌘←`                                           |
+| Browse Bounces                | `⌥↵`                                           |
+| Browse Collections            | `⌃↵`                                           |
+| Back to Search Projects       | `⌃↵` / `⌥↵` (from a collection / bounces view) |
+| Edit Info                     | `⌘E`                                           |
+| Edit Note                     | `⌘⌥N`                                          |
+| Queue collection in player    | `⌘⇧↵`                                          |
+| New Live Set                  | `⌘N`                                           |
+| Open in Finder                | `⌘⌥O`                                          |
+
+## Known limitations
+
+- **Queue collection in player** writes a standard `.m3u` playlist and opens it with your default `.m3u` handler. Use a player that supports playlists (IINA, VLC, Swinsian, …). **QuickTime Player does not support `.m3u`** and will not play the collection as a queue.
 
 ## Roadmap
 
-- Filter projects by Stage / Genre (single-dimension)
-- Copy latest bounce / selected bounce (as a file)
-- Duplicate Set · Move to Trash (projects, sets, bounces)
-- Playback position / duration readout
 - Filter / search by BPM & key
 - Missing-media (sample) check
 - New project from a template `.als`
+- Automated tests + CI
 
 ## Contributing
 
