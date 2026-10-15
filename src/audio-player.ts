@@ -1,9 +1,81 @@
 import { spawn, type ChildProcess } from "child_process";
+import { environment } from "@raycast/api";
+import fs from "node:fs";
+import path from "node:path";
+
+// 跨进程共享的后台播放器 PID 文件：命令进程被回收后，
+// 其他进程(重开命令 / 菜单栏)仍能据此找到并停止后台播放。
+const PID_FILE = path.join(environment.supportPath, "audio-player.pid");
+
+function readPidFile(): { pid: number; id: string; startedAt: number } | null {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(PID_FILE, "utf8"));
+    return typeof parsed?.pid === "number" && typeof parsed?.id === "string" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePidFile(pid: number, id: string): void {
+  try {
+    fs.writeFileSync(PID_FILE, JSON.stringify({ pid, id, startedAt: Date.now() }));
+  } catch {
+    // 忽略写入失败
+  }
+}
+
+// 查当前后台播放：返回仍存活的 { pid, id }，否则 null(并清理僵尸记录)。
+export function getActivePlayer(): { pid: number; id: string } | null {
+  const info = readPidFile();
+  if (!info) {
+    return null;
+  }
+  try {
+    process.kill(info.pid, 0); // 探活
+  } catch {
+    clearPidFile();
+    return null;
+  }
+  return { pid: info.pid, id: info.id };
+}
+
+function clearPidFile(pid?: number): void {
+  try {
+    if (pid !== undefined && readPidFile()?.pid !== pid) {
+      return; // 不是自己写的记录，别清
+    }
+    fs.rmSync(PID_FILE, { force: true });
+  } catch {
+    // 忽略
+  }
+}
+
+// 停掉当前后台播放(若有)。返回是否确有在跑的进程被通知停止。
+export function stopActivePlayer(): boolean {
+  const info = readPidFile();
+  if (!info) {
+    return false;
+  }
+  try {
+    process.kill(info.pid, 0); // 探活
+  } catch {
+    clearPidFile(); // 僵尸记录，清掉
+    return false;
+  }
+  try {
+    process.kill(info.pid, "SIGTERM"); // Swift 端收到后淡出退出
+  } catch {
+    // 忽略
+  }
+  clearPidFile(info.pid);
+  return true;
+}
 
 export type PlaybackStatus = "Starting" | "Playing" | "Paused" | "Stopping" | "Stopped" | "Failed";
 
 export interface AudioPlayerOptions {
   audioPath: string;
+  id: string;
   playerPath: string;
   onStatusChange: (status: PlaybackStatus) => void;
   onError: (message: string) => void;
@@ -48,7 +120,7 @@ let nextInstanceId = 1;
  * 本模块负责进程启动、输出监听、停止和退出清理。
  */
 export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerController {
-  const { audioPath, playerPath, onStatusChange, onError, onProgress } = options;
+  const { audioPath, id, playerPath, onStatusChange, onError, onProgress } = options;
 
   const instanceId = nextInstanceId++;
   const logPrefix = `[ASM Audio Player][Instance ${instanceId}]`;
@@ -80,9 +152,15 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
     try {
       child = spawn(playerPath, [audioPath], {
         stdio: ["pipe", "pipe", "pipe"],
+        detached: true, // 脱离父进程会话：命令被回收后仍继续播放
       });
 
       const player = child;
+      player.unref(); // 不让子进程拖住父进程事件循环
+
+      if (player.pid !== undefined) {
+        writePidFile(player.pid, id);
+      }
 
       console.log(
         `${logPrefix} SPAWN`,
@@ -145,6 +223,8 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
         if (child === player) {
           child = null;
         }
+
+        clearPidFile(player.pid ?? undefined);
 
         if (!active) {
           return;
@@ -220,6 +300,7 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
     console.log(`${logPrefix} CLEANUP ${new Date().toISOString()}`);
 
     active = false;
+    clearPidFile(child?.pid ?? undefined);
 
     if (startTimer !== null) {
       clearTimeout(startTimer);

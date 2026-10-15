@@ -1,5 +1,5 @@
-import { useCallback, useSyncExternalStore } from "react";
-import { startAudioPlayer } from "../audio-player";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { startAudioPlayer, stopActivePlayer, getActivePlayer } from "../audio-player";
 import type { AudioPlayerController, PlaybackStatus } from "../audio-player";
 
 interface UseAudioPlayerOptions {
@@ -87,12 +87,19 @@ function play(id: string, audioPath: string, playerPath: string, callbacks?: Pla
   // 清理旧播放器，避免多个播放器同时运行。
   previousController?.cleanup();
 
+  // 本进程没有正在运行的播放器时，可能存在上一个命令进程遗留的后台播放，
+  // 先按 PID 停掉，避免两段音频叠放。
+  if (!previousController) {
+    stopActivePlayer();
+  }
+
   setPlaybackStatus("Starting");
   setPlayingId(id);
   setProgress(0, 0);
 
   const controller = startAudioPlayer({
     audioPath,
+    id,
     playerPath,
 
     onProgress: (position, duration) => {
@@ -141,6 +148,7 @@ function play(id: string, audioPath: string, playerPath: string, callbacks?: Pla
 
 function stop() {
   if (!activeController) {
+    stopActivePlayer();
     if (playbackStatus !== "Stopped") {
       setPlaybackStatus("Stopped");
     }
@@ -149,6 +157,26 @@ function stop() {
   }
 
   activeController.stop();
+}
+
+// 本进程没在放，但后台(上一个命令进程遗留)仍在播时，恢复状态让 Toast 重新亮起。
+// 新进程和那个脱离的播放进程之间没有通道：进度恒为 0，只支持 Stop。
+function restoreFromBackground() {
+  if (activeController) {
+    return;
+  }
+  const info = getActivePlayer();
+  if (!info) {
+    return;
+  }
+  if (playingId === info.id && playbackStatus === "Playing") {
+    return;
+  }
+  playingId = info.id;
+  playbackStatus = "Playing";
+  positionSeconds = 0;
+  durationSeconds = 0;
+  emit();
 }
 
 function pause() {
@@ -178,6 +206,11 @@ export function cleanupAudioPlayer() {
 
 export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
   const current = useSyncExternalStore(subscribe, getSnapshot);
+
+  // 挂载时若后台仍有播放，恢复 Toast(见 restoreFromBackground 的降级说明)。
+  useEffect(() => {
+    restoreFromBackground();
+  }, []);
 
   const playTrack = useCallback(
     (id: string, audioPath: string, callbacks?: PlaybackCallbacks) => {
