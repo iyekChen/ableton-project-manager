@@ -10,6 +10,7 @@ import {
   showToast,
   Toast,
   trash,
+  useNavigation,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { getSettings } from "./settings";
@@ -46,6 +47,7 @@ function formatSize(bytes: number): string {
 }
 
 export function Bounces(props: { projectName: string; projectPath: string }) {
+  const { pop } = useNavigation();
   const [bounces, setBounces] = useState<Bounce[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useSortOption(BOUNCES_SORT_STORAGE_KEY, BOUNCES_SORT_OPTIONS, "created-desc");
@@ -131,6 +133,14 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
                   </ActionPanel.Section>
                   <ActionPanel.Section>
                     <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+                  </ActionPanel.Section>
+                  <ActionPanel.Section>
+                    <Action
+                      title={t.backToProjects}
+                      icon={Icon.ArrowLeftCircle}
+                      shortcut={{ modifiers: ["opt"], key: "return" }}
+                      onAction={pop}
+                    />
                   </ActionPanel.Section>
                 </ActionPanel>
               }

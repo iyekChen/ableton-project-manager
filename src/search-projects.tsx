@@ -440,6 +440,7 @@ export default function Command() {
               <Action.Push
                 title={t.editNote}
                 icon={Icon.Pencil}
+                shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
                 target={<EditNote project={item} onSaved={reloadProjects} />}
               />
               <Action

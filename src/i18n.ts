@@ -23,6 +23,7 @@ type TranslationKeys = {
   showInFinder: string;
   openInDefaultApp: string;
   browseCollections: string;
+  backToProjects: string;
   open: string;
   tracklist: string;
   unsorted: string;
@@ -140,6 +141,7 @@ const translations: Record<Language, TranslationKeys> = {
     showInFinder: "Show in Finder",
     openInDefaultApp: "Open in Default App",
     browseCollections: "Browse Collections",
+    backToProjects: "Back to Search Projects",
     open: "Open",
     tracklist: "Tracklist",
     unsorted: "Unsorted",
@@ -257,6 +259,7 @@ const translations: Record<Language, TranslationKeys> = {
     showInFinder: "在 Finder 中显示",
     openInDefaultApp: "用默认 App 打开",
     browseCollections: "浏览合集",
+    backToProjects: "返回 Search Projects",
     open: "打开",
     tracklist: "曲目列表",
     unsorted: "未排序",

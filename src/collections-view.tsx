@@ -39,6 +39,7 @@ import { getPinnedCollections, movePinnedCollection, togglePinnedCollection } fr
 import { collectionTaxonomy } from "./taxonomies";
 import { getAllProjectMetadata } from "./project-metadata";
 import { EditInfo } from "./components/project/edit-info";
+import { EditNote } from "./components/project/edit-note";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
 
@@ -53,7 +54,7 @@ const SEEK_STEP_SECONDS = 5;
 // 槽位 1→5：最冷 → 次冷 → 中性 → 次暖 → 最暖。
 const ENERGY_SLOT_COLORS: Color[] = [Color.Blue, Color.Green, Color.Yellow, Color.Orange, Color.Red];
 
-function formatDuration(totalSeconds: number): string {
+function formatDuration(totalSeconds: number, minuteDigits = 1): string {
   const s = Math.round(totalSeconds);
   const hours = Math.floor(s / 3600);
   const minutes = Math.floor((s % 3600) / 60);
@@ -61,7 +62,7 @@ function formatDuration(totalSeconds: number): string {
   if (hours > 0) {
     return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return `${String(minutes).padStart(minuteDigits, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 // 返回 5 个圆点 accessory：槽位 i < level 的点亮（显示该槽位的冷→暖色），其余留空（无色）。
@@ -125,6 +126,7 @@ export function CollectionList({
   collections: Collection[];
   stages: TaxonomyOption[];
 }) {
+  const { pop } = useNavigation();
   const [collections, setCollections] = useState<Collection[]>(initialCollections);
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
 
@@ -250,6 +252,14 @@ export function CollectionList({
                 onAction={() => deleteCollection(c)}
               />
             </ActionPanel.Section>
+            <ActionPanel.Section>
+              <Action
+                title={t.backToProjects}
+                icon={Icon.ArrowLeftCircle}
+                shortcut={{ modifiers: ["ctrl"], key: "return" }}
+                onAction={pop}
+              />
+            </ActionPanel.Section>
           </ActionPanel>
         }
       />
@@ -289,6 +299,7 @@ function CollectionPanel({
   projects: Project[];
   stages: TaxonomyOption[];
 }) {
+  const { pop } = useNavigation();
   const [projectList, setProjectList] = useState<Project[]>(projects);
   const members = projectList.filter((p) => p.collectionIds.includes(collection.id));
   const [map, setMap] = useState<TrackMap>({});
@@ -479,6 +490,12 @@ function CollectionPanel({
     );
   }
 
+  // Edit Note 存盘后：重读该曲目的 Note 正文，让详情面板即时回显。
+  function reloadNote(project: Project) {
+    const notes = stripFrontmatter(readDocFile(project, "notes"));
+    setProjectList((prev) => prev.map((p) => (p.id === project.id ? { ...p, notes } : p)));
+  }
+
   // 从 tracklist 移出时，连带清掉该曲目在本 collection 的角色。
   async function removeFromTracklist(id: string) {
     await apply(removeNumber(map, id));
@@ -531,6 +548,21 @@ function CollectionPanel({
     </ActionPanel.Section>
   );
 
+  // 返回 Search Projects（跨层直接回根视图）。
+  const renderBackToProjects = () => (
+    <ActionPanel.Section>
+      <Action
+        title={t.backToProjects}
+        icon={Icon.ArrowLeftCircle}
+        shortcut={{ modifiers: ["ctrl"], key: "return" }}
+        onAction={() => {
+          pop();
+          setTimeout(() => pop(), 0);
+        }}
+      />
+    </ActionPanel.Section>
+  );
+
   const tracked = members
     .filter((p) => map[p.id] !== undefined)
     .sort((a, b) => map[a.id] - map[b.id] || a.title.localeCompare(b.title));
@@ -557,6 +589,11 @@ function CollectionPanel({
   // 总时长：所有已排序曲目（含 Draft/Demo）。
   const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
   const tracklistTitle = totalSeconds > 0 ? `${t.tracklistDuration} ${formatDuration(totalSeconds)}` : t.tracklist;
+
+  // 分钟位宽：本合集任一曲目 ≥ 10 分钟则补两位，保证时长列对齐。
+  const longestTrackSeconds = members.reduce((max, p) => Math.max(max, infos[p.id]?.duration ?? 0), 0);
+  const durationMinuteDigits = longestTrackSeconds >= 600 ? 2 : 1;
+  const durationPlaceholder = durationMinuteDigits === 2 ? "--:--" : "-:--";
 
   const matchesStage = (p: Project) => selectedStage === "all" || p.stageId === selectedStage;
 
@@ -587,7 +624,7 @@ function CollectionPanel({
             )}
             <List.Item.Detail.Metadata.Label
               title="Duration"
-              text={info?.duration != null ? formatDuration(info.duration) : ""}
+              text={info?.duration != null ? formatDuration(info.duration, durationMinuteDigits) : ""}
             />
             <List.Item.Detail.Metadata.Label title="Role" text={role ?? ""} />
             <List.Item.Detail.Metadata.Label title="BPM" text={info?.bpm != null ? String(info.bpm) : ""} />
@@ -656,7 +693,12 @@ function CollectionPanel({
                       ]
                     : []),
                   { text: `Track ${String(num).padStart(2, "0")}` },
-                  { text: info?.duration != null ? formatDuration(info.duration) : "--:--" },
+                  {
+                    text:
+                      info?.duration != null
+                        ? formatDuration(info.duration, durationMinuteDigits)
+                        : durationPlaceholder,
+                  },
                   ...(ENERGY_ENABLED ? energyAccessories(level) : []),
                 ];
                 return (
@@ -702,7 +744,13 @@ function CollectionPanel({
                               }
                             />
                           }
-                        />{" "}
+                        />
+                        <Action.Push
+                          title={t.editNote}
+                          icon={Icon.Pencil}
+                          shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
+                          target={<EditNote project={p} onSaved={() => reloadNote(p)} />}
+                        />
                         <Action
                           title={t.removeFromTracklist}
                           icon={Icon.MinusCircle}
@@ -737,6 +785,7 @@ function CollectionPanel({
                         </ActionPanel.Section>
                         {renderDocActions(p)}
                         {renderViewToggle()}
+                        {renderBackToProjects()}
                       </ActionPanel>
                     }
                   />
