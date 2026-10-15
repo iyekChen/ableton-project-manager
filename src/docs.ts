@@ -131,18 +131,38 @@ export function writeDocBody(project: { title: string; folderPath: string }, kin
   fs.writeFileSync(file, frontmatter + body, "utf8");
 }
 
+export type DocRenameResult = { conflicts: DocKind[]; failures: DocKind[] };
+
 // 项目改名时，把自定义文件夹里的文档文件一并改名；默认存项目文件夹的随文件夹改名，无需处理。
-export function renameDocFiles(oldTitle: string, newTitle: string): void {
-  if (oldTitle === newTitle) return;
+// 用 link + unlink 做"原子不覆盖"改名：目标已存在时绝不覆盖（抛 EEXIST），避免丢失他人文档。
+// 返回每类文档的冲突/失败，交由调用方如实提示用户。
+export function renameDocFiles(oldTitle: string, newTitle: string): DocRenameResult {
+  const result: DocRenameResult = { conflicts: [], failures: [] };
+  if (oldTitle === newTitle) return result;
+
   (["notes", "lyrics"] as DocKind[]).forEach((kind) => {
     if (!getDocFolder(kind)) return;
     const oldPath = docFilePath({ title: oldTitle, folderPath: "" }, kind);
     const newPath = docFilePath({ title: newTitle, folderPath: "" }, kind);
+    if (!fs.existsSync(oldPath)) return; // 没有源文件，无需改名
+
     try {
-      // 目标已存在（可能是别的项目的文档）就不改名，避免静默覆盖造成数据丢失。
-      if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) fs.renameSync(oldPath, newPath);
+      fs.linkSync(oldPath, newPath); // 原子不覆盖：目标存在则抛 EEXIST
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === "EEXIST") {
+        result.conflicts.push(kind);
+      } else {
+        result.failures.push(kind);
+      }
+      return;
+    }
+
+    try {
+      fs.unlinkSync(oldPath); // 删除旧链接，完成改名
     } catch {
-      // 忽略改名失败（文件不存在等）。
+      // 新文件已就位、旧文件删除失败：内容未丢，留下旧副本即可。
     }
   });
+
+  return result;
 }

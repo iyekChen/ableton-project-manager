@@ -67,6 +67,7 @@ type TranslationKeys = {
   invalidName: string;
   nameExists: string;
   renameFailed: string;
+  docRenameSkipped: string;
   renameConfirmTitle: string;
   renameConfirmMessage: string;
   rename: string;
@@ -190,6 +191,7 @@ const translations: Record<Language, TranslationKeys> = {
     invalidName: "Name can't contain / or :",
     nameExists: "A project with that name already exists",
     renameFailed: "Rename failed",
+    docRenameSkipped: "Renamed — but a doc wasn't moved",
     renameConfirmTitle: "Rename project?",
     renameConfirmMessage:
       "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
@@ -313,6 +315,7 @@ const translations: Record<Language, TranslationKeys> = {
     invalidName: "名称不能包含 / 或 :",
     nameExists: "已存在同名项目",
     renameFailed: "重命名失败",
+    docRenameSkipped: "已重命名，但有文档未同步改名",
     renameConfirmTitle: "重命名项目?",
     renameConfirmMessage: "请确认该项目已在 Ableton Live 中关闭。开着时重命名可能让工程与文件失联。",
     rename: "重命名",

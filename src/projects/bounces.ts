@@ -65,14 +65,15 @@ export function countBounces(folderPath: string): number {
   }
 }
 
-/** 返回某目录下创建时间最新的 bounce 路径，没有则返回 null。 */
+/** 返回某目录下最近修改的 bounce 路径，没有则返回 null。
+ *  用 mtime 而非 birthtime：重新导出覆盖同名文件时，修改时间才会更新。 */
 export function findLatestBounce(folderPath: string): string | null {
   let latestPath: string | null = null;
-  let latestCreatedAt = Number.NEGATIVE_INFINITY;
+  let latestModifiedAt = Number.NEGATIVE_INFINITY;
 
   for (const bounce of listBounces(folderPath)) {
-    if (bounce.createdAt > latestCreatedAt) {
-      latestCreatedAt = bounce.createdAt;
+    if (bounce.modifiedAt > latestModifiedAt) {
+      latestModifiedAt = bounce.modifiedAt;
       latestPath = bounce.path;
     }
   }

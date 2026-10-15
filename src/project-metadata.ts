@@ -59,6 +59,16 @@ export async function getAllProjectMetadata(): Promise<ProjectMetadataStore> {
   return getStore();
 }
 
+// 删除某项目的元数据（移到废纸篓时清理，避免重建同名项目复活旧标签）。
+export async function deleteProjectMetadata(projectId: string): Promise<void> {
+  const store = await getStore();
+  if (!(projectId in store)) {
+    return;
+  }
+  delete store[projectId];
+  await saveStore(store);
+}
+
 // 项目文件夹改名后,把它的 metadata 从旧名字迁到新名字,避免丢失。
 export async function renameProjectMetadata(oldId: string, newId: string): Promise<void> {
   if (oldId === newId) {

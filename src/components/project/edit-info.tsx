@@ -17,7 +17,7 @@ import path from "node:path";
 import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "../../project-metadata";
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
-import { renameDocFiles } from "../../docs";
+import { renameDocFiles, type DocRenameResult } from "../../docs";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "../../taxonomies";
 import type { Project } from "../../projects/types";
 
@@ -78,6 +78,7 @@ export function EditInfo({
     const nameChanged = trimmedName !== "" && trimmedName !== project.title;
 
     let targetId = project.id;
+    let docRenameResult: DocRenameResult | null = null;
 
     if (nameChanged) {
       if (trimmedName.includes("/") || trimmedName.includes(":")) {
@@ -115,7 +116,7 @@ export function EditInfo({
       }
 
       await renameProjectMetadata(project.id, trimmedName);
-      renameDocFiles(project.title, trimmedName);
+      docRenameResult = renameDocFiles(project.title, trimmedName);
       targetId = trimmedName;
     }
 
@@ -136,10 +137,14 @@ export function EditInfo({
     }
 
     onSaved();
-    await showToast({
-      style: Toast.Style.Success,
-      title: t.infoUpdated,
-    });
+
+    if (docRenameResult && (docRenameResult.conflicts.length > 0 || docRenameResult.failures.length > 0)) {
+      // 文档改名有冲突/失败：如实告知，而不是误报"已更新"。
+      const kinds = [...docRenameResult.conflicts, ...docRenameResult.failures].join(", ");
+      await showToast({ style: Toast.Style.Failure, title: t.docRenameSkipped, message: kinds });
+    } else {
+      await showToast({ style: Toast.Style.Success, title: t.infoUpdated });
+    }
 
     pop();
   }

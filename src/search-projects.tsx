@@ -21,7 +21,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { getSettings } from "./settings";
-import { getAllProjectMetadata, movePinnedProject, setProjectPinned } from "./project-metadata";
+import { deleteProjectMetadata, getAllProjectMetadata, movePinnedProject, setProjectPinned } from "./project-metadata";
+import { removeProjectFromAllOrders } from "./collection-order";
+import { removeProjectFromAllRoles } from "./collection-roles";
 import { getTranslations } from "./i18n";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "./sorting";
 import type { SortOption } from "./sorting";
@@ -273,6 +275,11 @@ export default function Command() {
     });
     if (!confirmed) return;
     await trash(project.folderPath);
+    // 清理该项目的残留数据：元数据 + 各合集里的轨号/角色映射。
+    // 项目 id = 文件夹名，不清会在重建同名项目时复活（从废纸篓恢复也不会带回标签）。
+    await deleteProjectMetadata(project.id);
+    await removeProjectFromAllOrders(project.id);
+    await removeProjectFromAllRoles(project.id);
     await reloadProjects();
     await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: project.title });
   };

@@ -32,6 +32,20 @@ export async function removeRoleMap(collectionId: string): Promise<void> {
   await LocalStorage.removeItem(KEY_PREFIX + collectionId);
 }
 
+/** 从所有 collection 的角色映射里移除某项目（项目被删时清理） */
+export async function removeProjectFromAllRoles(projectId: string): Promise<void> {
+  const all = await LocalStorage.allItems();
+  for (const key of Object.keys(all)) {
+    if (!key.startsWith(KEY_PREFIX)) continue;
+    const collectionId = key.slice(KEY_PREFIX.length);
+    const map = await getRoleMap(collectionId);
+    if (projectId in map) {
+      delete map[projectId];
+      await setRoleMap(collectionId, map);
+    }
+  }
+}
+
 /** 给某项目设角色;返回新映射 */
 export function assignRole(map: RoleMap, id: string, role: string): RoleMap {
   return { ...map, [id]: role };

@@ -32,6 +32,20 @@ export async function removeTrackMap(collectionId: string): Promise<void> {
   await LocalStorage.removeItem(KEY_PREFIX + collectionId);
 }
 
+/** 从所有 collection 的轨号映射里移除某项目（项目被删时清理） */
+export async function removeProjectFromAllOrders(projectId: string): Promise<void> {
+  const all = await LocalStorage.allItems();
+  for (const key of Object.keys(all)) {
+    if (!key.startsWith(KEY_PREFIX)) continue;
+    const collectionId = key.slice(KEY_PREFIX.length);
+    const map = await getTrackMap(collectionId);
+    if (projectId in map) {
+      delete map[projectId];
+      await setTrackMap(collectionId, map);
+    }
+  }
+}
+
 /** 给某项目设轨号(n>=1);返回新映射 */
 export function assignNumber(map: TrackMap, id: string, n: number): TrackMap {
   return { ...map, [id]: Math.floor(n) };
