@@ -29,18 +29,24 @@ import {
   getTrackMap,
   nextNumber,
   removeNumber,
+  removeTrackMap,
   setTrackMap,
   swapNumbers,
 } from "./collection-order";
-import { RoleMap, assignRole, clearRole, getRoleMap, setRoleMap } from "./collection-roles";
+import { RoleMap, assignRole, clearRole, getRoleMap, removeRoleMap, setRoleMap } from "./collection-roles";
 import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
 import { ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
-import { getPinnedCollections, movePinnedCollection, togglePinnedCollection } from "./collection-pins";
+import {
+  getPinnedCollections,
+  movePinnedCollection,
+  removePinnedCollection,
+  togglePinnedCollection,
+} from "./collection-pins";
 import { collectionTaxonomy } from "./taxonomies";
-import { getAllProjectMetadata } from "./project-metadata";
+import { getAllProjectMetadata, saveProjectMetadata } from "./project-metadata";
 import { EditInfo } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
 
@@ -178,6 +184,23 @@ export function CollectionList({
     if (!confirmed) return;
     const current = await collectionTaxonomy.get();
     await collectionTaxonomy.save(current.filter((o) => o.id !== c.id));
+
+    // 清理与该合集 id 关联的残留数据，避免重建同名合集（slug 得出同 id）时旧状态复活。
+    const store = await getAllProjectMetadata();
+    await Promise.all(
+      Object.entries(store)
+        .filter(([, meta]) => (meta.collectionIds ?? []).includes(c.id))
+        .map(([projectId, meta]) =>
+          saveProjectMetadata(projectId, {
+            ...meta,
+            collectionIds: (meta.collectionIds ?? []).filter((id) => id !== c.id),
+          }),
+        ),
+    );
+    await removeTrackMap(c.id);
+    await removeRoleMap(c.id);
+    setPinnedIds(await removePinnedCollection(c.id));
+
     await reloadCollections();
     await showToast({ style: Toast.Style.Success, title: t.deleted });
   }

@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from "child_process";
+import { spawn, execFileSync, type ChildProcess } from "child_process";
 import { environment } from "@raycast/api";
 import fs from "node:fs";
 import path from "node:path";
@@ -58,6 +58,20 @@ function clearPidFile(pid?: number): void {
   }
 }
 
+// 校验某 pid 当前确实是我们的播放器进程：PID 可能被系统复用，
+// 发信号前确认进程身份（命令行含播放器二进制名），避免误杀无关进程。
+function isOurPlayerProcess(pid: number): boolean {
+  try {
+    const command = execFileSync("/bin/ps", ["-p", String(pid), "-o", "command="], {
+      encoding: "utf8",
+      timeout: 1000,
+    });
+    return command.includes("asm-audio-player");
+  } catch {
+    return false;
+  }
+}
+
 // 停掉当前后台播放(若有)。返回是否确有在跑的进程被通知停止。
 export function stopActivePlayer(): boolean {
   const info = readPidFile();
@@ -68,6 +82,11 @@ export function stopActivePlayer(): boolean {
     process.kill(info.pid, 0); // 探活
   } catch {
     clearPidFile(); // 僵尸记录，清掉
+    return false;
+  }
+  // PID 可能被复用，确认是我们的播放器才发信号。
+  if (!isOurPlayerProcess(info.pid)) {
+    clearPidFile();
     return false;
   }
   try {

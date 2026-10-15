@@ -26,6 +26,15 @@ export async function togglePinnedCollection(id: string): Promise<string[]> {
   return next;
 }
 
+// 从置顶列表移除某 collection（合集被删时清理），返回更新后的列表。
+export async function removePinnedCollection(id: string): Promise<string[]> {
+  const current = await getPinnedCollections();
+  if (!current.includes(id)) return current;
+  const next = current.filter((x) => x !== id);
+  await setPinnedCollections(next);
+  return next;
+}
+
 // 在置顶列表内上/下移一位（到边界则不动）。
 export async function movePinnedCollection(id: string, direction: "up" | "down"): Promise<string[]> {
   const current = await getPinnedCollections();

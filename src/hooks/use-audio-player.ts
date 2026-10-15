@@ -262,16 +262,6 @@ function restart() {
   commandRestart();
 }
 
-// 供根视图在命令关闭（根组件卸载）时调用：彻底停止并清理进程。
-// 子视图（push / pop）不应调用它，否则会打断跨视图保留的播放。
-export function cleanupAudioPlayer() {
-  activeSessionId += 1;
-  stopStatusPoller();
-  const controller = activeController;
-  activeController = null;
-  controller?.cleanup();
-}
-
 export function useAudioPlayer({ playerPath }: UseAudioPlayerOptions) {
   const current = useSyncExternalStore(subscribe, getSnapshot);
 

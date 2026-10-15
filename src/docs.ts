@@ -139,7 +139,8 @@ export function renameDocFiles(oldTitle: string, newTitle: string): void {
     const oldPath = docFilePath({ title: oldTitle, folderPath: "" }, kind);
     const newPath = docFilePath({ title: newTitle, folderPath: "" }, kind);
     try {
-      if (fs.existsSync(oldPath)) fs.renameSync(oldPath, newPath);
+      // 目标已存在（可能是别的项目的文档）就不改名，避免静默覆盖造成数据丢失。
+      if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) fs.renameSync(oldPath, newPath);
     } catch {
       // 忽略改名失败（文件不存在等）。
     }

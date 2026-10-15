@@ -27,6 +27,11 @@ export async function setRoleMap(collectionId: string, map: RoleMap): Promise<vo
   await LocalStorage.setItem(KEY_PREFIX + collectionId, JSON.stringify(map));
 }
 
+/** 删除某个 collection 的角色映射（合集被删时清理） */
+export async function removeRoleMap(collectionId: string): Promise<void> {
+  await LocalStorage.removeItem(KEY_PREFIX + collectionId);
+}
+
 /** 给某项目设角色;返回新映射 */
 export function assignRole(map: RoleMap, id: string, role: string): RoleMap {
   return { ...map, [id]: role };

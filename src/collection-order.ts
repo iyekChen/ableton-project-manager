@@ -27,6 +27,11 @@ export async function setTrackMap(collectionId: string, map: TrackMap): Promise<
   await LocalStorage.setItem(KEY_PREFIX + collectionId, JSON.stringify(map));
 }
 
+/** 删除某个 collection 的轨号映射（合集被删时清理） */
+export async function removeTrackMap(collectionId: string): Promise<void> {
+  await LocalStorage.removeItem(KEY_PREFIX + collectionId);
+}
+
 /** 给某项目设轨号(n>=1);返回新映射 */
 export function assignNumber(map: TrackMap, id: string, n: number): TrackMap {
   return { ...map, [id]: Math.floor(n) };
