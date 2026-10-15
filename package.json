@@ -167,13 +167,6 @@
 			"description": "Create and manage Stages, Genres, and Track Roles",
 			"mode": "view",
 			"subtitle": "Ableton Session Manager"
-		},
-		{
-			"name": "test",
-			"title": "Test",
-			"description": "Test Raycast API features",
-			"mode": "view",
-			"subtitle": "Ableton Session Manager"
 		}
 	],
 	"tools": [],
