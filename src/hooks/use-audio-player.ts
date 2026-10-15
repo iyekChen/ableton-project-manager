@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { startAudioPlayer, stopActivePlayer, getActivePlayer } from "../audio-player";
+import {
+  startAudioPlayer,
+  stopActivePlayer,
+  getActivePlayer,
+  commandPause,
+  commandResume,
+  commandSeek,
+  commandRestart,
+} from "../audio-player";
 import type { AudioPlayerController, PlaybackStatus } from "../audio-player";
 
 interface UseAudioPlayerOptions {
@@ -160,7 +168,7 @@ function stop() {
 }
 
 // 本进程没在放，但后台(上一个命令进程遗留)仍在播时，恢复状态让 Toast 重新亮起。
-// 新进程和那个脱离的播放进程之间没有通道：进度恒为 0，只支持 Stop。
+// 暂停 / 快退快进 / Restart / Stop 经命令文件跨进程生效；仅实时进度暂缺(恒为 0，B2 再补)。
 function restoreFromBackground() {
   if (activeController) {
     return;
@@ -180,19 +188,26 @@ function restoreFromBackground() {
 }
 
 function pause() {
-  activeController?.pause();
+  // 命令写入文件，后台播放进程轮询执行：切回命令后也能暂停。
+  commandPause();
+  if (playbackStatus === "Playing") {
+    setPlaybackStatus("Paused");
+  }
 }
 
 function resume() {
-  activeController?.resume();
+  commandResume();
+  if (playbackStatus === "Paused") {
+    setPlaybackStatus("Playing");
+  }
 }
 
 function seek(deltaSeconds: number) {
-  activeController?.seek(deltaSeconds);
+  commandSeek(deltaSeconds);
 }
 
 function restart() {
-  activeController?.restart();
+  commandRestart();
 }
 
 // 供根视图在命令关闭（根组件卸载）时调用：彻底停止并清理进程。

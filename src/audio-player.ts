@@ -7,6 +7,10 @@ import path from "node:path";
 // 其他进程(重开命令 / 菜单栏)仍能据此找到并停止后台播放。
 const PID_FILE = path.join(environment.supportPath, "audio-player.pid");
 
+// 跨进程命令通道：任何进程向其追加命令行(PAUSE/RESUME/SEEK/RESTART)，
+// 后台播放进程轮询读取 → 命令进程被回收后，切回来的命令仍能遥控播放。
+const CMD_FILE = path.join(environment.supportPath, "audio-player.cmd");
+
 function readPidFile(): { pid: number; id: string; startedAt: number } | null {
   try {
     const parsed = JSON.parse(fs.readFileSync(PID_FILE, "utf8"));
@@ -84,10 +88,6 @@ export interface AudioPlayerOptions {
 
 export interface AudioPlayerController {
   stop: () => void;
-  pause: () => void;
-  resume: () => void;
-  seek: (deltaSeconds: number) => void;
-  restart: () => void;
   cleanup: () => void;
 }
 
@@ -98,7 +98,7 @@ export interface AudioPlayerController {
 const PLAYER_PROTOCOL = {
   /** 子进程通过 stdout 输出，表示音频已开始播放。 */
   ready: "READY",
-  /** 通过 stdin 写给子进程，请求淡出并停止播放。 */
+  /** 经命令文件收到，请求淡出并停止播放(实际停止统一用 SIGTERM)。 */
   stop: "STOP",
   /** 暂停 / 续播。 */
   pause: "PAUSE",
@@ -110,6 +110,42 @@ const PLAYER_PROTOCOL = {
   /** 子进程通过 stdout 输出播放进度，其后跟 "<当前秒> <总秒>"，如 "POS 12.3 210.5"。 */
   posPrefix: "POS ",
 } as const;
+
+// 开新播放前清空命令文件，丢弃上一轮播放的残留命令。
+function resetCommandFile(): void {
+  try {
+    fs.writeFileSync(CMD_FILE, "");
+  } catch {
+    // 忽略
+  }
+}
+
+// 向命令文件追加一行命令。本命令进程与切回来的命令进程共用这一通道，
+// 后台播放进程轮询读取后执行。
+function appendCommand(line: string): void {
+  try {
+    fs.appendFileSync(CMD_FILE, `${line}\n`);
+  } catch {
+    // 忽略
+  }
+}
+
+// 跨进程遥控：无论本进程是否持有播放器句柄，都能通过命令文件控制后台播放。
+export function commandPause(): void {
+  appendCommand(PLAYER_PROTOCOL.pause);
+}
+
+export function commandResume(): void {
+  appendCommand(PLAYER_PROTOCOL.resume);
+}
+
+export function commandSeek(deltaSeconds: number): void {
+  appendCommand(`${PLAYER_PROTOCOL.seekPrefix}${deltaSeconds}`);
+}
+
+export function commandRestart(): void {
+  appendCommand(PLAYER_PROTOCOL.restart);
+}
 
 let nextInstanceId = 1;
 
@@ -149,8 +185,10 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
       return;
     }
 
+    resetCommandFile();
+
     try {
-      child = spawn(playerPath, [audioPath], {
+      child = spawn(playerPath, [audioPath, CMD_FILE], {
         stdio: ["pipe", "pipe", "pipe"],
         detached: true, // 脱离父进程会话：命令被回收后仍继续播放
       });
@@ -262,38 +300,7 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
 
     onStatusChange("Stopping");
 
-    player.stdin?.write(`${PLAYER_PROTOCOL.stop}\n`);
-  }
-
-  // 给正在播放的子进程发一行命令；进程不在/已退出则忽略。
-  function sendCommand(line: string) {
-    const player = child;
-    if (!player || player.exitCode !== null || player.signalCode !== null) {
-      return;
-    }
-    player.stdin?.write(`${line}\n`);
-  }
-
-  function pause() {
-    sendCommand(PLAYER_PROTOCOL.pause);
-    if (active) {
-      onStatusChange("Paused");
-    }
-  }
-
-  function resume() {
-    sendCommand(PLAYER_PROTOCOL.resume);
-    if (active) {
-      onStatusChange("Playing");
-    }
-  }
-
-  function seek(deltaSeconds: number) {
-    sendCommand(`${PLAYER_PROTOCOL.seekPrefix}${deltaSeconds}`);
-  }
-
-  function restart() {
-    sendCommand(PLAYER_PROTOCOL.restart);
+    player.kill("SIGTERM"); // Swift 收到后淡出退出
   }
 
   function cleanup() {
@@ -311,7 +318,7 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
     child = null;
 
     if (player && player.exitCode === null && player.signalCode === null) {
-      player.stdin?.write(`${PLAYER_PROTOCOL.stop}\n`);
+      player.kill("SIGTERM"); // Swift 收到后淡出退出
 
       const forceKillTimer = setTimeout(() => {
         if (player.exitCode === null && player.signalCode === null) {
@@ -329,10 +336,6 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
 
   return {
     stop,
-    pause,
-    resume,
-    seek,
-    restart,
     cleanup,
   };
 }

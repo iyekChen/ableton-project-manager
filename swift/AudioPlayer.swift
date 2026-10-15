@@ -7,10 +7,10 @@ import Foundation
 // 与 src/audio-player.ts 约定的进程间通信协议。
 // 这是跨语言契约：修改任一端的字符串时，另一端必须同步更新。
 let readyMessage = "READY"  // 经 stdout 输出 = 已开始播放
-let stopCommand = "STOP"    // 经 stdin 收到 = 请求淡出停止
-let pauseCommand = "PAUSE"   // 经 stdin 收到 = 暂停
-let resumeCommand = "RESUME" // 经 stdin 收到 = 续播
-let restartCommand = "SEEK0" // 经 stdin 收到 = 跳回开头
+let stopCommand = "STOP"    // 经命令文件收到 = 请求淡出停止
+let pauseCommand = "PAUSE"   // 经命令文件收到 = 暂停
+let resumeCommand = "RESUME" // 经命令文件收到 = 续播
+let restartCommand = "SEEK0" // 经命令文件收到 = 跳回开头
 let seekCommandPrefix = "SEEK " // 其后跟秒数（可正负），如 "SEEK 5" / "SEEK -5" = 相对跳转
 let positionPrefix = "POS " // 经 stdout 输出，其后跟 "<当前秒> <总秒>" = 播放进度
 
@@ -272,40 +272,57 @@ do {
   }
   terminationSource.resume()
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            while let line = readLine() {
-                let command = line.trimmingCharacters(in: .whitespacesAndNewlines)
-                if command == stopCommand {
-                    DispatchQueue.main.async {
-                        stopPlayback()
-                    }
-                    return
-                } else if command == pauseCommand {
-                    DispatchQueue.main.async {
-                        player.pause()
-                    }
-                } else if command == resumeCommand {
-                    DispatchQueue.main.async {
-                        player.play()
-                    }
-                } else if command == restartCommand {
-                    DispatchQueue.main.async {
-                        player.currentTime = 0
-                    }
-                } else if command.hasPrefix(seekCommandPrefix) {
-                    let arg = String(command.dropFirst(seekCommandPrefix.count)).trimmingCharacters(in: .whitespaces)
-                    if let delta = Double(arg) {
-                        DispatchQueue.main.async {
-                            let target = player.currentTime + delta
-                            player.currentTime = max(0, min(player.duration, target))
-                        }
-                    }
-                }
-                // 未知命令忽略
-            }
-            // stdin 关闭(父进程被回收)不再停止播放：后台继续放，
-            // 交由自然播完 / Stop / 看门狗(⌘Q) 来结束。
+  // 命令文件：任何进程(本命令 / 切回来的命令)向其追加命令行，
+  // 播放进程轮询读取 → pause / resume / seek / restart 跨进程生效。
+  // 不再从 stdin 收命令：命令进程被回收后 stdin 失效，而命令文件在磁盘上长存。
+  if arguments.count >= 3 {
+    let commandURL = URL(fileURLWithPath: arguments[2])
+    var commandOffset: UInt64 = 0
+
+    func handleCommand(_ raw: String) {
+      let command = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+      if command.isEmpty { return }
+      if command == stopCommand {
+        DispatchQueue.main.async { stopPlayback() }
+      } else if command == pauseCommand {
+        DispatchQueue.main.async { player.pause() }
+      } else if command == resumeCommand {
+        DispatchQueue.main.async { player.play() }
+      } else if command == restartCommand {
+        DispatchQueue.main.async { player.currentTime = 0 }
+      } else if command.hasPrefix(seekCommandPrefix) {
+        let arg = String(command.dropFirst(seekCommandPrefix.count)).trimmingCharacters(in: .whitespaces)
+        if let delta = Double(arg) {
+          DispatchQueue.main.async {
+            let target = player.currentTime + delta
+            player.currentTime = max(0, min(player.duration, target))
+          }
         }
+      }
+      // 未知命令忽略
+    }
+
+    let commandTimer = Timer(timeInterval: 0.15, repeats: true) { _ in
+      guard let handle = try? FileHandle(forReadingFrom: commandURL) else { return }
+      defer { try? handle.close() }
+      do {
+        try handle.seek(toOffset: commandOffset)
+      } catch {
+        return
+      }
+      let data = handle.readDataToEndOfFile()
+      if data.isEmpty { return }
+      // 只处理到最后一个换行为止，残缺行留到下一轮。
+      guard let text = String(data: data, encoding: .utf8),
+            let lastNewline = text.lastIndex(of: "\n") else { return }
+      let consumed = text[...lastNewline]
+      commandOffset += UInt64(consumed.utf8.count)
+      for line in consumed.split(separator: "\n", omittingEmptySubsequences: true) {
+        handleCommand(String(line))
+      }
+    }
+    RunLoop.main.add(commandTimer, forMode: .common)
+  }
 
   RunLoop.main.run()
 } catch {
