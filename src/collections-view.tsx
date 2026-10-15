@@ -11,12 +11,15 @@ import {
   LocalStorage,
   Toast,
   confirmAlert,
+  environment,
   getPreferenceValues,
   open,
   showToast,
   useNavigation,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
+import fs from "node:fs";
+import path from "node:path";
 import { getTranslations } from "./i18n";
 import type { Project } from "./projects/types";
 import type { TaxonomyOption } from "./taxonomy";
@@ -502,6 +505,66 @@ function CollectionPanel({
     await applyRoles(clearRole(roles, id));
   }
 
+  // 按 Track Number 顺序（tracked 在前，unsorted 在后）把成员的 latest bounce 写成 .m3u，
+  // 交系统默认 App 打开。不支持无播放列表的播放器（如 QuickTime Player）——见 README。
+  async function queueCollection() {
+    const entries: { title: string; path: string; duration: number }[] = [];
+    for (const p of [...tracked, ...unsorted]) {
+      const bounce = findLatestBounce(resolveBouncesFolder(p.folderPath));
+      if (bounce) {
+        entries.push({ title: p.title, path: bounce, duration: infos[p.id]?.duration ?? -1 });
+      }
+    }
+
+    if (entries.length === 0) {
+      await showToast({ style: Toast.Style.Failure, title: t.noBounces });
+      return;
+    }
+
+    const lines = ["#EXTM3U"];
+    for (const e of entries) {
+      lines.push(`#EXTINF:${Math.round(e.duration)},${e.title}`);
+      lines.push(e.path);
+    }
+
+    const safeName = collection.name.replace(/[/:]/g, "-") || collection.id;
+    const playlistPath = path.join(environment.supportPath, `${safeName}.m3u`);
+
+    try {
+      fs.writeFileSync(playlistPath, lines.join("\n") + "\n");
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: t.queueFailed,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
+
+    await open(playlistPath);
+
+    const skipped = tracked.length + unsorted.length - entries.length;
+    await showToast({
+      style: Toast.Style.Success,
+      title: t.collectionQueued,
+      message:
+        skipped > 0
+          ? `${entries.length} ${t.tracksWord} · ${skipped} ${t.skippedNoBounce}`
+          : `${entries.length} ${t.tracksWord}`,
+    });
+  }
+
+  const renderQueueCollection = () => (
+    <ActionPanel.Section>
+      <Action
+        title={t.queueCollection}
+        icon={Icon.List}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "return" }}
+        onAction={queueCollection}
+      />
+    </ActionPanel.Section>
+  );
+
   // 角色 pill（设了才显示，放在 accessories 最左）。
   const rolePill = (p: Project): List.Item.Accessory[] => {
     const role = roles[p.id];
@@ -785,6 +848,7 @@ function CollectionPanel({
                         </ActionPanel.Section>
                         {renderDocActions(p)}
                         {renderViewToggle()}
+                        {renderQueueCollection()}
                         {renderBackToProjects()}
                       </ActionPanel>
                     }

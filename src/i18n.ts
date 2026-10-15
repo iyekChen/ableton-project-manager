@@ -98,6 +98,11 @@ type TranslationKeys = {
   setTrackRole: string;
   clearRole: string;
   tracklistDuration: string;
+  queueCollection: string;
+  collectionQueued: string;
+  queueFailed: string;
+  tracksWord: string;
+  skippedNoBounce: string;
   pausePlayback: string;
   resumePlayback: string;
   stopPlayback: string;
@@ -217,6 +222,11 @@ const translations: Record<Language, TranslationKeys> = {
     setTrackRole: "Set Track Role",
     clearRole: "Clear Role",
     tracklistDuration: "Tracklist Duration",
+    queueCollection: "Queue Collection in Player",
+    collectionQueued: "Collection Queued",
+    queueFailed: "Queue Failed",
+    tracksWord: "tracks",
+    skippedNoBounce: "skipped (no bounce)",
     pausePlayback: "Pause",
     resumePlayback: "Resume",
     stopPlayback: "Stop Playback",
@@ -334,6 +344,11 @@ const translations: Record<Language, TranslationKeys> = {
     setTrackRole: "设置曲目角色",
     clearRole: "清除角色",
     tracklistDuration: "曲目列表时长",
+    queueCollection: "把合集加入播放器队列",
+    collectionQueued: "合集已加入队列",
+    queueFailed: "加入队列失败",
+    tracksWord: "首",
+    skippedNoBounce: "无 bounce 已跳过",
     pausePlayback: "暂停",
     resumePlayback: "继续播放",
     stopPlayback: "停止播放",
