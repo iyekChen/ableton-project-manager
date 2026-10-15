@@ -1,4 +1,5 @@
 import Accelerate
+import AppKit
 import AVFoundation
 import Darwin
 import Foundation
@@ -213,6 +214,10 @@ guard arguments.count >= 2 else {
 let audioPath = arguments[1]
 let audioURL = URL(fileURLWithPath: audioPath)
 
+// 忽略 SIGPIPE：父进程(Raycast 命令)被回收后 stdout 管道断裂，
+// 写进度不再因 SIGPIPE 被杀，播放得以在后台继续。
+signal(SIGPIPE, SIG_IGN)
+
 fputs("PLAYER_START pid=\(getpid()) path=\(audioPath)\n", stderr)
 
 do {
@@ -251,6 +256,22 @@ do {
     }
   }
 
+  // 看门狗：Raycast 退出(⌘Q)后，脱离的播放进程随之淡出停止。
+  let watchdogTimer = Timer(timeInterval: 2.0, repeats: true) { _ in
+    if NSRunningApplication.runningApplications(withBundleIdentifier: "com.raycast.macos").isEmpty {
+      stopPlayback()
+    }
+  }
+  RunLoop.main.add(watchdogTimer, forMode: .common)
+
+  // 响应 SIGTERM：让其他进程(重开命令 / 菜单栏)能停掉这个后台播放。
+  signal(SIGTERM, SIG_IGN)
+  let terminationSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+  terminationSource.setEventHandler {
+    stopPlayback()
+  }
+  terminationSource.resume()
+
         DispatchQueue.global(qos: .userInitiated).async {
             while let line = readLine() {
                 let command = line.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -282,10 +303,8 @@ do {
                 }
                 // 未知命令忽略
             }
-            // 父进程关闭标准输入时，也执行淡出停止。
-            DispatchQueue.main.async {
-                stopPlayback()
-            }
+            // stdin 关闭(父进程被回收)不再停止播放：后台继续放，
+            // 交由自然播完 / Stop / 看门狗(⌘Q) 来结束。
         }
 
   RunLoop.main.run()
