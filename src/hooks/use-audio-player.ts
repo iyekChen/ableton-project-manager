@@ -7,6 +7,7 @@ import {
   commandResume,
   commandSeek,
   commandRestart,
+  readPlayerStatus,
 } from "../audio-player";
 import type { AudioPlayerController, PlaybackStatus } from "../audio-player";
 
@@ -29,6 +30,10 @@ let positionSeconds = 0;
 let durationSeconds = 0;
 let activeController: AudioPlayerController | null = null;
 let activeSessionId = 0;
+// 切回来恢复的后台播放没有 stdout 管道，靠轮询状态文件拿实时进度。
+let statusPoller: ReturnType<typeof setInterval> | null = null;
+// 刚发过暂停/续播命令的时刻：命令有轮询延迟，这段时间内不让状态轮询回弹覆盖乐观态。
+let lastCommandAt = 0;
 
 // useSyncExternalStore 要求 getSnapshot 在未变化时返回稳定引用，这里缓存快照。
 let snapshot: {
@@ -88,6 +93,9 @@ function setProgress(position: number, duration: number) {
 function play(id: string, audioPath: string, playerPath: string, callbacks?: PlaybackCallbacks) {
   // 先切换会话编号，使旧播放器的回调失效。
   const sessionId = ++activeSessionId;
+
+  // 本进程接管为 owner，改由 stdout 驱动进度，停掉恢复用的状态轮询。
+  stopStatusPoller();
 
   const previousController = activeController;
   activeController = null;
@@ -156,19 +164,59 @@ function play(id: string, audioPath: string, playerPath: string, callbacks?: Pla
 
 function stop() {
   if (!activeController) {
+    stopStatusPoller();
     stopActivePlayer();
     if (playbackStatus !== "Stopped") {
       setPlaybackStatus("Stopped");
     }
     setPlayingId(null);
+    setProgress(0, 0);
     return;
   }
 
   activeController.stop();
 }
 
+// 轮询状态文件：驱动恢复出来的后台播放的实时进度；进程已不在则收尾为 Stopped。
+function startStatusPoller() {
+  if (statusPoller) {
+    return;
+  }
+  statusPoller = setInterval(() => {
+    const info = getActivePlayer();
+    if (!info) {
+      stopStatusPoller();
+      setProgress(0, 0);
+      setPlayingId(null);
+      setPlaybackStatus("Stopped");
+      return;
+    }
+    const status = readPlayerStatus();
+    if (!status) {
+      return;
+    }
+    setProgress(status.positionSeconds, status.durationSeconds);
+    if (Date.now() - lastCommandAt < 800) {
+      return; // 命令在途，暂不按状态文件回弹 Playing/Paused
+    }
+    if (status.paused && playbackStatus === "Playing") {
+      setPlaybackStatus("Paused");
+    } else if (!status.paused && playbackStatus === "Paused") {
+      setPlaybackStatus("Playing");
+    }
+  }, 500);
+  statusPoller.unref?.();
+}
+
+function stopStatusPoller() {
+  if (statusPoller) {
+    clearInterval(statusPoller);
+    statusPoller = null;
+  }
+}
+
 // 本进程没在放，但后台(上一个命令进程遗留)仍在播时，恢复状态让 Toast 重新亮起。
-// 暂停 / 快退快进 / Restart / Stop 经命令文件跨进程生效；仅实时进度暂缺(恒为 0，B2 再补)。
+// 暂停 / 快退快进 / Restart / Stop 经命令文件跨进程生效；实时进度经状态文件轮询补上。
 function restoreFromBackground() {
   if (activeController) {
     return;
@@ -177,18 +225,21 @@ function restoreFromBackground() {
   if (!info) {
     return;
   }
-  if (playingId === info.id && playbackStatus === "Playing") {
-    return;
-  }
+
   playingId = info.id;
-  playbackStatus = "Playing";
-  positionSeconds = 0;
-  durationSeconds = 0;
+  const status = readPlayerStatus();
+  playbackStatus = status?.paused ? "Paused" : "Playing";
+  positionSeconds = status?.positionSeconds ?? 0;
+  durationSeconds = status?.durationSeconds ?? 0;
   emit();
+
+  // 持续轮询状态文件，让进度条实时跳动。
+  startStatusPoller();
 }
 
 function pause() {
   // 命令写入文件，后台播放进程轮询执行：切回命令后也能暂停。
+  lastCommandAt = Date.now();
   commandPause();
   if (playbackStatus === "Playing") {
     setPlaybackStatus("Paused");
@@ -196,6 +247,7 @@ function pause() {
 }
 
 function resume() {
+  lastCommandAt = Date.now();
   commandResume();
   if (playbackStatus === "Paused") {
     setPlaybackStatus("Playing");
@@ -214,6 +266,7 @@ function restart() {
 // 子视图（push / pop）不应调用它，否则会打断跨视图保留的播放。
 export function cleanupAudioPlayer() {
   activeSessionId += 1;
+  stopStatusPoller();
   const controller = activeController;
   activeController = null;
   controller?.cleanup();

@@ -11,6 +11,10 @@ const PID_FILE = path.join(environment.supportPath, "audio-player.pid");
 // 后台播放进程轮询读取 → 命令进程被回收后，切回来的命令仍能遥控播放。
 const CMD_FILE = path.join(environment.supportPath, "audio-player.cmd");
 
+// 跨进程状态通道：后台播放进程每 0.5s 写入 "<当前秒> <总秒> <PLAYING|PAUSED>"，
+// 切回来的命令进程轮询它拿到实时进度与暂停态。
+const STATUS_FILE = path.join(environment.supportPath, "audio-player.status");
+
 function readPidFile(): { pid: number; id: string; startedAt: number } | null {
   try {
     const parsed = JSON.parse(fs.readFileSync(PID_FILE, "utf8"));
@@ -147,6 +151,38 @@ export function commandRestart(): void {
   appendCommand(PLAYER_PROTOCOL.restart);
 }
 
+// 开新播放前清空状态文件，避免切回来时读到上一轮的残留进度。
+function resetStatusFile(): void {
+  try {
+    fs.writeFileSync(STATUS_FILE, "");
+  } catch {
+    // 忽略
+  }
+}
+
+// 读后台播放进程写入的实时状态；文件缺失/格式不符时返回 null。
+export function readPlayerStatus(): {
+  positionSeconds: number;
+  durationSeconds: number;
+  paused: boolean;
+} | null {
+  try {
+    const raw = fs.readFileSync(STATUS_FILE, "utf8").trim();
+    if (!raw) {
+      return null;
+    }
+    const [posText, durText, state] = raw.split(" ");
+    const position = Number(posText);
+    const duration = Number(durText);
+    if (!Number.isFinite(position) || !Number.isFinite(duration)) {
+      return null;
+    }
+    return { positionSeconds: position, durationSeconds: duration, paused: state === "PAUSED" };
+  } catch {
+    return null;
+  }
+}
+
 let nextInstanceId = 1;
 
 /**
@@ -186,9 +222,10 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
     }
 
     resetCommandFile();
+    resetStatusFile();
 
     try {
-      child = spawn(playerPath, [audioPath, CMD_FILE], {
+      child = spawn(playerPath, [audioPath, CMD_FILE, STATUS_FILE], {
         stdio: ["pipe", "pipe", "pipe"],
         detached: true, // 脱离父进程会话：命令被回收后仍继续播放
       });

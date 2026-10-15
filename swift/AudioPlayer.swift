@@ -235,10 +235,25 @@ do {
   print(readyMessage)
   fflush(stdout)
 
+  // 状态文件：每 0.5s 原子写入 "<当前秒> <总秒> <PLAYING|PAUSED>"，
+  // 供切回来的命令进程(没有 stdout 管道)轮询出实时进度与暂停态。
+  let statusURL = arguments.count >= 4 ? URL(fileURLWithPath: arguments[3]) : nil
+
+  func writeStatus() {
+    guard let statusURL else { return }
+    let state = player.isPlaying ? "PLAYING" : "PAUSED"
+    let line = "\(player.currentTime) \(player.duration) \(state)\n"
+    try? line.data(using: .utf8)?.write(to: statusURL, options: .atomic)
+  }
+
+  writeStatus()
+
   // 定时向 stdout 汇报播放进度：POS <当前秒> <总秒>，上层据此显示 "已播放 / 总时长"。
+  // 同时刷新状态文件，让后台进度跨进程可读。
   let progressTimer = Timer(timeInterval: 0.5, repeats: true) { _ in
     print("\(positionPrefix)\(player.currentTime) \(player.duration)")
     fflush(stdout)
+    writeStatus()
   }
   RunLoop.main.add(progressTimer, forMode: .common)
 
