@@ -18,7 +18,8 @@ import {
   type Application,
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAudioPlayer } from "./hooks/use-audio-player";import { ensureAudioPlayerBinary } from "./audio-player-path";
+import { useAudioPlayer } from "./hooks/use-audio-player";
+import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { getSettings } from "./settings";
 import { getAllProjectMetadata, movePinnedProject, setProjectPinned } from "./project-metadata";
 import { getTranslations } from "./i18n";
@@ -468,7 +469,8 @@ export default function Command() {
                 />
                 <Action
                   title={t.seekBackward}
-                  icon={Icon.ArrowLeft}                  shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
+                  icon={Icon.ArrowLeft}
+                  shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
                   onAction={() => seek(-SEEK_STEP_SECONDS)}
                 />
                 <Action

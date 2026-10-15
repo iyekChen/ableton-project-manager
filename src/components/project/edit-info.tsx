@@ -176,17 +176,18 @@ export function EditInfo({
         ))}
       </Form.TagPicker>
       {collectionId && (
-        <Form.TagPicker
-          id="role"
-          title="Track Role"
-          value={role === "none" ? [] : [role]}
-          onChange={(values) => setRole(values[0] ?? "none")}
-        >
+        <Form.Dropdown id="role" title={t.role} value={role} onChange={setRole}>
+          <Form.Dropdown.Item value="none" title={t.none} />
           {roleOptions.map((option) => (
-            <Form.TagPicker.Item key={option.id} value={option.name} title={option.name} />
+            <Form.Dropdown.Item
+              key={option.id}
+              value={option.name}
+              title={option.name}
+              keywords={option.name.includes("&") ? [option.name.replace(/&/g, "n")] : undefined}
+            />
           ))}
-        </Form.TagPicker>
-      )}{" "}
+        </Form.Dropdown>
+      )}
     </Form>
   );
 }

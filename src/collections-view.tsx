@@ -298,7 +298,9 @@ function CollectionPanel({
   const [showDetail, setShowDetail] = useState(true);
   const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
   const [selectedStage, setSelectedStage] = useState("all");
-  const { playbackStatus, playingId, play, pause, resume, stop, seek, restart } = useAudioPlayer({ playerPath: PLAYER_PATH });
+  const { playbackStatus, playingId, play, pause, resume, stop, seek, restart } = useAudioPlayer({
+    playerPath: PLAYER_PATH,
+  });
   function playProjectBounce(project: Project) {
     const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
     if (!latestBouncePath) {
@@ -362,14 +364,10 @@ function CollectionPanel({
   const renderPlaybackControls = () =>
     playingId !== null ? (
       <ActionPanel.Section>
+        <Action title={t.stopPlayback} icon={Icon.Stop} shortcut={{ modifiers: ["cmd"], key: "-" }} onAction={stop} />
         <Action
-          title={t.stopPlayback}
-          icon={Icon.Stop}
-          shortcut={{ modifiers: ["cmd"], key: "-" }}
-          onAction={stop}
-        />
-        <Action
-          title={t.seekBackward}          icon={Icon.ArrowLeft}
+          title={t.seekBackward}
+          icon={Icon.ArrowLeft}
           shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
           onAction={() => seek(-SEEK_STEP_SECONDS)}
         />

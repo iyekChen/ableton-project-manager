@@ -102,7 +102,8 @@ type TranslationKeys = {
   stopPlayback: string;
   seekBackward: string;
   seekForward: string;
-  restartTrack: string;  showDetail: string;
+  restartTrack: string;
+  showDetail: string;
   showOverview: string;
   newLiveSet: string;
   newLiveSetFailed: string;
