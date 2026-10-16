@@ -94,9 +94,16 @@ export function EditInfo({
 
       const newPath = path.join(path.dirname(project.folderPath), trimmedName);
 
-      // macOS 不区分大小写：只改大小写时 existsSync 会把自己当成"已存在"，需放行。
-      const caseOnly = trimmedName.toLowerCase() === project.title.toLowerCase();
-      if (!caseOnly && fs.existsSync(newPath)) {
+      // 目标路径已存在时，看它是不是项目自己（只改大小写、不区分大小写的卷）；是别的文件夹就拦下。
+      let targetIsSelf = false;
+      try {
+        const target = fs.statSync(newPath);
+        const self = fs.statSync(project.folderPath);
+        targetIsSelf = target.ino === self.ino && target.dev === self.dev;
+      } catch {
+        // 目标不存在。
+      }
+      if (!targetIsSelf && fs.existsSync(newPath)) {
         await showToast({ style: Toast.Style.Failure, title: t.nameExists });
         return;
       }

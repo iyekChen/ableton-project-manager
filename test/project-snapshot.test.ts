@@ -19,6 +19,13 @@ describe("diffSnapshots", () => {
     expect(diff.removed).toEqual([e("Song", 1, 10)]);
   });
 
+  it("旧快照没有 inode：创建时间相同也不判为改名，当作歧义跳过", () => {
+    const diff = diffSnapshots([e("Song", 1)], [e("Song copy", 1, 11)]);
+    expect(diff.renamed).toEqual([]);
+    expect(diff.removed).toEqual([]);
+    expect(diff.ambiguous).toEqual([e("Song", 1)]);
+  });
+
   it("一个消失项对应多个候选时判为歧义，不自动处理", () => {
     const diff = diffSnapshots([e("A", 1)], [e("X", 1), e("Y", 1)]);
     expect(diff.renamed).toEqual([]);

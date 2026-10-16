@@ -156,7 +156,8 @@ const FULLWIDTH: Record<string, string> = {
 
 /** 项目名 → 文档文件的基础名（不含类型后缀与扩展名）。 */
 export function docFileBaseName(title: string): string {
-  return title.replace(ILLEGAL_FILE_CHARS, (char) => FULLWIDTH[char] ?? char).trim();
+  // 不 trim：首尾空格也是文件夹名的一部分，否则 "Song" 与 " Song " 会撞到同一个文件。
+  return title.replace(ILLEGAL_FILE_CHARS, (char) => FULLWIDTH[char] ?? char);
 }
 
 // 设了自定义文档文件夹时，返回名字里会被替换掉的字符（去重），供表单提示；否则返回空。
@@ -270,9 +271,16 @@ export function writeDocBody(project: { title: string; folderPath: string }, kin
   fs.writeFileSync(file, frontmatter + body, "utf8");
 }
 
-// 只改大小写时新旧路径指向同一个文件（macOS 不区分大小写）。
-function isCaseOnly(a: string, b: string): boolean {
-  return a.toLowerCase() === b.toLowerCase();
+// 两个路径是否指向同一个文件（比较 inode + 设备号）。只改大小写时，在不区分大小写的卷上为 true；
+// 在区分大小写的卷上，目标若是另一份独立文档则为 false，绝不能覆盖。任一路径不存在时为 false。
+function sameFile(a: string, b: string): boolean {
+  try {
+    const sa = fs.statSync(a);
+    const sb = fs.statSync(b);
+    return sa.ino === sb.ino && sa.dev === sb.dev;
+  } catch {
+    return false;
+  }
 }
 
 // 改名前预检：哪些文档的目标文件已被占用（只改大小写不算）。返回被占用的文件名，供确认框提示。
@@ -282,7 +290,7 @@ export function docRenameConflicts(oldTitle: string, newTitle: string): string[]
     if (!getDocFolder(kind)) continue;
     const oldPath = docFilePath({ title: oldTitle, folderPath: "" }, kind);
     const newPath = docFilePath({ title: newTitle, folderPath: "" }, kind);
-    if (!isCaseOnly(oldPath, newPath) && fs.existsSync(newPath)) files.push(path.basename(newPath));
+    if (fs.existsSync(newPath) && !sameFile(oldPath, newPath)) files.push(path.basename(newPath));
   }
   return files;
 }
@@ -302,8 +310,8 @@ export function renameDocFiles(oldTitle: string, newTitle: string): DocRenameRes
     const newPath = docFilePath({ title: newTitle, folderPath: "" }, kind);
     if (!fs.existsSync(oldPath)) return; // 没有源文件，无需改名
 
-    if (isCaseOnly(oldPath, newPath)) {
-      // 只改大小写：同一个文件，直接 rename（link 会因"目标已存在"失败）。
+    if (sameFile(oldPath, newPath)) {
+      // 目标就是源文件本身（只改大小写）：直接 rename（link 会因"目标已存在"失败）。
       try {
         fs.renameSync(oldPath, newPath);
       } catch {

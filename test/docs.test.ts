@@ -41,6 +41,11 @@ describe("docFilePath", () => {
     expect(docFilePath(project("Song?A"), "notes")).not.toBe(docFilePath(project("Song-A"), "notes"));
   });
 
+  it("首尾空格保留，不与无空格的名字撞名", () => {
+    expect(docFilePath(project(" Song "), "notes")).toBe(path.join(notes, " Song .md"));
+    expect(docFilePath(project(" Song "), "notes")).not.toBe(docFilePath(project("Song"), "notes"));
+  });
+
   it("未设自定义文件夹时存进项目文件夹，用固定名", () => {
     __setPreferences({});
     expect(docFilePath(project("Song?A"), "notes")).toBe("/p/Notes.md");
@@ -82,6 +87,17 @@ describe("改名", () => {
     expect(docRenameConflicts("song", "Song")).toEqual([]);
     expect(renameDocFiles("song", "Song")).toEqual({ conflicts: [], failures: [] });
     expect(fs.readdirSync(notes)).toEqual(["Song.md"]);
+  });
+
+  it("目标是源文件本身（同一 inode）时直接改名，不报冲突", () => {
+    // 用硬链接模拟"不区分大小写的卷上只改大小写"：两个名字指向同一个文件。
+    fs.writeFileSync(path.join(notes, "Old.md"), "x");
+    fs.linkSync(path.join(notes, "Old.md"), path.join(notes, "New.md"));
+    expect(docRenameConflicts("Old", "New")).toEqual([]);
+    expect(renameDocFiles("Old", "New")).toEqual({ conflicts: [], failures: [] });
+    // POSIX rename 遇到"两个路径本来就是同一个文件"时什么都不做，所以硬链接下旧名字仍在；
+    // 关键是没报冲突、内容没丢。真实的只改大小写由上一条用例覆盖。
+    expect(fs.readFileSync(path.join(notes, "New.md"), "utf8")).toBe("x");
   });
 
   it("目标已存在时预检报出文件名，改名不覆盖", () => {

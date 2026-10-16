@@ -44,7 +44,13 @@ export function diffSnapshots(previous: SnapshotEntry[], current: SnapshotEntry[
   for (const [entry, list] of candidates) {
     if (list.length === 0) {
       removed.push(entry);
-    } else if (list.length === 1 && claims.get(list[0]) === 1) {
+    } else if (
+      list.length === 1 &&
+      claims.get(list[0]) === 1 &&
+      entry.inode !== undefined &&
+      list[0].inode !== undefined
+    ) {
+      // 双方都有 inode 才认定为改名；旧快照没有 inode，分不清"改名"和"复制后删原件"，当作歧义跳过。
       renamed.push({ from: entry, to: list[0] });
     } else {
       ambiguous.push(entry);
