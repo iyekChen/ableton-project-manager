@@ -1,7 +1,13 @@
 // 仅供测试：被测模块顶层 import 了 @raycast/api，这里给最小桩，避免加载真实 Raycast 运行时。
-// 偏好返回空对象；LocalStorage 用内存 Map 模拟（测试间用 LocalStorage.clear() 重置）。
+// 偏好默认为空对象，可用 __setPreferences 设置；LocalStorage 用内存 Map 模拟（测试间用 clear() 重置）。
+let preferences: Record<string, unknown> = {};
+
+export function __setPreferences(next: Record<string, unknown>): void {
+  preferences = next;
+}
+
 export function getPreferenceValues<T>(): T {
-  return {} as T;
+  return preferences as T;
 }
 
 const store = new Map<string, string>();
