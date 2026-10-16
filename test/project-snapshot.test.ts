@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { diffSnapshots, readTrashFolders } from "../src/project-snapshot";
+import { diffSnapshots, isConfirmedInTrash, readTrashFolders } from "../src/project-snapshot";
 
 const e = (id: string, birthtimeMs: number, inode?: number) => ({ id, birthtimeMs, inode });
 
@@ -81,5 +81,22 @@ describe("readTrashFolders", () => {
       fs.chmodSync(locked, 0o700);
       fs.rmSync(locked, { recursive: true, force: true });
     }
+  });
+});
+
+describe("isConfirmedInTrash", () => {
+  const f = (birthtimeMs: number, inode?: number) => ({ birthtimeMs, inode });
+
+  it("读不到废纸篓（null）时一律不确认", () => {
+    expect(isConfirmedInTrash(f(1, 10), null)).toBe(false);
+  });
+
+  it("能读到废纸篓且 inode 一致才确认；inode 不一致不确认", () => {
+    expect(isConfirmedInTrash(f(1, 10), [f(1, 10)])).toBe(true);
+    expect(isConfirmedInTrash(f(1, 10), [f(1, 99)])).toBe(false);
+  });
+
+  it("旧快照缺 inode：即使废纸篓里有同创建时间的文件夹也不确认（避免误归档）", () => {
+    expect(isConfirmedInTrash(f(1), [f(1, 10)])).toBe(false);
   });
 });

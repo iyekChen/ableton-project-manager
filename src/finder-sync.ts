@@ -1,6 +1,13 @@
 import { LocalStorage } from "@raycast/api";
 import type { Project } from "./projects/types";
-import { diffSnapshots, readTrashFolders, sameFolder, trashDirsFor, type SnapshotEntry } from "./project-snapshot";
+import {
+  diffSnapshots,
+  isConfirmedInTrash,
+  readTrashFolders,
+  sameFolder,
+  trashDirsFor,
+  type SnapshotEntry,
+} from "./project-snapshot";
 import { deleteProjectMetadata, renameProjectMetadata } from "./project-metadata";
 import { removeProjectFromAllOrders, renameProjectInAllOrders } from "./collection-order";
 import { removeProjectFromAllRoles, renameProjectInAllRoles } from "./collection-roles";
@@ -65,8 +72,8 @@ export async function syncFinderChanges(
     for (const entry of diff.removed) {
       if (skipIds.has(entry.id) || (await hasDeletedRecord(entry))) continue;
       // 只有能读到废纸篓、且确认该项目确实在废纸篓里，才按「删除」归档清理。
-      // 读不到废纸篓（没有完全磁盘访问权限）时一律不动数据，交给「清理已移除的项目」命令手动处理。
-      if (!trash || !trash.some((folder) => sameFolder(folder, entry))) continue;
+      // 读不到废纸篓（无完全磁盘访问权限），或旧快照缺 inode 无法可靠匹配时，一律不动数据，交给手动清理。
+      if (!isConfirmedInTrash(entry, trash)) continue;
       await archiveDeletedProject({
         id: entry.id,
         title: entry.id,

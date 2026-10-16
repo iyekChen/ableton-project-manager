@@ -2,7 +2,7 @@ import { Action, ActionPanel, Alert, Color, confirmAlert, Icon, Keyboard, List, 
 import { useEffect, useState } from "react";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
-import { loadProjects } from "./projects/load-projects";
+import { removedProjectIds } from "./removed-projects";
 import { deleteProjectMetadata, getAllProjectMetadata } from "./project-metadata";
 import { removeProjectFromAllOrders } from "./collection-order";
 import { removeProjectFromAllRoles } from "./collection-roles";
@@ -20,25 +20,16 @@ export default function Command() {
 
   async function reload() {
     setIsLoading(true);
-    let present: Set<string> | null = null;
-    try {
-      present = new Set(loadProjects(PROJECTS_ROOT).map((p) => p.id));
-    } catch {
-      present = null; // 根目录读不到（如外接盘未连接）：不把一切都当成已移除。
-    }
-    if (!present) {
+    const store = await getAllProjectMetadata();
+    const removed = removedProjectIds(PROJECTS_ROOT, Object.keys(store));
+    if (!removed) {
+      // 根目录读不到（如外接盘未连接）：不确定，不把一切都当成已移除。
       setRemovedIds([]);
       setIsLoading(false);
       await showToast({ style: Toast.Style.Failure, title: t.manyProjectsMissing });
       return;
     }
-    const presentIds = present;
-    const store = await getAllProjectMetadata();
-    setRemovedIds(
-      Object.keys(store)
-        .filter((id) => !presentIds.has(id))
-        .sort(),
-    );
+    setRemovedIds(removed);
     setIsLoading(false);
   }
 

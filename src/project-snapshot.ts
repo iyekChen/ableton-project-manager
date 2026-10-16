@@ -22,6 +22,13 @@ export function sameFolder(a: FolderIdentity, b: FolderIdentity): boolean {
   return a.inode === undefined || b.inode === undefined || a.inode === b.inode;
 }
 
+/** 用于「确认删除」的严格匹配：读不到废纸篓、或待匹配项缺 inode（仅凭创建时间可能撞上另一个
+ *  同时创建的文件夹）时，一律视为不确定、不确认在废纸篓里——交给手动清理，绝不自动归档。 */
+export function isConfirmedInTrash(entry: FolderIdentity, trash: FolderIdentity[] | null): boolean {
+  if (!trash || entry.inode === undefined) return false;
+  return trash.some((folder) => sameFolder(folder, entry));
+}
+
 // 对比前后两份清单：
 // - 消失项恰好对应一个新出现的同一文件夹（且该文件夹没被别的消失项认领）= 改名；
 // - 没有对应 = 移除；
