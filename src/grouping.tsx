@@ -32,26 +32,23 @@ export function useGroupOption(storageKey: string, fallback: GroupOption) {
   return [groupBy, setGroupBy] as const;
 }
 
-// 按本地时间计算各日期段的下界，从最近到最早。先判本周再判本月，这样"上周但跨月"会归入本周。
-function dateBands(): { key: string; title: string; from: number }[] {
-  const now = new Date();
-  const day = 24 * 60 * 60 * 1000;
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const startOfWeek = startOfToday - ((now.getDay() + 6) % 7) * day; // 周一为一周起点
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
-  return [
-    { key: "today", title: t.bandToday, from: startOfToday },
-    { key: "week", title: t.bandThisWeek, from: startOfWeek },
-    { key: "month", title: t.bandThisMonth, from: startOfMonth },
-    { key: "year", title: t.bandThisYear, from: startOfYear },
-    { key: "earlier", title: t.bandEarlier, from: Number.NEGATIVE_INFINITY },
-  ];
+const isZh = getSettings().language.startsWith("zh");
+
+// 月份段标题：中文「9月」，英文「September」。
+function monthTitle(date: Date): string {
+  return isZh ? `${date.getMonth() + 1}月` : date.toLocaleString("en-US", { month: "long" });
+}
+
+// 年份段标题：中文「2025年」，英文「2025」。
+function yearTitle(date: Date): string {
+  return isZh ? `${date.getFullYear()}年` : String(date.getFullYear());
 }
 
 export type Group<T> = { key: string; title: string; subtitle: string; items: T[] };
 
 // 把（已排序的）items 按分组维度分段。none 返回单段，标题用调用方给的 noneTitle（通常是排序名）。
+// 日期分组采用 Finder 风格的动态段：今天 / 昨天 / 过去 7 天 / 过去 30 天 / 今年各月 / 往年各年，
+// 只保留非空段，并按各段内最新时间从新到旧排列。
 export function groupItems<T>(
   items: T[],
   groupBy: GroupOption,
@@ -62,22 +59,49 @@ export function groupItems<T>(
     return [{ key: "all", title: noneTitle, subtitle: String(items.length), items }];
   }
 
-  const bands = dateBands();
-  const buckets = new Map<string, T[]>();
-  for (const item of items) {
-    const ms = groupBy === "created" ? getDate(item).created : getDate(item).modified;
-    const band = bands.find((b) => ms >= b.from) ?? bands[bands.length - 1];
-    const bucket = buckets.get(band.key);
-    if (bucket) bucket.push(item);
-    else buckets.set(band.key, [item]);
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  // 固定窗口用日历天相减（new Date(y, m, d - n)），有夏令时的时区不会在切换当天差一小时；
+  // 无夏令时的时区则与固定 24 小时窗口完全一致。
+  const startOfToday = new Date(y, m, d).getTime();
+  const startOfYesterday = new Date(y, m, d - 1).getTime();
+  const startOfPrev7 = new Date(y, m, d - 7).getTime();
+  const startOfPrev30 = new Date(y, m, d - 30).getTime();
+  const startOfYear = new Date(y, 0, 1).getTime();
+
+  function bandFor(ms: number): { key: string; title: string } {
+    if (ms >= startOfToday) return { key: "today", title: t.bandToday };
+    if (ms >= startOfYesterday) return { key: "yesterday", title: t.bandYesterday };
+    if (ms >= startOfPrev7) return { key: "prev7", title: t.bandPrev7Days };
+    if (ms >= startOfPrev30) return { key: "prev30", title: t.bandPrev30Days };
+    const date = new Date(ms);
+    if (ms >= startOfYear) return { key: `month-${date.getMonth()}`, title: monthTitle(date) };
+    return { key: `year-${date.getFullYear()}`, title: yearTitle(date) };
   }
 
-  const groups: Group<T>[] = [];
-  for (const band of bands) {
+  const buckets = new Map<string, { title: string; max: number; items: T[] }>();
+  for (const item of items) {
+    const ms = groupBy === "created" ? getDate(item).created : getDate(item).modified;
+    const band = bandFor(ms);
     const bucket = buckets.get(band.key);
-    if (bucket) groups.push({ key: band.key, title: band.title, subtitle: String(bucket.length), items: bucket });
+    if (bucket) {
+      bucket.items.push(item);
+      if (ms > bucket.max) bucket.max = ms;
+    } else {
+      buckets.set(band.key, { title: band.title, max: ms, items: [item] });
+    }
   }
-  return groups;
+
+  return [...buckets.entries()]
+    .sort((a, b) => b[1].max - a[1].max)
+    .map(([key, bucket]) => ({
+      key,
+      title: bucket.title,
+      subtitle: String(bucket.items.length),
+      items: bucket.items,
+    }));
 }
 
 // 分组子菜单：按 allowed 顺序渲染日期维度，None 固定放最后，当前项打勾。

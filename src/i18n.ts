@@ -57,10 +57,9 @@ type TranslationKeys = {
   groupByModified: string;
   groupNone: string;
   bandToday: string;
-  bandThisWeek: string;
-  bandThisMonth: string;
-  bandThisYear: string;
-  bandEarlier: string;
+  bandYesterday: string;
+  bandPrev7Days: string;
+  bandPrev30Days: string;
   select: string;
   modifiedNewest: string;
   modifiedOldest: string;
@@ -215,10 +214,9 @@ const translations: Record<Language, TranslationKeys> = {
     groupByModified: "Modified",
     groupNone: "None",
     bandToday: "Today",
-    bandThisWeek: "This Week",
-    bandThisMonth: "This Month",
-    bandThisYear: "This Year",
-    bandEarlier: "Earlier",
+    bandYesterday: "Yesterday",
+    bandPrev7Days: "Previous 7 Days",
+    bandPrev30Days: "Previous 30 Days",
     select: "Select",
     modifiedNewest: "Modified — Newest",
     modifiedOldest: "Modified — Oldest",
@@ -376,10 +374,9 @@ const translations: Record<Language, TranslationKeys> = {
     groupByModified: "修改时间",
     groupNone: "不分组",
     bandToday: "今天",
-    bandThisWeek: "本周",
-    bandThisMonth: "本月",
-    bandThisYear: "今年",
-    bandEarlier: "更早",
+    bandYesterday: "昨天",
+    bandPrev7Days: "过去 7 天",
+    bandPrev30Days: "过去 30 天",
     select: "选择",
     modifiedNewest: "修改时间 — 最新",
     modifiedOldest: "修改时间 — 最旧",

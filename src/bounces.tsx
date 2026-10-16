@@ -145,7 +145,7 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
                       />
                     </ActionPanel.Section>
                     <ActionPanel.Section>
-                      <GroupBySubmenu allowed={["created", "modified"]} value={groupBy} onChange={setGroupBy} />
+                      <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
                       <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
                     </ActionPanel.Section>
                     <ActionPanel.Section>
