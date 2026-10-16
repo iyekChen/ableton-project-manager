@@ -1,5 +1,4 @@
-import { getPreferenceValues } from "@raycast/api";
-import { createHash } from "node:crypto";
+import { environment, getPreferenceValues } from "@raycast/api";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -9,7 +8,10 @@ type DocPreferences = {
   lyricsFolder?: string;
   notesTemplateFile?: string;
   lyricsTemplateFile?: string;
+  strictLineBreaks?: boolean;
 };
+
+const DOC_KINDS: DocKind[] = ["notes", "lyrics"];
 
 // 没指定自定义文件夹时，文档存进项目文件夹，用固定名。
 const FIXED_FILE_NAME: Record<DocKind, string> = {
@@ -23,16 +25,75 @@ const COLLISION_SUFFIX: Record<DocKind, string> = {
   lyrics: " @Lyrics",
 };
 
+/** 已删除项目的遗留文档收进自定义文件夹下的这个子文件夹（名称固定，不随语言变）。 */
+export const DELETED_DOCS_FOLDER = "Deleted Projects";
+
 function prefs(): DocPreferences {
   return getPreferenceValues<DocPreferences>();
 }
 
-// 该类文档的自定义保存文件夹（选填）。留空 = 存进项目文件夹。
-export function getDocFolder(kind: DocKind): string {
-  const value = kind === "notes" ? prefs().notesFolder : prefs().lyricsFolder;
-  return (value ?? "").trim();
+// 记住"上次用过的自定义文件夹"。实测文件夹被改名后，扩展读到的设置值可能变成空（设置页仍显示旧路径），
+// 这时分不清"文件夹没了"和"用户没设"，会把笔记悄悄写进项目文件夹。有了这份记录就能识别前者。
+type RememberedFolders = Partial<Record<DocKind, string>>;
+let rememberedCache: { file: string; data: RememberedFolders } | null = null;
+
+function rememberedFile(): string {
+  return path.join(environment.supportPath, "doc-folders.json");
 }
 
+function readRemembered(): RememberedFolders {
+  const file = rememberedFile();
+  if (rememberedCache?.file === file) return rememberedCache.data;
+  let data: RememberedFolders = {};
+  try {
+    data = JSON.parse(fs.readFileSync(file, "utf8")) as RememberedFolders;
+  } catch {
+    // 没有记录 = 从未用过自定义文件夹。
+  }
+  rememberedCache = { file, data };
+  return data;
+}
+
+function rememberFolder(kind: DocKind, folder: string): void {
+  const current = readRemembered();
+  if ((current[kind] ?? "") === folder) return;
+  const next = { ...current, [kind]: folder };
+  rememberedCache = { file: rememberedFile(), data: next };
+  try {
+    fs.mkdirSync(path.dirname(rememberedCache.file), { recursive: true });
+    fs.writeFileSync(rememberedCache.file, JSON.stringify(next));
+  } catch {
+    // 记不住只是少一层保护，不影响读写。
+  }
+}
+
+/** 用户确认改为存进项目文件夹：忘掉记住的旧文件夹，解除失效保护。 */
+export function forgetDocFolder(kind: DocKind): void {
+  rememberFolder(kind, "");
+}
+
+// 解析该类文档的文件夹。fromMemory = 设置为空、但用的是记住的旧文件夹（它已不存在）。
+function resolveDocFolder(kind: DocKind): { folder: string; fromMemory: boolean } {
+  const value = ((kind === "notes" ? prefs().notesFolder : prefs().lyricsFolder) ?? "").trim();
+  if (value !== "") {
+    if (fs.existsSync(value)) rememberFolder(kind, value);
+    return { folder: value, fromMemory: false };
+  }
+  const remembered = readRemembered()[kind] ?? "";
+  if (remembered === "") return { folder: "", fromMemory: false };
+  if (fs.existsSync(remembered)) {
+    // 旧文件夹还在、设置却清空了：用户是主动改回"存进项目文件夹"。
+    forgetDocFolder(kind);
+    return { folder: "", fromMemory: false };
+  }
+  return { folder: remembered, fromMemory: true };
+}
+
+// 该类文档的自定义保存文件夹（选填）。留空 = 存进项目文件夹。
+// 设置为空、但之前用过的文件夹已消失时，仍返回旧路径，交给 missingDocFolder 判定为失效。
+export function getDocFolder(kind: DocKind): string {
+  return resolveDocFolder(kind).folder;
+}
 function getTemplateFile(kind: DocKind): string {
   const value = kind === "notes" ? prefs().notesTemplateFile : prefs().lyricsTemplateFile;
   return (value ?? "").trim();
@@ -50,21 +111,52 @@ function customFoldersCollide(): boolean {
   return notes !== "" && notes === lyrics;
 }
 
+// 自定义文件夹设置了但不存在（被改名、移动或外接盘未挂载）时返回该路径，否则返回 null。
+export function missingDocFolder(kind: DocKind): string | null {
+  const folder = getDocFolder(kind);
+  return folder !== "" && !fs.existsSync(folder) ? folder : null;
+}
+
+/** 自定义文档文件夹不存在时抛出：此时只读不写，避免在旧路径上悄悄重建文件夹、把笔记拆成两份。 */
+export class DocFolderMissingError extends Error {
+  constructor(
+    readonly folder: string,
+    readonly kind: DocKind,
+    readonly fromMemory: boolean,
+  ) {
+    super(`Folder not found: ${folder}`);
+    this.name = "DocFolderMissingError";
+  }
+}
+
+function assertDocFolder(kind: DocKind): void {
+  const { folder, fromMemory } = resolveDocFolder(kind);
+  if (folder !== "" && !fs.existsSync(folder)) throw new DocFolderMissingError(folder, kind, fromMemory);
+}
+
 // 文件名里的非法字符（含 Windows 非法字符与 Obsidian 禁用的 # ^ [ ] |）。保留 @。
 const ILLEGAL_FILE_CHARS = /[/\\:*?"<>|#^[\]]/g;
 
-// 清洗文件名里的非法字符。
-function sanitizeFileName(name: string): string {
-  return name.replace(ILLEGAL_FILE_CHARS, "-").trim();
-}
+// 每个非法字符映射到外观相近的全角字符。一一对应，所以 Song?A 与 Song-A 不会落到同一个文件。
+const FULLWIDTH: Record<string, string> = {
+  "/": "／",
+  "\\": "＼",
+  ":": "：",
+  "*": "＊",
+  "?": "？",
+  '"': "＂",
+  "<": "＜",
+  ">": "＞",
+  "|": "｜",
+  "#": "＃",
+  "^": "＾",
+  "[": "［",
+  "]": "］",
+};
 
-// 文档文件的基础名：清洗没改动名字时就用原名；改动了则追加原名的短哈希，
-// 让 Song?A 与 Song-A 落到不同文件。哈希只取决于原名，同一名字永远得到同一路径。
-function docBaseName(title: string): string {
-  const base = sanitizeFileName(title);
-  if (base === title) return base;
-  const hash = createHash("sha1").update(title).digest("hex").slice(0, 6);
-  return `${base} ~${hash}`;
+/** 项目名 → 文档文件的基础名（不含类型后缀与扩展名）。 */
+export function docFileBaseName(title: string): string {
+  return title.replace(ILLEGAL_FILE_CHARS, (char) => FULLWIDTH[char] ?? char).trim();
 }
 
 // 设了自定义文档文件夹时，返回名字里会被替换掉的字符（去重），供表单提示；否则返回空。
@@ -72,6 +164,7 @@ export function alteredDocChars(title: string): string[] {
   if (!getDocFolder("notes") && !getDocFolder("lyrics")) return [];
   return [...new Set(title.match(ILLEGAL_FILE_CHARS) ?? [])];
 }
+
 // 解析某项目某类文档的目标 .md 路径，遵循三条命名规则。
 export function docFilePath(project: { title: string; folderPath: string }, kind: DocKind): string {
   const folder = getDocFolder(kind);
@@ -79,7 +172,7 @@ export function docFilePath(project: { title: string; folderPath: string }, kind
     // 规则 1：项目文件夹 + 固定名。
     return path.join(project.folderPath, FIXED_FILE_NAME[kind]);
   }
-  const base = docBaseName(project.title);
+  const base = docFileBaseName(project.title);
   // 规则 3：相同文件夹 → 带类型后缀；规则 2：不同文件夹 → 纯项目名。
   const fileName = customFoldersCollide() ? `${base}${COLLISION_SUFFIX[kind]}.md` : `${base}.md`;
   return path.join(folder, fileName);
@@ -109,6 +202,33 @@ export function stripFrontmatter(markdown: string): string {
   return markdown.replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
 }
 
+const FENCE = /^\s*(```|~~~)/;
+
+// 把单个换行转成 Markdown 硬换行（行尾两个空格）。空行、代码块内部、代码块前一行不动。
+export function softBreaksToHard(markdown: string): string {
+  const lines = markdown.split(/\r?\n/);
+  let inFence = false;
+  return lines
+    .map((line, i) => {
+      if (FENCE.test(line)) {
+        inFence = !inFence;
+        return line;
+      }
+      const next = lines[i + 1];
+      if (inFence || next === undefined || line.trim() === "" || next.trim() === "" || FENCE.test(next)) {
+        return line;
+      }
+      return /( {2}|\\)$/.test(line) ? line : `${line}  `;
+    })
+    .join("\n");
+}
+
+// 显示用：默认模拟 Obsidian（单个换行即换行）；开启 Strict Line Breaks 则按标准 Markdown 原样渲染。
+// 只影响显示，不改文件。
+export function displayDoc(markdown: string): string {
+  return prefs().strictLineBreaks ? markdown : softBreaksToHard(markdown);
+}
+
 // 文件是否已存在。
 export function docFileExists(project: { title: string; folderPath: string }, kind: DocKind): boolean {
   return fs.existsSync(docFilePath(project, kind));
@@ -123,8 +243,9 @@ export function readDocFile(project: { title: string; folderPath: string }, kind
   }
 }
 
-// 确保文件存在（不存在就按模板创建），返回路径。供 Open 使用。
+// 确保文件存在（不存在就按模板创建），返回路径。供 Open 使用。自定义文件夹失效时抛 DocFolderMissingError。
 export function ensureDocFile(project: { title: string; folderPath: string }, kind: DocKind): string {
+  assertDocFolder(kind);
   const file = docFilePath(project, kind);
   if (!fs.existsSync(file)) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -133,8 +254,9 @@ export function ensureDocFile(project: { title: string; folderPath: string }, ki
   return file;
 }
 
-// 写入正文，但保留文件原有的 frontmatter（编辑笔记时用）。
+// 写入正文，但保留文件原有的 frontmatter（编辑笔记时用）。自定义文件夹失效时抛 DocFolderMissingError。
 export function writeDocBody(project: { title: string; folderPath: string }, kind: DocKind, body: string): void {
+  assertDocFolder(kind);
   const file = docFilePath(project, kind);
   let existing = "";
   try {
@@ -148,6 +270,23 @@ export function writeDocBody(project: { title: string; folderPath: string }, kin
   fs.writeFileSync(file, frontmatter + body, "utf8");
 }
 
+// 只改大小写时新旧路径指向同一个文件（macOS 不区分大小写）。
+function isCaseOnly(a: string, b: string): boolean {
+  return a.toLowerCase() === b.toLowerCase();
+}
+
+// 改名前预检：哪些文档的目标文件已被占用（只改大小写不算）。返回被占用的文件名，供确认框提示。
+export function docRenameConflicts(oldTitle: string, newTitle: string): string[] {
+  const files: string[] = [];
+  for (const kind of DOC_KINDS) {
+    if (!getDocFolder(kind)) continue;
+    const oldPath = docFilePath({ title: oldTitle, folderPath: "" }, kind);
+    const newPath = docFilePath({ title: newTitle, folderPath: "" }, kind);
+    if (!isCaseOnly(oldPath, newPath) && fs.existsSync(newPath)) files.push(path.basename(newPath));
+  }
+  return files;
+}
+
 export type DocRenameResult = { conflicts: DocKind[]; failures: DocKind[] };
 
 // 项目改名时，把自定义文件夹里的文档文件一并改名；默认存项目文件夹的随文件夹改名，无需处理。
@@ -157,11 +296,21 @@ export function renameDocFiles(oldTitle: string, newTitle: string): DocRenameRes
   const result: DocRenameResult = { conflicts: [], failures: [] };
   if (oldTitle === newTitle) return result;
 
-  (["notes", "lyrics"] as DocKind[]).forEach((kind) => {
+  DOC_KINDS.forEach((kind) => {
     if (!getDocFolder(kind)) return;
     const oldPath = docFilePath({ title: oldTitle, folderPath: "" }, kind);
     const newPath = docFilePath({ title: newTitle, folderPath: "" }, kind);
     if (!fs.existsSync(oldPath)) return; // 没有源文件，无需改名
+
+    if (isCaseOnly(oldPath, newPath)) {
+      // 只改大小写：同一个文件，直接 rename（link 会因"目标已存在"失败）。
+      try {
+        fs.renameSync(oldPath, newPath);
+      } catch {
+        result.failures.push(kind);
+      }
+      return;
+    }
 
     try {
       fs.linkSync(oldPath, newPath); // 原子不覆盖：目标存在则抛 EEXIST
@@ -182,4 +331,68 @@ export function renameDocFiles(oldTitle: string, newTitle: string): DocRenameRes
   });
 
   return result;
+}
+
+/** 已归档文档：relativePath 相对于该类文档的自定义文件夹，整个文件夹被搬走后仍能找回。 */
+export type ArchivedDoc = { kind: DocKind; relativePath: string };
+
+// 项目删除时，把自定义文件夹里的文档移进 Deleted Projects/。同名时依次用 "名 2"、"名 3"…，绝不覆盖。
+export function archiveDocFiles(title: string): ArchivedDoc[] {
+  const archived: ArchivedDoc[] = [];
+  for (const kind of DOC_KINDS) {
+    const folder = getDocFolder(kind);
+    if (!folder || !fs.existsSync(folder)) continue;
+    const source = docFilePath({ title, folderPath: "" }, kind);
+    if (!fs.existsSync(source)) continue;
+
+    try {
+      const dir = path.join(folder, DELETED_DOCS_FOLDER);
+      fs.mkdirSync(dir, { recursive: true });
+      const ext = path.extname(source);
+      const base = path.basename(source, ext);
+
+      for (let n = 1; n <= 1000; n++) {
+        const name = n === 1 ? `${base}${ext}` : `${base} ${n}${ext}`;
+        try {
+          fs.linkSync(source, path.join(dir, name));
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException)?.code === "EEXIST") continue;
+          break;
+        }
+        try {
+          fs.unlinkSync(source);
+        } catch {
+          // 旧文件删除失败：归档副本已就位，内容未丢。
+        }
+        archived.push({ kind, relativePath: path.join(DELETED_DOCS_FOLDER, name) });
+        break;
+      }
+    } catch {
+      // 归档失败（如文件夹不可写）：文档留在原处，不影响删除项目。
+    }
+  }
+  return archived;
+}
+
+// 项目从废纸篓放回后，把归档的文档移回原位。原位置已被占用时不覆盖，保留归档。
+export function restoreArchivedDoc(
+  project: { title: string; folderPath: string },
+  doc: ArchivedDoc,
+): "restored" | "conflict" | "missing" {
+  const folder = getDocFolder(doc.kind);
+  if (!folder) return "missing";
+  const source = path.join(folder, doc.relativePath);
+  if (!fs.existsSync(source)) return "missing";
+
+  try {
+    fs.linkSync(source, docFilePath(project, doc.kind));
+  } catch (error) {
+    return (error as NodeJS.ErrnoException)?.code === "EEXIST" ? "conflict" : "missing";
+  }
+  try {
+    fs.unlinkSync(source);
+  } catch {
+    // 已还原；归档副本删不掉就留着。
+  }
+  return "restored";
 }

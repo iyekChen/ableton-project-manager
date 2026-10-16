@@ -69,6 +69,16 @@ type TranslationKeys = {
   renameFailed: string;
   docRenameSkipped: string;
   docNameHint: string;
+  docConflictWarning: string;
+  renameAnyway: string;
+  collectionNameExists: string;
+  projectsRestored: string;
+  restoreDocConflict: string;
+  docFolderMissing: string;
+  docFolderMissingHint: string;
+  openPreferences: string;
+  docSaveFailed: string;
+  useProjectFolders: string;
   renameConfirmTitle: string;
   renameConfirmMessage: string;
   rename: string;
@@ -193,8 +203,18 @@ const translations: Record<Language, TranslationKeys> = {
     nameExists: "A project with that name already exists",
     renameFailed: "Rename failed",
     docRenameSkipped: "Renamed — but a doc wasn't moved",
-    docNameHint:
-      "In note & lyrics filenames, {chars} will be replaced with “-” and a short ID added to keep them unique.",
+    docNameHint: "Note & lyrics file: “{file}” ({chars} → full-width look-alikes)",
+    docConflictWarning:
+      "The notes folder already contains {files}. After renaming, this project will show that existing file; its own notes (if any) keep the old file name.",
+    renameAnyway: "Rename Anyway",
+    collectionNameExists: "A collection with that name already exists",
+    projectsRestored: "Restored put-back project",
+    restoreDocConflict: "Restored — but a note file name was already taken",
+    docFolderMissing: "Notes / lyrics folder not found",
+    docFolderMissingHint: "Choose it again in Extension Preferences. Nothing will be written until then.",
+    openPreferences: "Open Extension Preferences",
+    docSaveFailed: "Couldn't save",
+    useProjectFolders: "Store in Project Folders Instead",
     renameConfirmTitle: "Rename project?",
     renameConfirmMessage:
       "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
@@ -319,7 +339,18 @@ const translations: Record<Language, TranslationKeys> = {
     nameExists: "已存在同名项目",
     renameFailed: "重命名失败",
     docRenameSkipped: "已重命名，但有文档未同步改名",
-    docNameHint: "笔记/歌词文件名中的 {chars} 会被替换为“-”，并追加一段短 ID 以免与其他项目重名。",
+    docNameHint: "笔记/歌词文件名：“{file}”（{chars} 已替换为相似的全角字符）",
+    docConflictWarning:
+      "笔记文件夹中已存在 {files}。改名后，本项目将显示这份已有文件的内容；本项目原有的笔记（如有）会保留旧文件名。",
+    renameAnyway: "仍然重命名",
+    collectionNameExists: "已存在同名合集",
+    projectsRestored: "已恢复放回的项目",
+    restoreDocConflict: "已恢复，但有笔记文件名已被占用",
+    docFolderMissing: "找不到笔记/歌词文件夹",
+    docFolderMissingHint: "请在扩展设置里重新选择。在此之前不会写入任何文件。",
+    openPreferences: "打开扩展设置",
+    docSaveFailed: "保存失败",
+    useProjectFolders: "改为存进项目文件夹",
     renameConfirmTitle: "重命名项目?",
     renameConfirmMessage: "请确认该项目已在 Ableton Live 中关闭。开着时重命名可能让工程与文件失联。",
     rename: "重命名",

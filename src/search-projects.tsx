@@ -18,6 +18,7 @@ import {
   type Application,
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
+import fs from "node:fs";
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { getSettings } from "./settings";
@@ -30,7 +31,9 @@ import type { SortOption } from "./sorting";
 import { Bounces } from "./bounces";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "./taxonomies";
 import type { TaxonomyOption } from "./taxonomy";
-import { ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
+import { displayDoc, readDocFile, stripFrontmatter } from "./docs";
+import { docPlaceholder, openDoc } from "./doc-actions";
+import { archiveDeletedProject, restorePutBackProjects } from "./deleted-projects";
 import { CollectionList } from "./collections-view";
 import { EditInfo } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
@@ -172,7 +175,14 @@ export default function Command() {
   const reloadProjects = useCallback(async () => {
     try {
       baseProjectsRef.current = loadProjects(PROJECTS_ROOT);
+      // 先还原从废纸篓放回的项目（标签/轨号/角色/文档），再套用元数据。
+      const { restored, docConflicts } = await restorePutBackProjects(baseProjectsRef.current);
       await applyMetadata();
+      if (docConflicts.length > 0) {
+        await showToast({ style: Toast.Style.Failure, title: t.restoreDocConflict, message: docConflicts.join(", ") });
+      } else if (restored.length > 0) {
+        await showToast({ style: Toast.Style.Success, title: t.projectsRestored, message: restored.join(", ") });
+      }
     } catch (error) {
       console.error("[Ableton Session Manager] Failed to load projects:", error);
       setProjects([]);
@@ -190,6 +200,26 @@ export default function Command() {
       setIsLoading(false);
     }
     void load();
+  }, [reloadProjects]);
+
+  // 监听项目根目录（fs.watch 为 Node 内置，底层走 FSEvents）：Finder 里新建、删除、改名或从废纸篓放回项目时自动重载。
+  // 去抖 0.5 秒，合并 Finder 连续触发的多次事件。
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let watcher: fs.FSWatcher | null = null;
+    try {
+      watcher = fs.watch(PROJECTS_ROOT, () => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => void reloadProjects(), 500);
+      });
+      watcher.on("error", () => watcher?.close());
+    } catch {
+      // 根目录不存在等：不监听，照常在打开时加载。
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+      watcher?.close();
+    };
   }, [reloadProjects]);
 
   // 根据播放状态维护常驻 Toast。
@@ -275,8 +305,9 @@ export default function Command() {
     });
     if (!confirmed) return;
     await trash(project.folderPath);
-    // 清理该项目的残留数据：元数据 + 各合集里的轨号/角色映射。
-    // 项目 id = 文件夹名，不清会在重建同名项目时复活（从废纸篓恢复也不会带回标签）。
+    // 先存档（标签/轨号/角色，并把自定义文件夹里的文档移进 Deleted Projects/），再清理残留数据。
+    // 30 天内从废纸篓放回，下次加载会按「同名 + 同创建时间」识别并还原；同名新项目不受影响。
+    await archiveDeletedProject(project);
     await deleteProjectMetadata(project.id);
     await removeProjectFromAllOrders(project.id);
     await removeProjectFromAllRoles(project.id);
@@ -318,7 +349,7 @@ export default function Command() {
       : detailDoc === "notes"
         ? item.notes
         : stripFrontmatter(readDocFile(item, "lyrics"));
-    const detailPlaceholder = detailDoc === "notes" ? "_No notes yet_" : "_No lyrics yet_";
+    const detailPlaceholder = docPlaceholder(detailDoc);
 
     const isThisPlaying = playingId === item.id;
     const isAnythingPlaying = playingId !== null;
@@ -351,7 +382,7 @@ export default function Command() {
         detail={
           showDetail ? (
             <List.Item.Detail
-              markdown={detailBody.trim() ? detailBody : detailPlaceholder}
+              markdown={detailBody.trim() ? displayDoc(detailBody) : detailPlaceholder}
               metadata={
                 <List.Item.Detail.Metadata>
                   {stage ? (
@@ -455,7 +486,7 @@ export default function Command() {
                 icon={Icon.Document}
                 shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
                 onAction={async () => {
-                  await open(ensureDocFile(item, "notes"));
+                  await openDoc(item, "notes");
                 }}
               />
               <Action
@@ -463,7 +494,7 @@ export default function Command() {
                 icon={Icon.Music}
                 shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
                 onAction={async () => {
-                  await open(ensureDocFile(item, "lyrics"));
+                  await openDoc(item, "lyrics");
                 }}
               />
             </ActionPanel.Section>
