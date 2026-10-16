@@ -94,18 +94,22 @@ Most actions are discoverable via the Action Panel (`⌘K`). A few highlights:
 ## Known limitations
 
 - **Queue collection in player** writes a standard `.m3u` playlist and opens it with your default `.m3u` handler. Use a player that supports playlists (IINA, VLC, Swinsian, …). **QuickTime Player does not support `.m3u`** and will not play the collection as a queue.
-- **Notes / lyrics in a custom folder** are named after the project. Characters that are unsafe in filenames or special in Obsidian (`\ * ? " < > | # ^ [ ]`) are replaced with `-`, and a short ID is appended (e.g. `Beat #3` → `Beat -3 ~1a2b3c.md`) so two projects never share a file.
+- **Notes / lyrics in a custom folder** are linked to a project **by file name** (`<Project Name>.md`). Rename projects inside the extension and the `.md` follows automatically; if you rename the `.md` yourself, the extension won't find it anymore.
+- Characters that are unsafe in filenames or special in Obsidian (`/ \ : * ? " < > | # ^ [ ]`) are replaced with **full-width look-alikes** (e.g. `Beat #3` → `Beat ＃3.md`), so two projects never share a file.
+- **Moving a project to the Trash** moves its custom-folder notes / lyrics into a `Deleted Projects/` subfolder and remembers its tags, track numbers and roles for **30 days**. Put the project back from the Trash within that time and everything is restored the next time you open Search Projects. A new project that merely has the same name is not affected.
+- **Renaming or deleting projects in Finder** is picked up automatically (projects are matched by folder creation date). With **Full Disk Access** granted to Raycast, a deletion is confirmed against the Trash; without it, a vanished project is treated as deleted and fully restored if it comes back. If many projects vanish at once (e.g. an external drive is unplugged), nothing is changed.
+- If the custom notes / lyrics folder is renamed or moved, the extension shows a warning and **won't write anything** until you choose the folder again in Extension Preferences.
 
 ## Roadmap
 
 - Filter / search by BPM & key
 - Missing-media (sample) check
 - New project from a template `.als`
-- Automated tests + CI
 
 ## Contributing
 
 Commit messages follow **Conventional Commits** with Chinese descriptions and English technical terms — e.g. `feat(bounces): 新增 Show in Finder 与 Open in Default App`.
+| **Strict Line Breaks** | — | Off (default): a single line break shows as a line break, like Obsidian. On: standard Markdown. Display only. |
 
 ## License
 

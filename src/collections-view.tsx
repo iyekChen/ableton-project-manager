@@ -38,7 +38,8 @@ import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrack
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "./audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
-import { ensureDocFile, readDocFile, stripFrontmatter } from "./docs";
+import { displayDoc, readDocFile, stripFrontmatter } from "./docs";
+import { docPlaceholder, openDoc } from "./doc-actions";
 import {
   getPinnedCollections,
   movePinnedCollection,
@@ -92,7 +93,16 @@ function slugify(name: string): string {
   return slug || name.trim().toLowerCase();
 }
 
-function CollectionNameForm(props: { title: string; currentName?: string; onSubmit: (name: string) => Promise<void> }) {
+// 合集名比较：忽略首尾空格与大小写。
+function sameName(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+function CollectionNameForm(props: {
+  title: string;
+  currentName?: string;
+  onSubmit: (name: string) => Promise<boolean>;
+}) {
   const { pop } = useNavigation();
   const [name, setName] = useState("");
 
@@ -114,8 +124,8 @@ function CollectionNameForm(props: { title: string; currentName?: string; onSubm
                 await showToast({ style: Toast.Style.Failure, title: t.invalidName });
                 return;
               }
-              await props.onSubmit(trimmed);
-              pop();
+              // 返回 false（如重名）时留在表单里，方便直接改。
+              if (await props.onSubmit(trimmed)) pop();
             }}
           />
         </ActionPanel>
@@ -155,23 +165,35 @@ export function CollectionList({
     setPinnedIds(await movePinnedCollection(id, direction));
   }
 
-  async function createCollection(name: string) {
+  // 按显示名判重（不区分大小写）。id 仍由 slug 生成；slug 撞了就加 -2、-3…，避免 Demo! 与 Demo 被误判重名。
+  async function createCollection(name: string): Promise<boolean> {
     const current = await collectionTaxonomy.get();
-    const option: TaxonomyOption = { id: slugify(name), name };
-    if (current.some((o) => o.id === option.id)) {
-      await showToast({ style: Toast.Style.Failure, title: t.nameExists });
-      return;
+    if (current.some((o) => sameName(o.name, name))) {
+      await showToast({ style: Toast.Style.Failure, title: t.collectionNameExists });
+      return false;
     }
+    const base = slugify(name);
+    let id = base;
+    for (let n = 2; current.some((o) => o.id === id); n++) {
+      id = `${base}-${n}`;
+    }
+    const option: TaxonomyOption = { id, name };
     await collectionTaxonomy.save([...current, option]);
     await reloadCollections();
     await showToast({ style: Toast.Style.Success, title: t.created });
+    return true;
   }
 
-  async function renameCollection(id: string, name: string) {
+  async function renameCollection(id: string, name: string): Promise<boolean> {
     const current = await collectionTaxonomy.get();
+    if (current.some((o) => o.id !== id && sameName(o.name, name))) {
+      await showToast({ style: Toast.Style.Failure, title: t.collectionNameExists });
+      return false;
+    }
     await collectionTaxonomy.save(current.map((o) => (o.id === id ? { ...o, name } : o)));
     await reloadCollections();
     await showToast({ style: Toast.Style.Success, title: t.renamed });
+    return true;
   }
 
   async function deleteCollection(c: Collection) {
@@ -614,7 +636,7 @@ function CollectionPanel({
         icon={Icon.Document}
         shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
         onAction={async () => {
-          await open(ensureDocFile(p, "notes"));
+          await openDoc(p, "notes");
         }}
       />
       <Action
@@ -622,7 +644,7 @@ function CollectionPanel({
         icon={Icon.Music}
         shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
         onAction={async () => {
-          await open(ensureDocFile(p, "lyrics"));
+          await openDoc(p, "lyrics");
         }}
       />
     </ActionPanel.Section>
@@ -707,10 +729,11 @@ function CollectionPanel({
       if (score !== null) level = energyLevelFromScore(score);
     }
     const detailBody = detailDoc === "notes" ? (p.notes ?? "") : stripFrontmatter(readDocFile(p, "lyrics"));
-    const detailPlaceholder = detailDoc === "notes" ? "_No notes yet_" : "_No lyrics yet_";
+    const detailPlaceholder = docPlaceholder(detailDoc);
+
     return (
       <List.Item.Detail
-        markdown={detailBody.trim() ? detailBody : detailPlaceholder}
+        markdown={detailBody.trim() ? displayDoc(detailBody) : detailPlaceholder}
         metadata={
           <List.Item.Detail.Metadata>
             {stage ? (

@@ -74,8 +74,16 @@
 			"required": false
 		},
 		{
-			"name": "weightCrest",
-			"title": "Energy Weight: Density (Crest)",
+			"name": "strictLineBreaks",
+			"title": "Strict Line Breaks",
+			"label": "Strict line breaks",
+			"description": "Like Obsidian's setting of the same name. Off: a single line break shows as a line break. On: standard Markdown, where a single line break is ignored and a blank line starts a new paragraph. Display only — files are never changed.",
+			"type": "checkbox",
+			"required": false,
+			"default": false
+		},
+		{
+			"name": "weightCrest",			"title": "Energy Weight: Density (Crest)",
 			"description": "How much a track's density/compression counts toward its energy. Weights are relative — only the differences between the three matter.",
 			"type": "dropdown",
 			"required": false,

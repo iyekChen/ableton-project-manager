@@ -62,6 +62,19 @@ export async function renameProjectInAllOrders(oldId: string, newId: string): Pr
   }
 }
 
+/** 收集某项目在各 collection 里的轨号 { collectionId -> 轨号 }（删项目时存档用） */
+export async function getProjectOrders(projectId: string): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  const all = await LocalStorage.allItems();
+  for (const key of Object.keys(all)) {
+    if (!key.startsWith(KEY_PREFIX)) continue;
+    const collectionId = key.slice(KEY_PREFIX.length);
+    const map = await getTrackMap(collectionId);
+    if (projectId in map) out[collectionId] = map[projectId];
+  }
+  return out;
+}
+
 /** 给某项目设轨号(n>=1);返回新映射 */ export function assignNumber(map: TrackMap, id: string, n: number): TrackMap {
   return { ...map, [id]: Math.floor(n) };
 }

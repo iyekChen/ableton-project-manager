@@ -34,6 +34,7 @@ import type { TaxonomyOption } from "./taxonomy";
 import { displayDoc, readDocFile, stripFrontmatter } from "./docs";
 import { docPlaceholder, openDoc } from "./doc-actions";
 import { archiveDeletedProject, restorePutBackProjects } from "./deleted-projects";
+import { syncFinderChanges } from "./finder-sync";
 import { CollectionList } from "./collections-view";
 import { EditInfo } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
@@ -50,6 +51,8 @@ const VIEW_MODE_STORAGE_KEY = "view-mode:projects";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:projects";
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
+// 正在由扩展执行 Move to Trash 的项目：已归档，目录监听触发的重载不要再当成 Finder 删除处理。
+const trashingIds = new Set<string>();
 
 const PROJECT_SORT_OPTIONS: SortOption[] = [
   "modified-desc",
@@ -175,6 +178,11 @@ export default function Command() {
   const reloadProjects = useCallback(async () => {
     try {
       baseProjectsRef.current = loadProjects(PROJECTS_ROOT);
+      // 先补做在 Finder 里做的改名/删除，再处理放回、套用元数据。
+      const { guardTripped } = await syncFinderChanges(baseProjectsRef.current, PROJECTS_ROOT, trashingIds);
+      if (guardTripped) {
+        await showToast({ style: Toast.Style.Failure, title: t.manyProjectsMissing });
+      }
       // 先还原从废纸篓放回的项目（标签/轨号/角色/文档），再套用元数据。
       const { restored, docConflicts } = await restorePutBackProjects(baseProjectsRef.current);
       await applyMetadata();
@@ -304,6 +312,7 @@ export default function Command() {
       primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
+    trashingIds.add(project.id);
     await trash(project.folderPath);
     // 先存档（标签/轨号/角色，并把自定义文件夹里的文档移进 Deleted Projects/），再清理残留数据。
     // 30 天内从废纸篓放回，下次加载会按「同名 + 同创建时间」识别并还原；同名新项目不受影响。
@@ -311,6 +320,7 @@ export default function Command() {
     await deleteProjectMetadata(project.id);
     await removeProjectFromAllOrders(project.id);
     await removeProjectFromAllRoles(project.id);
+    trashingIds.delete(project.id);
     await reloadProjects();
     await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: project.title });
   };

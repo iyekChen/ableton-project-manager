@@ -1,6 +1,7 @@
 import { ActionPanel, Action, Form, showToast, Toast, useNavigation } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { readDocFile, stripFrontmatter, writeDocBody } from "../../docs";
+import { showDocError } from "../../doc-actions";
 import { getSettings } from "../../settings";
 import { getTranslations } from "../../i18n";
 import type { Project } from "../../projects/types";
@@ -17,6 +18,13 @@ export function EditNote({ project, onSaved }: { project: Project; onSaved: () =
   }, [project]);
 
   async function handleSubmit() {
+    try {
+      writeDocBody(project, "notes", note);
+    } catch (error) {
+      // 自定义文件夹失效等：不返回上一页，保留已输入的内容。
+      await showDocError(error);
+      return;
+    }
     writeDocBody(project, "notes", note);
 
     onSaved();

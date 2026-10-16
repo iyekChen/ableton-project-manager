@@ -62,6 +62,19 @@ export async function renameProjectInAllRoles(oldId: string, newId: string): Pro
   }
 }
 
+/** 收集某项目在各 collection 里的角色 { collectionId -> 角色 }（删项目时存档用） */
+export async function getProjectRoles(projectId: string): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  const all = await LocalStorage.allItems();
+  for (const key of Object.keys(all)) {
+    if (!key.startsWith(KEY_PREFIX)) continue;
+    const collectionId = key.slice(KEY_PREFIX.length);
+    const map = await getRoleMap(collectionId);
+    if (projectId in map) out[collectionId] = map[projectId];
+  }
+  return out;
+}
+
 /** 给某项目设角色;返回新映射 */ export function assignRole(map: RoleMap, id: string, role: string): RoleMap {
   return { ...map, [id]: role };
 }

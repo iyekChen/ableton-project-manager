@@ -17,7 +17,7 @@ import path from "node:path";
 import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "../../project-metadata";
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
-import { alteredDocChars, renameDocFiles, type DocRenameResult } from "../../docs";
+import { alteredDocChars, docFileBaseName, docRenameConflicts, renameDocFiles, type DocRenameResult } from "../../docs";
 import { renameProjectInAllOrders } from "../../collection-order";
 import { renameProjectInAllRoles } from "../../collection-roles";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "../../taxonomies";
@@ -94,16 +94,26 @@ export function EditInfo({
 
       const newPath = path.join(path.dirname(project.folderPath), trimmedName);
 
-      if (fs.existsSync(newPath)) {
+      // macOS 不区分大小写：只改大小写时 existsSync 会把自己当成"已存在"，需放行。
+      const caseOnly = trimmedName.toLowerCase() === project.title.toLowerCase();
+      if (!caseOnly && fs.existsSync(newPath)) {
         await showToast({ style: Toast.Style.Failure, title: t.nameExists });
         return;
       }
 
+      // 改名前预检笔记/歌词的目标文件是否已被占用，在确认框里写明后果，而不是改完才报。
+      const docConflicts = docRenameConflicts(project.title, trimmedName);
+      const hasDocConflicts = docConflicts.length > 0;
       const confirmed = await confirmAlert({
         icon: { source: Icon.Warning, tintColor: Color.Yellow },
         title: t.renameConfirmTitle,
-        message: t.renameConfirmMessage,
-        primaryAction: { title: t.rename, style: Alert.ActionStyle.Default },
+        message: hasDocConflicts
+          ? `${t.renameConfirmMessage}\n\n${t.docConflictWarning.replace("{files}", docConflicts.join(", "))}`
+          : t.renameConfirmMessage,
+        primaryAction: {
+          title: hasDocConflicts ? t.renameAnyway : t.rename,
+          style: hasDocConflicts ? Alert.ActionStyle.Destructive : Alert.ActionStyle.Default,
+        },
       });
 
       if (!confirmed) {
@@ -170,8 +180,12 @@ export function EditInfo({
     >
       <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
       {alteredDocChars(name.trim()).length > 0 && (
-        <Form.Description text={t.docNameHint.replace("{chars}", alteredDocChars(name.trim()).join(" "))} />
-      )}{" "}
+        <Form.Description
+          text={t.docNameHint
+            .replace("{file}", docFileBaseName(name.trim()))
+            .replace("{chars}", alteredDocChars(name.trim()).join(" "))}
+        />
+      )}
       <Form.Dropdown id="stage" title={t.stage} value={stageId} onChange={setStageId}>
         <Form.Dropdown.Item value="none" title={t.none} icon={Icon.Circle} />
         {stageOptions.map((option) => (

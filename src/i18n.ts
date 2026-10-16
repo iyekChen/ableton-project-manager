@@ -79,6 +79,7 @@ type TranslationKeys = {
   openPreferences: string;
   docSaveFailed: string;
   useProjectFolders: string;
+  manyProjectsMissing: string;
   renameConfirmTitle: string;
   renameConfirmMessage: string;
   rename: string;
@@ -215,6 +216,7 @@ const translations: Record<Language, TranslationKeys> = {
     openPreferences: "Open Extension Preferences",
     docSaveFailed: "Couldn't save",
     useProjectFolders: "Store in Project Folders Instead",
+    manyProjectsMissing: "Many projects disappeared at once — nothing was changed. Is the drive connected?",
     renameConfirmTitle: "Rename project?",
     renameConfirmMessage:
       "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
@@ -351,6 +353,7 @@ const translations: Record<Language, TranslationKeys> = {
     openPreferences: "打开扩展设置",
     docSaveFailed: "保存失败",
     useProjectFolders: "改为存进项目文件夹",
+    manyProjectsMissing: "检测到大量项目同时消失，未做任何处理。项目所在的磁盘是否已连接？",
     renameConfirmTitle: "重命名项目?",
     renameConfirmMessage: "请确认该项目已在 Ableton Live 中关闭。开着时重命名可能让工程与文件失联。",
     rename: "重命名",
