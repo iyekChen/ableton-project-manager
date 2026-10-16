@@ -46,8 +46,23 @@ export async function removeProjectFromAllRoles(projectId: string): Promise<void
   }
 }
 
-/** 给某项目设角色;返回新映射 */
-export function assignRole(map: RoleMap, id: string, role: string): RoleMap {
+/** 把所有 collection 角色映射里的 oldId 改成 newId（项目改名时迁移，保留原角色） */
+export async function renameProjectInAllRoles(oldId: string, newId: string): Promise<void> {
+  if (oldId === newId) return;
+  const all = await LocalStorage.allItems();
+  for (const key of Object.keys(all)) {
+    if (!key.startsWith(KEY_PREFIX)) continue;
+    const collectionId = key.slice(KEY_PREFIX.length);
+    const map = await getRoleMap(collectionId);
+    if (!(oldId in map)) continue;
+    // newId 下若有残留（同名旧项目的孤儿数据），以迁移过来的值为准。
+    map[newId] = map[oldId];
+    delete map[oldId];
+    await setRoleMap(collectionId, map);
+  }
+}
+
+/** 给某项目设角色;返回新映射 */ export function assignRole(map: RoleMap, id: string, role: string): RoleMap {
   return { ...map, [id]: role };
 }
 

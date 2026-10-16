@@ -18,11 +18,16 @@ import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
 import { renameDocFiles, type DocRenameResult } from "../../docs";
+import { renameProjectInAllOrders } from "../../collection-order";
+import { renameProjectInAllRoles } from "../../collection-roles";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "../../taxonomies";
 import type { Project } from "../../projects/types";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
+
+/** 改名成功时回传给调用方，便于其刷新内存中以旧 id 为键的状态。 */
+export type ProjectRename = { oldId: string; newId: string; folderPath: string };
 
 export function EditInfo({
   project,
@@ -32,10 +37,10 @@ export function EditInfo({
   onRoleChanged,
 }: {
   project: Project;
-  onSaved: () => void;
+  onSaved: (rename?: ProjectRename) => void;
   collectionId?: string;
   currentRole?: string;
-  onRoleChanged?: (role: string | null) => Promise<void>;
+  onRoleChanged?: (role: string | null, projectId: string) => Promise<void>;
 }) {
   const { pop } = useNavigation();
   const [name, setName] = useState(project.title);
@@ -79,6 +84,7 @@ export function EditInfo({
 
     let targetId = project.id;
     let docRenameResult: DocRenameResult | null = null;
+    let rename: ProjectRename | undefined;
 
     if (nameChanged) {
       if (trimmedName.includes("/") || trimmedName.includes(":")) {
@@ -116,8 +122,12 @@ export function EditInfo({
       }
 
       await renameProjectMetadata(project.id, trimmedName);
+      // 合集里的轨号/角色也以项目 id 为键，一并迁移，否则改名后曲目会掉进 Unsorted、角色丢失。
+      await renameProjectInAllOrders(project.id, trimmedName);
+      await renameProjectInAllRoles(project.id, trimmedName);
       docRenameResult = renameDocFiles(project.title, trimmedName);
       targetId = trimmedName;
+      rename = { oldId: project.id, newId: trimmedName, folderPath: newPath };
     }
 
     const metadata = await getProjectMetadata(targetId);
@@ -132,11 +142,11 @@ export function EditInfo({
       const nextRole = role === "none" ? null : role;
 
       if (nextRole !== (currentRole ?? null)) {
-        await onRoleChanged(nextRole);
+        await onRoleChanged(nextRole, targetId);
       }
     }
 
-    onSaved();
+    onSaved(rename);
 
     if (docRenameResult && (docRenameResult.conflicts.length > 0 || docRenameResult.failures.length > 0)) {
       // 文档改名有冲突/失败：如实告知，而不是误报"已更新"。

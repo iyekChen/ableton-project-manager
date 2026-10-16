@@ -46,8 +46,23 @@ export async function removeProjectFromAllOrders(projectId: string): Promise<voi
   }
 }
 
-/** 给某项目设轨号(n>=1);返回新映射 */
-export function assignNumber(map: TrackMap, id: string, n: number): TrackMap {
+/** 把所有 collection 轨号映射里的 oldId 改成 newId（项目改名时迁移，保留原轨号） */
+export async function renameProjectInAllOrders(oldId: string, newId: string): Promise<void> {
+  if (oldId === newId) return;
+  const all = await LocalStorage.allItems();
+  for (const key of Object.keys(all)) {
+    if (!key.startsWith(KEY_PREFIX)) continue;
+    const collectionId = key.slice(KEY_PREFIX.length);
+    const map = await getTrackMap(collectionId);
+    if (!(oldId in map)) continue;
+    // newId 下若有残留（同名旧项目的孤儿数据），以迁移过来的值为准。
+    map[newId] = map[oldId];
+    delete map[oldId];
+    await setTrackMap(collectionId, map);
+  }
+}
+
+/** 给某项目设轨号(n>=1);返回新映射 */ export function assignNumber(map: TrackMap, id: string, n: number): TrackMap {
   return { ...map, [id]: Math.floor(n) };
 }
 

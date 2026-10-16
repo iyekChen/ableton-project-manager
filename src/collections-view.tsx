@@ -47,7 +47,7 @@ import {
 } from "./collection-pins";
 import { collectionTaxonomy } from "./taxonomies";
 import { getAllProjectMetadata, saveProjectMetadata } from "./project-metadata";
-import { EditInfo } from "./components/project/edit-info";
+import { EditInfo, type ProjectRename } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
 
 const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
@@ -499,10 +499,22 @@ function CollectionPanel({
   }
 
   // Edit Info 存盘后：从 LocalStorage 重读成员的 Stage/Genre/Collection（含成员增减）。
-  async function reloadMetadata() {
+  async function reloadMetadata(rename?: ProjectRename) {
     const store = await getAllProjectMetadata();
+    if (rename) {
+      // 在本面板里改了名：存储里的轨号/角色已迁到新 id，这里重读，
+      // 避免内存里的旧表在下次 apply() 时把迁移覆盖回去。
+      const [trackMap, roleMap] = await Promise.all([getTrackMap(collection.id), getRoleMap(collection.id)]);
+      setMap(trackMap);
+      setRoles(roleMap);
+      setInfos((prev) => (rename.oldId in prev ? { ...prev, [rename.newId]: prev[rename.oldId] } : prev));
+    }
     setProjectList((prev) =>
-      prev.map((p) => {
+      prev.map((item) => {
+        const p =
+          rename && item.id === rename.oldId
+            ? { ...item, id: rename.newId, title: rename.newId, folderPath: rename.folderPath }
+            : item;
         const meta = store[p.id];
         return meta
           ? {
@@ -825,9 +837,13 @@ function CollectionPanel({
                               onSaved={reloadMetadata}
                               collectionId={collection.id}
                               currentRole={roles[p.id]}
-                              onRoleChanged={(nextRole) =>
-                                applyRoles(nextRole ? assignRole(roles, p.id, nextRole) : clearRole(roles, p.id))
-                              }
+                              onRoleChanged={async (nextRole, projectId) => {
+                                // 读存储里的最新表（同一次保存可能刚做过改名迁移），按 EditInfo 给的 id 写入。
+                                const fresh = await getRoleMap(collection.id);
+                                await applyRoles(
+                                  nextRole ? assignRole(fresh, projectId, nextRole) : clearRole(fresh, projectId),
+                                );
+                              }}
                             />
                           }
                         />
@@ -887,7 +903,7 @@ function CollectionPanel({
                 return (
                   <List.Item
                     key={p.id}
-                    icon={{ source: "Project.png" }}
+                    icon="icon.png"
                     title={p.title}
                     detail={showDetail ? renderDetail(p) : undefined}
                     actions={
