@@ -60,10 +60,13 @@ export function DuplicateProject({ project, onDuplicated }: { project: Project; 
       toast.title = t.projectDuplicated;
       onDuplicated();
     } catch (error) {
-      // 提交前已确认目标不存在，这里留下的只会是本次复制了一半的内容，清掉。
-      await fs.promises.rm(target, { recursive: true, force: true }).catch(() => undefined);
+      // 复制失败时清理半成品；但 EEXIST 说明目标在复制前就已被别的进程创建（不是本次产物），绝不能删。
+      const code = error instanceof Error ? (error as NodeJS.ErrnoException).code : undefined;
+      if (code !== "ERR_FS_CP_EEXIST") {
+        await fs.promises.rm(target, { recursive: true, force: true }).catch(() => undefined);
+      }
       toast.style = Toast.Style.Failure;
-      toast.title = t.duplicateFailed;
+      toast.title = code === "ERR_FS_CP_EEXIST" ? t.nameExists : t.duplicateFailed;
       toast.message = error instanceof Error ? error.message : String(error);
     }
   }

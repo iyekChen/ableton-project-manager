@@ -26,5 +26,8 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Build audio player
+        run: npm run build:player
+
       - name: Build
         run: npm run build

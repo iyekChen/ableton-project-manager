@@ -154,6 +154,17 @@ type TranslationKeys = {
   trashProjectHint: string;
   trashSetHint: string;
   trashBounceHint: string;
+  cleanUpRemoved: string;
+  noRemovedProjects: string;
+  removedNotOnDisk: string;
+  cleanUp: string;
+  cleanUpAll: string;
+  cleanedUp: string;
+  cleanUpRemovedConfirmTitle: string;
+  cleanUpRemovedConfirmMessage: string;
+  trashNoAccess: string;
+  trashNoAccessHint: string;
+  openFullDiskAccess: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -315,6 +326,18 @@ const translations: Record<Language, TranslationKeys> = {
     trashProjectHint: "This moves the entire project folder to the Trash:",
     trashSetHint: "This moves the Set to the Trash:",
     trashBounceHint: "This moves the bounce to the Trash:",
+    cleanUpRemoved: "Clean up Removed Projects",
+    noRemovedProjects: "Nothing to clean up",
+    removedNotOnDisk: "Not in Projects folder",
+    cleanUp: "Clean Up",
+    cleanUpAll: "Clean Up All",
+    cleanedUp: "Cleaned Up",
+    cleanUpRemovedConfirmTitle: "Clean up this project's data?",
+    cleanUpRemovedConfirmMessage:
+      "Its notes are archived to the Deleted Projects folder and its tags / track numbers are cleared. The project folder itself is not touched.",
+    trashNoAccess: "Projects left the folder — data kept safe",
+    trashNoAccessHint: "Grant Full Disk Access to clean up automatically, or run Clean Up Removed Projects.",
+    openFullDiskAccess: "Open Full Disk Access Settings",
   },
 
   "zh-CN": {
@@ -473,6 +496,18 @@ const translations: Record<Language, TranslationKeys> = {
     trashProjectHint: "这会把整个项目文件夹移到废纸篓：",
     trashSetHint: "这会把该 Set 移到废纸篓：",
     trashBounceHint: "这会把该 bounce 移到废纸篓：",
+    cleanUpRemoved: "清理已移除的项目",
+    noRemovedProjects: "没有需要清理的项目",
+    removedNotOnDisk: "已不在项目文件夹中",
+    cleanUp: "清理",
+    cleanUpAll: "全部清理",
+    cleanedUp: "已清理",
+    cleanUpRemovedConfirmTitle: "清理该项目的数据？",
+    cleanUpRemovedConfirmMessage:
+      "它的笔记会归档到 Deleted Projects 文件夹，标签 / 轨号会被清除。项目文件夹本身不受影响。",
+    trashNoAccess: "有项目离开了文件夹 — 数据已安全保留",
+    trashNoAccessHint: "授予完全磁盘访问权限可自动清理，或运行「清理已移除的项目」命令。",
+    openFullDiskAccess: "打开完全磁盘访问权限设置",
   },
 };
 

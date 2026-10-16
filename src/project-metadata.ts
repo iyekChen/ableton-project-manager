@@ -69,6 +69,32 @@ export async function deleteProjectMetadata(projectId: string): Promise<void> {
   await saveStore(store);
 }
 
+// 删除某个 Stage 后，清空所有引用它的项目的 stageId（一次读—改—写回，避免并发覆盖）。
+export async function removeStageEverywhere(stageId: string): Promise<void> {
+  const store = await getStore();
+  let changed = false;
+  for (const id of Object.keys(store)) {
+    if (store[id].stageId === stageId) {
+      store[id] = { ...store[id], stageId: null };
+      changed = true;
+    }
+  }
+  if (changed) await saveStore(store);
+}
+
+// 删除某个 Genre 后，从所有项目的 genreIds 里移除它（一次读—改—写回）。
+export async function removeGenreEverywhere(genreId: string): Promise<void> {
+  const store = await getStore();
+  let changed = false;
+  for (const id of Object.keys(store)) {
+    if (store[id].genreIds?.includes(genreId)) {
+      store[id] = { ...store[id], genreIds: store[id].genreIds.filter((g) => g !== genreId) };
+      changed = true;
+    }
+  }
+  if (changed) await saveStore(store);
+}
+
 // 项目文件夹改名后,把它的 metadata 从旧名字迁到新名字,避免丢失。
 export async function renameProjectMetadata(oldId: string, newId: string): Promise<void> {
   if (oldId === newId) {

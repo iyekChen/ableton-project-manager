@@ -56,13 +56,9 @@ export function listBounces(folderPath: string): Bounce[] {
   return bounces;
 }
 
-/** 统计某目录下的 bounce 数量（仅按后缀，不读取文件状态）。 */
+/** 统计某目录下的 bounce 数量：与 listBounces 口径一致（跟随 symlink、必须是文件），避免把同名目录当成音频。 */
 export function countBounces(folderPath: string): number {
-  try {
-    return fs.readdirSync(folderPath).filter(isAudioFile).length;
-  } catch {
-    return 0;
-  }
+  return listBounces(folderPath).length;
 }
 
 /** 返回某目录下最近修改的 bounce 路径，没有则返回 null。

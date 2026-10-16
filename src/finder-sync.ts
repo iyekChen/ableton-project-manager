@@ -20,7 +20,13 @@ async function readSnapshot(): Promise<SnapshotEntry[] | null> {
   }
 }
 
-export type FinderSyncResult = { renamed: number; archived: number; ambiguous: number; guardTripped: boolean };
+export type FinderSyncResult = {
+  renamed: number;
+  archived: number;
+  ambiguous: number;
+  guardTripped: boolean;
+  trashUnavailable: boolean;
+};
 
 /** 对比上次看到的项目清单，把在 Finder 里做的改名/删除补做一遍。
  *  改名：同一文件夹（创建时间 + inode）换了名字 → 迁移元数据、轨号、角色、文档名。
@@ -33,7 +39,13 @@ export async function syncFinderChanges(
 ): Promise<FinderSyncResult> {
   const current: SnapshotEntry[] = projects.map((p) => ({ id: p.id, birthtimeMs: p.createdAt, inode: p.inode }));
   const previous = await readSnapshot();
-  const result: FinderSyncResult = { renamed: 0, archived: 0, ambiguous: 0, guardTripped: false };
+  const result: FinderSyncResult = {
+    renamed: 0,
+    archived: 0,
+    ambiguous: 0,
+    guardTripped: false,
+    trashUnavailable: false,
+  };
 
   if (previous) {
     const diff = diffSnapshots(previous, current);
@@ -49,10 +61,12 @@ export async function syncFinderChanges(
     }
 
     const trash = readTrashFolders(trashDirsFor(projectsRoot));
+    if (!trash && diff.removed.length > 0) result.trashUnavailable = true;
     for (const entry of diff.removed) {
       if (skipIds.has(entry.id) || (await hasDeletedRecord(entry))) continue;
-      // 有权限时：不在废纸篓 = 被移走而非删除，保留数据等它回来。
-      if (trash && !trash.some((folder) => sameFolder(folder, entry))) continue;
+      // 只有能读到废纸篓、且确认该项目确实在废纸篓里，才按「删除」归档清理。
+      // 读不到废纸篓（没有完全磁盘访问权限）时一律不动数据，交给「清理已移除的项目」命令手动处理。
+      if (!trash || !trash.some((folder) => sameFolder(folder, entry))) continue;
       await archiveDeletedProject({
         id: entry.id,
         title: entry.id,

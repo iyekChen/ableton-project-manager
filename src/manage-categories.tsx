@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { Taxonomy, TaxonomyOption } from "./taxonomy";
 import { stageTaxonomy, genreTaxonomy, roleTaxonomy } from "./taxonomies";
 import { deleteRoleEverywhere, renameRoleEverywhere } from "./collection-roles";
+import { removeGenreEverywhere, removeStageEverywhere } from "./project-metadata";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
 
@@ -165,6 +166,10 @@ export default function Command() {
     setOptions(next);
     if (kind === "role") {
       await deleteRoleEverywhere(option.name);
+    } else if (kind === "stage") {
+      await removeStageEverywhere(option.id);
+    } else if (kind === "genre") {
+      await removeGenreEverywhere(option.id);
     }
     await showToast({ style: Toast.Style.Success, title: t.deleted });
   }
