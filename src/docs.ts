@@ -149,9 +149,44 @@ export class DocSharedError extends Error {
 let knownTitles: string[] = [];
 let sharedDocs = new Map<string, string[]>();
 
-// 按不区分大小写比较：笔记文件夹多半在不区分大小写的卷上，宁可多拦也不混用。
+// 文件夹所在卷是否区分大小写：把文件夹名换个大小写再查，找不到或找到的不是同一个 inode = 区分大小写。
+// 名字里没有字母、或探测失败时，按不区分处理（宁可多拦也不混用）。结果按文件夹缓存。
+const caseSensitivity = new Map<string, boolean>();
+
+function isCaseSensitive(folder: string): boolean {
+  const cached = caseSensitivity.get(folder);
+  if (cached !== undefined) return cached;
+
+  let result = false;
+  const base = path.basename(folder);
+  const flippedBase = base.replace(/[a-z]/gi, (c) => (c === c.toLowerCase() ? c.toUpperCase() : c.toLowerCase()));
+  if (flippedBase !== base) {
+    try {
+      const original = fs.statSync(folder);
+      try {
+        const flipped = fs.statSync(path.join(path.dirname(folder), flippedBase));
+        result = !(flipped.ino === original.ino && flipped.dev === original.dev);
+      } catch {
+        result = true; // 换了大小写就找不到
+      }
+    } catch {
+      result = false; // 文件夹本身读不到：交给失效保护处理
+    }
+  }
+  caseSensitivity.set(folder, result);
+  return result;
+}
+
+/** 该类文档的自定义文件夹是否在区分大小写的卷上（未设自定义文件夹时为 false）。 */
+export function docFolderIsCaseSensitive(kind: DocKind): boolean {
+  const folder = getDocFolder(kind);
+  return folder !== "" && isCaseSensitive(folder);
+}
+
+// 撞名比较用的键：不区分大小写的卷上转小写（Song.md 与 song.md 是同一个文件），区分大小写的卷上原样比较。
 function docKey(title: string, kind: DocKind): string {
-  return docFilePath({ title, folderPath: "" }, kind).toLowerCase();
+  const file = docFilePath({ title, folderPath: "" }, kind);
+  return docFolderIsCaseSensitive(kind) ? file : file.toLowerCase();
 }
 
 /** 每次加载项目列表后调用，预先算好哪些项目会共用文档文件。 */
@@ -167,11 +202,16 @@ export function setKnownProjectTitles(titles: string[]): void {
     }
     for (const group of groups.values()) {
       if (group.length < 2) continue;
-      for (const title of group)
+      // 原名即文件名的项目是这个文件的正主：只有一个正主时它照常读写，只拦经替换后撞上的项目；
+      // 没有正主或有多个（如只差大小写）时分不清，全部拦下。
+      const owners = group.filter(isDocOwner);
+      const blocked = owners.length === 1 ? group.filter((title) => title !== owners[0]) : group;
+      for (const title of blocked) {
         next.set(
           `${kind}:${title}`,
           group.filter((other) => other !== title),
         );
+      }
     }
   }
   sharedDocs = next;
@@ -193,6 +233,27 @@ export function docNameTakenBy(newTitle: string, selfTitle: string): string[] {
     }
   }
   return [...others];
+}
+
+/** 当前项目列表里，除了 title（及 exclude）之外还有谁用着 title 对应的这类文档文件。
+ *  不依赖 title 自身是否还在列表里，所以 Finder 删除/改名后（旧名字已不在列表中）也能正确判断。 */
+export function docInUseByOthers(title: string, kind: DocKind, exclude: string[] = []): string[] {
+  if (!getDocFolder(kind)) return [];
+  const key = docKey(title, kind);
+  return knownTitles.filter((other) => other !== title && !exclude.includes(other) && docKey(other, kind) === key);
+}
+
+/** 名字原样就是文件名（不含需要替换的字符）的项目，是该文件的正主。 */
+function isDocOwner(title: string): boolean {
+  return docFileBaseName(title) === title;
+}
+
+/** 归档/改名迁移前判断：title 对应的文件是否归别的项目。
+ *  只有 title 自己是正主、而其他用着它的项目都不是正主时，文件才算 title 的；其余情况（含分不清）一律不动。 */
+export function docHeldByOthers(title: string, kind: DocKind, exclude: string[] = []): boolean {
+  const others = docInUseByOthers(title, kind, exclude);
+  if (others.length === 0) return false;
+  return !(isDocOwner(title) && !others.some(isDocOwner));
 }
 
 // 写入前的检查：文件夹可用，且不与别的项目共用文件。
@@ -375,8 +436,10 @@ export function renameDocFiles(oldTitle: string, newTitle: string): DocRenameRes
 
   DOC_KINDS.forEach((kind) => {
     if (!getDocFolder(kind)) return;
-    if (docSharedWith(oldTitle, kind).length > 0) {
-      // 这份文件同时属于别的项目，不能跟着这个项目改名。
+    // 排除 newTitle：改成与旧名对应同一文件的名字（如 Song?A → Song？A）时，那是它自己，不算别人。
+    if (docHeldByOthers(oldTitle, kind, [newTitle])) {
+      // 这份文件还被别的项目用着，不能跟着这个项目改名。
+      // 不能只查撞名表：Finder 改名后旧名字已不在当前列表里，表里查不到它。
       result.conflicts.push(kind);
       return;
     }
@@ -426,7 +489,8 @@ export function archiveDocFiles(title: string): ArchivedDoc[] {
     if (!folder || !fs.existsSync(folder)) continue;
     const source = docFilePath({ title, folderPath: "" }, kind);
     if (!fs.existsSync(source)) continue;
-    if (docSharedWith(title, kind).length > 0) continue; // 这份文件也属于别的项目，不能归档走
+    // 不能只查撞名表：Finder 删除后该项目已不在当前列表里。直接问"还有没有别的项目用着这个文件"。
+    if (docHeldByOthers(title, kind)) continue;
 
     try {
       const dir = path.join(folder, DELETED_DOCS_FOLDER);

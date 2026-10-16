@@ -9,6 +9,7 @@ import {
   archiveDocFiles,
   displayDoc,
   docFilePath,
+  docFolderIsCaseSensitive,
   docNameTakenBy,
   docRenameConflicts,
   docSharedWith,
@@ -143,15 +144,58 @@ describe("删除归档与放回还原", () => {
 describe("笔记撞名检测", () => {
   afterEach(() => setKnownProjectTitles([]));
 
-  it("落到同一文件的项目互相识别，读写都被拦下，对方的文件不被改动", () => {
+  it("正主（原名即文件名）照常读写，经替换后撞上的项目被拦下", () => {
     fs.writeFileSync(path.join(notes, "Song？A.md"), "theirs");
     setKnownProjectTitles(["Song?A", "Song？A", "Other"]);
+
+    expect(docSharedWith("Song？A", "notes")).toEqual([]);
+    expect(readDocFile(project("Song？A"), "notes")).toBe("theirs");
 
     expect(docSharedWith("Song?A", "notes")).toEqual(["Song？A"]);
     expect(docSharedWith("Other", "notes")).toEqual([]);
     expect(readDocFile(project("Song?A"), "notes")).toBe("");
     expect(() => writeDocBody(project("Song?A"), "notes", "mine")).toThrow(DocSharedError);
     expect(fs.readFileSync(path.join(notes, "Song？A.md"), "utf8")).toBe("theirs");
+  });
+
+  it("没有正主时（双方都经替换才撞上）两边都拦", () => {
+    setKnownProjectTitles(["A?#", "A？#"]);
+    expect(docSharedWith("A?#", "notes")).toEqual(["A？#"]);
+    expect(docSharedWith("A？#", "notes")).toEqual(["A?#"]);
+  });
+
+  it("正主在 Finder 里被删除后，归档带走它自己的笔记", () => {
+    fs.writeFileSync(path.join(notes, "Song？A.md"), "owner");
+    setKnownProjectTitles(["Song?A"]); // Song？A 已删除，只剩经替换撞上的 Song?A
+
+    expect(archiveDocFiles("Song？A")).toEqual([
+      { kind: "notes", relativePath: path.join("Deleted Projects", "Song？A.md") },
+    ]);
+    expect(fs.existsSync(path.join(notes, "Song？A.md"))).toBe(false);
+  });
+
+  it("Finder 删除其中一个后，归档不会搬走另一个项目的笔记", () => {
+    fs.writeFileSync(path.join(notes, "Song？A.md"), "theirs");
+    setKnownProjectTitles(["Song？A"]); // Song?A 已在 Finder 里删除，不在当前列表里
+
+    expect(archiveDocFiles("Song?A")).toEqual([]);
+    expect(fs.readFileSync(path.join(notes, "Song？A.md"), "utf8")).toBe("theirs");
+  });
+
+  it("Finder 改名其中一个后，改名迁移不会搬走另一个项目的笔记", () => {
+    fs.writeFileSync(path.join(notes, "Song？A.md"), "theirs");
+    setKnownProjectTitles(["Song？A", "X"]); // Song?A 已在 Finder 里改名为 X
+
+    expect(renameDocFiles("Song?A", "X").conflicts).toEqual(["notes"]);
+    expect(fs.readFileSync(path.join(notes, "Song？A.md"), "utf8")).toBe("theirs");
+    expect(fs.existsSync(path.join(notes, "X.md"))).toBe(false);
+  });
+
+  it("不区分大小写的卷上，Song 与 song 视为同一个文件", () => {
+    // CI 与本机的临时目录都在不区分大小写的 APFS 上；区分大小写的分支需要专门格式化的卷，这里无法覆盖。
+    expect(docFolderIsCaseSensitive("notes")).toBe(false);
+    setKnownProjectTitles(["Song", "song"]);
+    expect(docSharedWith("Song", "notes")).toEqual(["song"]);
   });
 
   it("改名预检：改成会撞名的名字时报出对方", () => {
