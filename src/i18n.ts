@@ -165,6 +165,12 @@ type TranslationKeys = {
   trashNoAccess: string;
   trashNoAccessHint: string;
   openFullDiskAccess: string;
+  loadProjectsFailed: string;
+  loadProjectsFailedHint: string;
+  noNotesYet: string;
+  noLyricsYet: string;
+  storageUnreadable: string;
+  trashFailed: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -338,6 +344,12 @@ const translations: Record<Language, TranslationKeys> = {
     trashNoAccess: "Projects left the folder — data kept safe",
     trashNoAccessHint: "Grant Full Disk Access to clean up automatically, or run Clean Up Removed Projects.",
     openFullDiskAccess: "Open Full Disk Access Settings",
+    loadProjectsFailed: "Couldn't Load Projects",
+    loadProjectsFailedHint: "Check that your Projects folder exists and that Raycast can access it.",
+    noNotesYet: "_No notes yet_",
+    noLyricsYet: "_No lyrics yet_",
+    storageUnreadable: "Couldn't read your saved data — the change was skipped to avoid overwriting it",
+    trashFailed: "Couldn't move to Trash",
   },
 
   "zh-CN": {
@@ -508,6 +520,12 @@ const translations: Record<Language, TranslationKeys> = {
     trashNoAccess: "有项目离开了文件夹 — 数据已安全保留",
     trashNoAccessHint: "授予完全磁盘访问权限可自动清理，或运行「清理已移除的项目」命令。",
     openFullDiskAccess: "打开完全磁盘访问权限设置",
+    loadProjectsFailed: "无法加载项目",
+    loadProjectsFailedHint: "请检查项目文件夹是否存在，以及 Raycast 是否有访问该文件夹的权限。",
+    noNotesYet: "_暂无笔记_",
+    noLyricsYet: "_暂无歌词_",
+    storageUnreadable: "读取已保存的数据失败——为避免覆盖，已跳过本次改动",
+    trashFailed: "移到废纸篓失败",
   },
 };
 

@@ -275,9 +275,17 @@ export function Sets({ project }: { project: Project }) {
       primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
-    await trash(set.path);
-    setReloadToken((n) => n + 1);
-    await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: set.name });
+    try {
+      await trash(set.path);
+      setReloadToken((n) => n + 1);
+      await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: set.name });
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: t.trashFailed,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
   };
 
   const sortedSets = sortItems(sets, sortBy, (set) => ({

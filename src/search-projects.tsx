@@ -35,6 +35,7 @@ import type { TaxonomyOption } from "./taxonomy";
 import { displayDoc, readDocFile, setKnownProjectTitles, stripFrontmatter } from "./docs";
 import { docPlaceholder, openDoc } from "./doc-actions";
 import { archiveDeletedProject, restorePutBackProjects } from "./deleted-projects";
+import { StorageUnreadableError } from "./storage";
 import { syncFinderChanges } from "./finder-sync";
 import { CollectionList } from "./collections-view";
 import { EditInfo } from "./components/project/edit-info";
@@ -220,8 +221,8 @@ export default function Command() {
       setProjects([]);
       await showToast({
         style: Toast.Style.Failure,
-        title: "Failed to load projects",
-        message: error instanceof Error ? error.message : String(error),
+        title: error instanceof StorageUnreadableError ? t.storageUnreadable : t.loadProjectsFailed,
+        message: error instanceof StorageUnreadableError ? undefined : t.loadProjectsFailedHint,
       });
     }
   }, [applyMetadata]);
@@ -337,16 +338,25 @@ export default function Command() {
     });
     if (!confirmed) return;
     trashingIds.add(project.id);
-    await trash(project.folderPath);
-    // 先存档（标签/轨号/角色，并把自定义文件夹里的文档移进 Deleted Projects/），再清理残留数据。
-    // 30 天内从废纸篓放回，下次加载会按「同名 + 同创建时间」识别并还原；同名新项目不受影响。
-    await archiveDeletedProject(project);
-    await deleteProjectMetadata(project.id);
-    await removeProjectFromAllOrders(project.id);
-    await removeProjectFromAllRoles(project.id);
-    trashingIds.delete(project.id);
-    await reloadProjects();
-    await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: project.title });
+    try {
+      await trash(project.folderPath);
+      // 先存档（标签/轨号/角色，并把自定义文件夹里的文档移进 Deleted Projects/），再清理残留数据。
+      // 30 天内从废纸篓放回，下次加载会按「同名 + 同创建时间」识别并还原；同名新项目不受影响。
+      await archiveDeletedProject(project);
+      await deleteProjectMetadata(project.id);
+      await removeProjectFromAllOrders(project.id);
+      await removeProjectFromAllRoles(project.id);
+      await reloadProjects();
+      await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: project.title });
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: error instanceof StorageUnreadableError ? t.storageUnreadable : t.trashFailed,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      trashingIds.delete(project.id);
+    }
   };
 
   const filteredProjects = (() => {

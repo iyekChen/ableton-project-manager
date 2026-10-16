@@ -1,4 +1,5 @@
 import { LocalStorage } from "@raycast/api";
+import { isCorruptJson, StorageUnreadableError } from "./storage";
 import { archiveDocFiles, restoreArchivedDoc, type ArchivedDoc } from "./docs";
 import { getAllProjectMetadata, saveProjectMetadata, type ProjectMetadata } from "./project-metadata";
 import { assignNumber, getProjectOrders, getTrackMap, nextNumber, setTrackMap } from "./collection-order";
@@ -32,11 +33,17 @@ async function getRecords(): Promise<DeletedRecord[]> {
     const cutoff = Date.now() - RETENTION_MS;
     return Array.isArray(parsed) ? (parsed as DeletedRecord[]).filter((r) => r.deletedAt >= cutoff) : [];
   } catch {
+    // 损坏：读取时宽容返回空；写入由 saveRecords 拦截，不覆盖。
     return [];
   }
 }
 
 async function saveRecords(records: DeletedRecord[]): Promise<void> {
+  const existing = await LocalStorage.getItem<string>(STORAGE_KEY);
+  if (isCorruptJson(existing)) {
+    // 损坏的删除记录仍可能可恢复，绝不覆盖。
+    throw new StorageUnreadableError();
+  }
   await LocalStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 }
 

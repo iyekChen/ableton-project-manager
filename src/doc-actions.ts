@@ -58,5 +58,5 @@ export function docPlaceholder(kind: DocKind, title?: string): string {
   if (missing) {
     return `**⚠️ ${t.docFolderMissing}**\n\n\`${missing}\`\n\n${t.docFolderMissingHint}`;
   }
-  return kind === "notes" ? "_No notes yet_" : "_No lyrics yet_";
+  return kind === "notes" ? t.noNotesYet : t.noLyricsYet;
 }

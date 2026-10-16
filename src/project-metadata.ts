@@ -1,4 +1,5 @@
 import { LocalStorage } from "@raycast/api";
+import { isCorruptJson, StorageUnreadableError } from "./storage";
 
 export type ProjectMetadata = {
   stageId: string | null;
@@ -32,11 +33,17 @@ async function getStore(): Promise<ProjectMetadataStore> {
   try {
     return JSON.parse(storedMetadata) as ProjectMetadataStore;
   } catch {
+    // 损坏：读取时宽容返回空（仅供展示），不在此处覆盖——写入由 saveStore 拦截。
     return {};
   }
 }
 
 async function saveStore(store: ProjectMetadataStore): Promise<void> {
+  const existing = await LocalStorage.getItem<string>(PROJECT_METADATA_STORAGE_KEY);
+  if (isCorruptJson(existing)) {
+    // 原数据虽损坏仍可能可人工恢复，绝不用新内容覆盖。
+    throw new StorageUnreadableError();
+  }
   await LocalStorage.setItem(PROJECT_METADATA_STORAGE_KEY, JSON.stringify(store));
 }
 
