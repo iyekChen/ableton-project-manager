@@ -480,6 +480,11 @@ export default function Command() {
                 icon={Icon.Cd}
                 shortcut={{ modifiers: ["ctrl"], key: "return" }}
                 target={<CollectionList projects={projects} collections={collectionOptions} stages={stageOptions} />}
+                onPop={() => {
+                  // 在合集里改过的名字、标签、成员，以及新建/改名的合集，返回时一并刷新。
+                  void reloadProjects();
+                  void collectionTaxonomy.get().then(setCollectionOptions);
+                }}
               />
             </ActionPanel.Section>
             <ActionPanel.Section>

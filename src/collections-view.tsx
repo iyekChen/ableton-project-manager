@@ -137,7 +137,7 @@ function CollectionNameForm(props: {
 }
 
 export function CollectionList({
-  projects,
+  projects: initialProjects,
   collections: initialCollections,
   stages,
 }: {
@@ -147,6 +147,8 @@ export function CollectionList({
 }) {
   const { pop } = useNavigation();
   const [collections, setCollections] = useState<Collection[]>(initialCollections);
+  // 推入时拿到的是快照；合集面板里的改动会通过 onProjectsChanged 回传到这里。
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -254,7 +256,9 @@ export function CollectionList({
             <Action.Push
               title={t.open}
               icon={Icon.Cd}
-              target={<CollectionPanel collection={c} projects={projects} stages={stages} />}
+              target={
+                <CollectionPanel collection={c} projects={projects} stages={stages} onProjectsChanged={setProjects} />
+              }
             />
             <Action.Push
               title={t.rename}
@@ -342,13 +346,20 @@ function CollectionPanel({
   collection,
   projects,
   stages,
+  onProjectsChanged,
 }: {
   collection: Collection;
   projects: Project[];
   stages: TaxonomyOption[];
+  onProjectsChanged?: (projects: Project[]) => void;
 }) {
   const { pop } = useNavigation();
   const [projectList, setProjectList] = useState<Project[]>(projects);
+
+  // 面板里的改动（改名、标签、成员增减、笔记）回传给 Browse Collections，再次打开合集时不会用到旧快照。
+  useEffect(() => {
+    onProjectsChanged?.(projectList);
+  }, [projectList, onProjectsChanged]);
   const members = projectList.filter((p) => p.collectionIds.includes(collection.id));
   const [map, setMap] = useState<TrackMap>({});
   const [roles, setRoles] = useState<RoleMap>({});
@@ -523,12 +534,12 @@ function CollectionPanel({
   // Edit Info 存盘后：从 LocalStorage 重读成员的 Stage/Genre/Collection（含成员增减）。
   async function reloadMetadata(rename?: ProjectRename) {
     const store = await getAllProjectMetadata();
+    // Edit Info 可能改了名（轨号/角色迁到新 id），或把本曲移出了合集（轨号/角色被清掉）：
+    // 一律从存储重读，避免内存里的旧表在下次 apply() 时把这些改动覆盖回去。
+    const [trackMap, roleMap] = await Promise.all([getTrackMap(collection.id), getRoleMap(collection.id)]);
+    setMap(trackMap);
+    setRoles(roleMap);
     if (rename) {
-      // 在本面板里改了名：存储里的轨号/角色已迁到新 id，这里重读，
-      // 避免内存里的旧表在下次 apply() 时把迁移覆盖回去。
-      const [trackMap, roleMap] = await Promise.all([getTrackMap(collection.id), getRoleMap(collection.id)]);
-      setMap(trackMap);
-      setRoles(roleMap);
       setInfos((prev) => (rename.oldId in prev ? { ...prev, [rename.newId]: prev[rename.oldId] } : prev));
     }
     setProjectList((prev) =>

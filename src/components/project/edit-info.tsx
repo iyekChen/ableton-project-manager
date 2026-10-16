@@ -25,8 +25,8 @@ import {
   renameDocFiles,
   type DocRenameResult,
 } from "../../docs";
-import { renameProjectInAllOrders } from "../../collection-order";
-import { renameProjectInAllRoles } from "../../collection-roles";
+import { getTrackMap, removeNumber, renameProjectInAllOrders, setTrackMap } from "../../collection-order";
+import { clearRole, getRoleMap, renameProjectInAllRoles, setRoleMap } from "../../collection-roles";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "../../taxonomies";
 import type { Project } from "../../projects/types";
 
@@ -162,6 +162,15 @@ export function EditInfo({
     }
 
     const metadata = await getProjectMetadata(targetId);
+    // 被移出的合集：和 Remove from Tracklist 一样清掉本曲在那里的轨号和角色，
+    // 免得日后再加回来时旧轨号"复活"、与别的曲目撞号。
+    const removedCollections = (metadata.collectionIds ?? []).filter((id) => !collectionIds.includes(id));
+    for (const id of removedCollections) {
+      const trackMap = await getTrackMap(id);
+      if (targetId in trackMap) await setTrackMap(id, removeNumber(trackMap, targetId));
+      const roleMap = await getRoleMap(id);
+      if (targetId in roleMap) await setRoleMap(id, clearRole(roleMap, targetId));
+    }
     await saveProjectMetadata(targetId, {
       ...metadata,
       stageId: stageId === "none" ? null : stageId,
@@ -169,7 +178,7 @@ export function EditInfo({
       collectionIds,
     });
 
-    if (collectionId && onRoleChanged) {
+    if (collectionId && onRoleChanged && !removedCollections.includes(collectionId)) {
       const nextRole = role === "none" ? null : role;
 
       if (nextRole !== (currentRole ?? null)) {
