@@ -729,7 +729,7 @@ function CollectionPanel({
       if (score !== null) level = energyLevelFromScore(score);
     }
     const detailBody = detailDoc === "notes" ? (p.notes ?? "") : stripFrontmatter(readDocFile(p, "lyrics"));
-    const detailPlaceholder = docPlaceholder(detailDoc);
+    const detailPlaceholder = docPlaceholder(detailDoc, p.title);
 
     return (
       <List.Item.Detail

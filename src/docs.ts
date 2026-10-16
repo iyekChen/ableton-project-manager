@@ -134,6 +134,74 @@ function assertDocFolder(kind: DocKind): void {
   if (folder !== "" && !fs.existsSync(folder)) throw new DocFolderMissingError(folder, kind, fromMemory);
 }
 
+/** 两个项目的文档会落到同一个文件时抛出（如 Song?A 与 Song？A）：拒绝读写，避免笔记混用。 */
+export class DocSharedError extends Error {
+  constructor(
+    readonly title: string,
+    readonly others: string[],
+  ) {
+    super(`Shares a doc file with: ${others.join(", ")}`);
+    this.name = "DocSharedError";
+  }
+}
+
+// 当前扫描到的项目，以及其中文档会落到同一个文件的分组：`${kind}:${title}` → 其他项目名。
+let knownTitles: string[] = [];
+let sharedDocs = new Map<string, string[]>();
+
+// 按不区分大小写比较：笔记文件夹多半在不区分大小写的卷上，宁可多拦也不混用。
+function docKey(title: string, kind: DocKind): string {
+  return docFilePath({ title, folderPath: "" }, kind).toLowerCase();
+}
+
+/** 每次加载项目列表后调用，预先算好哪些项目会共用文档文件。 */
+export function setKnownProjectTitles(titles: string[]): void {
+  knownTitles = titles;
+  const next = new Map<string, string[]>();
+  for (const kind of DOC_KINDS) {
+    if (!getDocFolder(kind)) continue;
+    const groups = new Map<string, string[]>();
+    for (const title of titles) {
+      const key = docKey(title, kind);
+      groups.set(key, [...(groups.get(key) ?? []), title]);
+    }
+    for (const group of groups.values()) {
+      if (group.length < 2) continue;
+      for (const title of group)
+        next.set(
+          `${kind}:${title}`,
+          group.filter((other) => other !== title),
+        );
+    }
+  }
+  sharedDocs = next;
+}
+
+/** 与该项目共用某类文档文件的其他项目；没有则为空。 */
+export function docSharedWith(title: string, kind: DocKind): string[] {
+  return sharedDocs.get(`${kind}:${title}`) ?? [];
+}
+
+/** 改名预检：改成 newTitle 后，会与哪些其他项目共用文档文件。 */
+export function docNameTakenBy(newTitle: string, selfTitle: string): string[] {
+  const others = new Set<string>();
+  for (const kind of DOC_KINDS) {
+    if (!getDocFolder(kind)) continue;
+    const key = docKey(newTitle, kind);
+    for (const title of knownTitles) {
+      if (title !== selfTitle && docKey(title, kind) === key) others.add(title);
+    }
+  }
+  return [...others];
+}
+
+// 写入前的检查：文件夹可用，且不与别的项目共用文件。
+function assertDocWritable(title: string, kind: DocKind): void {
+  assertDocFolder(kind);
+  const others = docSharedWith(title, kind);
+  if (others.length > 0) throw new DocSharedError(title, others);
+}
+
 // 文件名里的非法字符（含 Windows 非法字符与 Obsidian 禁用的 # ^ [ ] |）。保留 @。
 const ILLEGAL_FILE_CHARS = /[/\\:*?"<>|#^[\]]/g;
 
@@ -237,6 +305,7 @@ export function docFileExists(project: { title: string; folderPath: string }, ki
 
 // 读取原始内容（不存在返回空）。
 export function readDocFile(project: { title: string; folderPath: string }, kind: DocKind): string {
+  if (docSharedWith(project.title, kind).length > 0) return "";
   try {
     return fs.readFileSync(docFilePath(project, kind), "utf8");
   } catch {
@@ -246,7 +315,7 @@ export function readDocFile(project: { title: string; folderPath: string }, kind
 
 // 确保文件存在（不存在就按模板创建），返回路径。供 Open 使用。自定义文件夹失效时抛 DocFolderMissingError。
 export function ensureDocFile(project: { title: string; folderPath: string }, kind: DocKind): string {
-  assertDocFolder(kind);
+  assertDocWritable(project.title, kind);
   const file = docFilePath(project, kind);
   if (!fs.existsSync(file)) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -257,7 +326,7 @@ export function ensureDocFile(project: { title: string; folderPath: string }, ki
 
 // 写入正文，但保留文件原有的 frontmatter（编辑笔记时用）。自定义文件夹失效时抛 DocFolderMissingError。
 export function writeDocBody(project: { title: string; folderPath: string }, kind: DocKind, body: string): void {
-  assertDocFolder(kind);
+  assertDocWritable(project.title, kind);
   const file = docFilePath(project, kind);
   let existing = "";
   try {
@@ -306,6 +375,11 @@ export function renameDocFiles(oldTitle: string, newTitle: string): DocRenameRes
 
   DOC_KINDS.forEach((kind) => {
     if (!getDocFolder(kind)) return;
+    if (docSharedWith(oldTitle, kind).length > 0) {
+      // 这份文件同时属于别的项目，不能跟着这个项目改名。
+      result.conflicts.push(kind);
+      return;
+    }
     const oldPath = docFilePath({ title: oldTitle, folderPath: "" }, kind);
     const newPath = docFilePath({ title: newTitle, folderPath: "" }, kind);
     if (!fs.existsSync(oldPath)) return; // 没有源文件，无需改名
@@ -352,6 +426,7 @@ export function archiveDocFiles(title: string): ArchivedDoc[] {
     if (!folder || !fs.existsSync(folder)) continue;
     const source = docFilePath({ title, folderPath: "" }, kind);
     if (!fs.existsSync(source)) continue;
+    if (docSharedWith(title, kind).length > 0) continue; // 这份文件也属于别的项目，不能归档走
 
     try {
       const dir = path.join(folder, DELETED_DOCS_FOLDER);

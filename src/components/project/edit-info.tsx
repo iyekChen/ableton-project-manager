@@ -17,7 +17,14 @@ import path from "node:path";
 import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "../../project-metadata";
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
-import { alteredDocChars, docFileBaseName, docRenameConflicts, renameDocFiles, type DocRenameResult } from "../../docs";
+import {
+  alteredDocChars,
+  docFileBaseName,
+  docNameTakenBy,
+  docRenameConflicts,
+  renameDocFiles,
+  type DocRenameResult,
+} from "../../docs";
 import { renameProjectInAllOrders } from "../../collection-order";
 import { renameProjectInAllRoles } from "../../collection-roles";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "../../taxonomies";
@@ -105,6 +112,13 @@ export function EditInfo({
       }
       if (!targetIsSelf && fs.existsSync(newPath)) {
         await showToast({ style: Toast.Style.Failure, title: t.nameExists });
+        return;
+      }
+
+      // 改名后笔记/歌词文件会与别的项目撞名（如 Song?A 与 Song？A）：拦下，免得两个项目共用一份笔记。
+      const docTakenBy = docNameTakenBy(trimmedName, project.title);
+      if (docTakenBy.length > 0) {
+        await showToast({ style: Toast.Style.Failure, title: t.docNameTaken, message: docTakenBy.join(", ") });
         return;
       }
 

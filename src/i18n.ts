@@ -81,6 +81,9 @@ type TranslationKeys = {
   useProjectFolders: string;
   manyProjectsMissing: string;
   ambiguousFinderChanges: string;
+  docShared: string;
+  docSharedHint: string;
+  docNameTaken: string;
   renameConfirmTitle: string;
   renameConfirmMessage: string;
   rename: string;
@@ -219,6 +222,10 @@ const translations: Record<Language, TranslationKeys> = {
     useProjectFolders: "Store in Project Folders Instead",
     manyProjectsMissing: "Many projects disappeared at once — nothing was changed. Is the drive connected?",
     ambiguousFinderChanges: "Some changes made in Finder couldn't be matched safely and were skipped",
+    docShared: "Shares a note file with another project",
+    docSharedHint:
+      "Its notes / lyrics file name is the same as {names}. Rename one of the projects so each keeps its own file — nothing is read or written until then.",
+    docNameTaken: "Another project would use the same note file",
     renameConfirmTitle: "Rename project?",
     renameConfirmMessage:
       "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
@@ -357,6 +364,9 @@ const translations: Record<Language, TranslationKeys> = {
     useProjectFolders: "改为存进项目文件夹",
     manyProjectsMissing: "检测到大量项目同时消失，未做任何处理。项目所在的磁盘是否已连接？",
     ambiguousFinderChanges: "有些在 Finder 中的改动无法安全识别，已跳过",
+    docShared: "与其他项目共用同一个笔记文件",
+    docSharedHint: "笔记/歌词文件名与 {names} 相同。请给其中一个项目改名，让它们各用各的文件；在此之前不会读写该文件。",
+    docNameTaken: "改名后会与其他项目共用同一个笔记文件",
     renameConfirmTitle: "重命名项目?",
     renameConfirmMessage: "请确认该项目已在 Ableton Live 中关闭。开着时重命名可能让工程与文件失联。",
     rename: "重命名",

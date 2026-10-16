@@ -31,7 +31,7 @@ import type { SortOption } from "./sorting";
 import { Bounces } from "./bounces";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "./taxonomies";
 import type { TaxonomyOption } from "./taxonomy";
-import { displayDoc, readDocFile, stripFrontmatter } from "./docs";
+import { displayDoc, readDocFile, setKnownProjectTitles, stripFrontmatter } from "./docs";
 import { docPlaceholder, openDoc } from "./doc-actions";
 import { archiveDeletedProject, restorePutBackProjects } from "./deleted-projects";
 import { syncFinderChanges } from "./finder-sync";
@@ -178,6 +178,8 @@ export default function Command() {
   const reloadProjects = useCallback(async () => {
     try {
       baseProjectsRef.current = loadProjects(PROJECTS_ROOT);
+      // 预先算好哪些项目会共用同一个笔记/歌词文件，读写时据此拦截。
+      setKnownProjectTitles(baseProjectsRef.current.map((p) => p.title));
       // 先补做在 Finder 里做的改名/删除，再处理放回、套用元数据。
       const { guardTripped, ambiguous } = await syncFinderChanges(baseProjectsRef.current, PROJECTS_ROOT, trashingIds);
       if (guardTripped) {
@@ -361,7 +363,7 @@ export default function Command() {
       : detailDoc === "notes"
         ? item.notes
         : stripFrontmatter(readDocFile(item, "lyrics"));
-    const detailPlaceholder = docPlaceholder(detailDoc);
+    const detailPlaceholder = docPlaceholder(detailDoc, item.title);
 
     const isThisPlaying = playingId === item.id;
     const isAnythingPlaying = playingId !== null;

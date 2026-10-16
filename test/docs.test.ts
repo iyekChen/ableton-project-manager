@@ -4,15 +4,21 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   DocFolderMissingError,
+  DocSharedError,
   alteredDocChars,
   archiveDocFiles,
   displayDoc,
   docFilePath,
+  docNameTakenBy,
   docRenameConflicts,
+  docSharedWith,
   ensureDocFile,
+  readDocFile,
   renameDocFiles,
   restoreArchivedDoc,
+  setKnownProjectTitles,
   softBreaksToHard,
+  writeDocBody,
 } from "../src/docs";
 import { __setPreferences, environment } from "./mocks/raycast-api";
 
@@ -131,6 +137,27 @@ describe("删除归档与放回还原", () => {
     expect(restoreArchivedDoc(project("Song"), doc)).toBe("conflict");
     expect(fs.readFileSync(path.join(notes, "Song.md"), "utf8")).toBe("new project");
     expect(fs.existsSync(path.join(notes, doc.relativePath))).toBe(true);
+  });
+});
+
+describe("笔记撞名检测", () => {
+  afterEach(() => setKnownProjectTitles([]));
+
+  it("落到同一文件的项目互相识别，读写都被拦下，对方的文件不被改动", () => {
+    fs.writeFileSync(path.join(notes, "Song？A.md"), "theirs");
+    setKnownProjectTitles(["Song?A", "Song？A", "Other"]);
+
+    expect(docSharedWith("Song?A", "notes")).toEqual(["Song？A"]);
+    expect(docSharedWith("Other", "notes")).toEqual([]);
+    expect(readDocFile(project("Song?A"), "notes")).toBe("");
+    expect(() => writeDocBody(project("Song?A"), "notes", "mine")).toThrow(DocSharedError);
+    expect(fs.readFileSync(path.join(notes, "Song？A.md"), "utf8")).toBe("theirs");
+  });
+
+  it("改名预检：改成会撞名的名字时报出对方", () => {
+    setKnownProjectTitles(["Song？A", "Mine"]);
+    expect(docNameTakenBy("Song?A", "Mine")).toEqual(["Song？A"]);
+    expect(docNameTakenBy("Fresh", "Mine")).toEqual([]);
   });
 });
 
