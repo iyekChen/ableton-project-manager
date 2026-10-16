@@ -131,6 +131,15 @@ type TranslationKeys = {
   newLiveSet: string;
   newLiveSetFailed: string;
   duplicateSet: string;
+  duplicateProject: string;
+  duplicatingProject: string;
+  projectDuplicated: string;
+  duplicateFailed: string;
+  renameSet: string;
+  setRenamed: string;
+  setNameExists: string;
+  renameSetConfirmTitle: string;
+  renameSetConfirmMessage: string;
   setDuplicated: string;
   moveToTrash: string;
   movedToTrash: string;
@@ -274,6 +283,16 @@ const translations: Record<Language, TranslationKeys> = {
     newLiveSet: "New Live Set",
     newLiveSetFailed: "Ableton Live not found",
     duplicateSet: "Duplicate Set",
+    duplicateProject: "Duplicate Project",
+    duplicatingProject: "Duplicating Project…",
+    projectDuplicated: "Project Duplicated",
+    duplicateFailed: "Duplicate Failed",
+    renameSet: "Rename Set",
+    setRenamed: "Set Renamed",
+    setNameExists: "A Set with that name already exists",
+    renameSetConfirmTitle: "Rename Set?",
+    renameSetConfirmMessage:
+      "Make sure this Set is closed in Ableton Live. Renaming while it's open can make Ableton keep saving to the old name.",
     setDuplicated: "Set Duplicated",
     moveToTrash: "Move to Trash",
     movedToTrash: "Moved to Trash",
@@ -415,6 +434,15 @@ const translations: Record<Language, TranslationKeys> = {
     newLiveSet: "新建 Live Set",
     newLiveSetFailed: "未找到 Ableton Live",
     duplicateSet: "复制 Set",
+    duplicateProject: "复制项目",
+    duplicatingProject: "正在复制项目…",
+    projectDuplicated: "已复制项目",
+    duplicateFailed: "复制失败",
+    renameSet: "重命名 Set",
+    setRenamed: "已重命名 Set",
+    setNameExists: "已存在同名 Set",
+    renameSetConfirmTitle: "重命名 Set?",
+    renameSetConfirmMessage: "请确认该 Set 已在 Ableton Live 中关闭。开着时重命名，Ableton 可能继续按旧名保存。",
     setDuplicated: "已复制 Set",
     moveToTrash: "移到废纸篓",
     movedToTrash: "已移到废纸篓",

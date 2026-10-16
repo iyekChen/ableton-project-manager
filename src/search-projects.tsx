@@ -38,6 +38,7 @@ import { syncFinderChanges } from "./finder-sync";
 import { CollectionList } from "./collections-view";
 import { EditInfo } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
+import { DuplicateProject } from "./components/project/duplicate-project";
 import { Sets } from "./components/project/sets";
 import type { Project } from "./projects/types";
 import { loadProjects } from "./projects/load-projects";
@@ -570,6 +571,12 @@ export default function Command() {
                     });
                   }
                 }}
+              />
+              <Action.Push
+                title={t.duplicateProject}
+                icon={Icon.Duplicate}
+                shortcut={Keyboard.Shortcut.Common.Duplicate}
+                target={<DuplicateProject project={item} onDuplicated={reloadProjects} />}
               />
               <Action.Open
                 title={t.openInFinder}

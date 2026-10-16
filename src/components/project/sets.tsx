@@ -2,7 +2,9 @@ import {
   ActionPanel,
   Action,
   Alert,
+  Color,
   confirmAlert,
+  Form,
   getApplications,
   Icon,
   Keyboard,
@@ -10,6 +12,7 @@ import {
   showToast,
   Toast,
   trash,
+  useNavigation,
   type Application,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
@@ -61,6 +64,78 @@ function uniqueCopyPath(dir: string, baseName: string): string {
     counter++;
   }
   return candidate;
+}
+
+// 两个路径是否指向同一个文件（只改大小写时，在不区分大小写的卷上为 true）。
+function isSameFile(a: string, b: string): boolean {
+  try {
+    const sa = fs.statSync(a);
+    const sb = fs.statSync(b);
+    return sa.ino === sb.ino && sa.dev === sb.dev;
+  } catch {
+    return false;
+  }
+}
+
+function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => void }) {
+  const { pop } = useNavigation();
+  const [name, setName] = useState(set.name);
+
+  async function handleSubmit() {
+    // 用户顺手输了 .als 也接受，统一由这里补后缀。
+    const trimmed = name.trim().replace(/\.als$/i, "");
+    if (trimmed === "" || trimmed === set.name) {
+      pop();
+      return;
+    }
+    if (trimmed.includes("/") || trimmed.includes(":")) {
+      await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+      return;
+    }
+
+    const target = path.join(path.dirname(set.path), `${trimmed}.als`);
+    // 目标已存在且不是它自己（只改大小写）时拦下，绝不覆盖另一个 Set。
+    if (fs.existsSync(target) && !isSameFile(target, set.path)) {
+      await showToast({ style: Toast.Style.Failure, title: t.setNameExists });
+      return;
+    }
+
+    const confirmed = await confirmAlert({
+      icon: { source: Icon.Warning, tintColor: Color.Yellow },
+      title: t.renameSetConfirmTitle,
+      message: t.renameSetConfirmMessage,
+      primaryAction: { title: t.rename, style: Alert.ActionStyle.Default },
+    });
+    if (!confirmed) return;
+
+    try {
+      fs.renameSync(set.path, target);
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: t.renameFailed,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
+
+    onRenamed();
+    await showToast({ style: Toast.Style.Success, title: t.setRenamed, message: `${trimmed}.als` });
+    pop();
+  }
+
+  return (
+    <Form
+      navigationTitle={`${t.renameSet} — ${set.name}`}
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm title={t.save} onSubmit={handleSubmit} />
+        </ActionPanel>
+      }
+    >
+      <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
+    </Form>
+  );
 }
 
 export function Sets({ project }: { project: Project }) {
@@ -246,6 +321,12 @@ export function Sets({ project }: { project: Project }) {
                   shortcut={Keyboard.Shortcut.Common.CopyPath}
                 />
                 <ActionPanel.Section>
+                  <Action.Push
+                    title={t.renameSet}
+                    icon={Icon.Pencil}
+                    shortcut={Keyboard.Shortcut.Common.Edit}
+                    target={<RenameSetForm set={set} onRenamed={() => setReloadToken((n) => n + 1)} />}
+                  />
                   <Action
                     title={t.duplicateSet}
                     icon={Icon.Duplicate}
