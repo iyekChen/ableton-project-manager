@@ -118,6 +118,22 @@ describe("删除归档与放回还原", () => {
   });
 });
 
+describe("还原状态", () => {
+  it("文档文件夹暂时不可用时返回 unavailable（值得重试）", () => {
+    fs.writeFileSync(path.join(notes, "Song.md"), "mine");
+    const [doc] = archiveDocFiles("Song");
+    __setPreferences({ notesFolder: path.join(notes, "unplugged") });
+    expect(restoreArchivedDoc(project("Song"), doc)).toBe("unavailable");
+  });
+
+  it("文件夹在、归档文件被删了时返回 gone", () => {
+    fs.writeFileSync(path.join(notes, "Song.md"), "mine");
+    const [doc] = archiveDocFiles("Song");
+    fs.rmSync(path.join(notes, doc.relativePath));
+    expect(restoreArchivedDoc(project("Song"), doc)).toBe("gone");
+  });
+});
+
 describe("设置被清空", () => {
   it("之前用过的文件夹已消失：仍判定失效，不写进项目文件夹", () => {
     const vault = path.join(notes, "vault");

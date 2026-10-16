@@ -179,9 +179,11 @@ export default function Command() {
     try {
       baseProjectsRef.current = loadProjects(PROJECTS_ROOT);
       // 先补做在 Finder 里做的改名/删除，再处理放回、套用元数据。
-      const { guardTripped } = await syncFinderChanges(baseProjectsRef.current, PROJECTS_ROOT, trashingIds);
+      const { guardTripped, ambiguous } = await syncFinderChanges(baseProjectsRef.current, PROJECTS_ROOT, trashingIds);
       if (guardTripped) {
         await showToast({ style: Toast.Style.Failure, title: t.manyProjectsMissing });
+      } else if (ambiguous > 0) {
+        await showToast({ style: Toast.Style.Failure, title: t.ambiguousFinderChanges });
       }
       // 先还原从废纸篓放回的项目（标签/轨号/角色/文档），再套用元数据。
       const { restored, docConflicts } = await restorePutBackProjects(baseProjectsRef.current);

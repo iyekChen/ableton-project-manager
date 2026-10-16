@@ -25,7 +25,6 @@ export function EditNote({ project, onSaved }: { project: Project; onSaved: () =
       await showDocError(error);
       return;
     }
-    writeDocBody(project, "notes", note);
 
     onSaved();
 

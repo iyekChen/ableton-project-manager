@@ -31,6 +31,7 @@ export function loadProjects(projectsRoot: string): Project[] {
         title: folder,
         folderPath,
         createdAt: stats.birthtimeMs,
+        inode: stats.ino,
         modifiedAt: latestSetModifiedAt,
         stageId: null,
         genreIds: [],

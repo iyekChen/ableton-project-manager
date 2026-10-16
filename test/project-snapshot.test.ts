@@ -2,18 +2,37 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { diffSnapshots, readTrashBirthtimes } from "../src/project-snapshot";
+import { diffSnapshots, readTrashFolders } from "../src/project-snapshot";
 
-const e = (id: string, birthtimeMs: number) => ({ id, birthtimeMs });
+const e = (id: string, birthtimeMs: number, inode?: number) => ({ id, birthtimeMs, inode });
 
 describe("diffSnapshots", () => {
-  it("同创建时间换了名字识别为改名", () => {
-    const diff = diffSnapshots([e("Old", 1), e("Keep", 2)], [e("New", 1), e("Keep", 2)]);
-    expect(diff.renamed).toEqual([{ from: e("Old", 1), to: e("New", 1) }]);
+  it("同一文件夹（创建时间 + inode）换了名字识别为改名", () => {
+    const diff = diffSnapshots([e("Old", 1, 10), e("Keep", 2, 20)], [e("New", 1, 10), e("Keep", 2, 20)]);
+    expect(diff.renamed).toEqual([{ from: e("Old", 1, 10), to: e("New", 1, 10) }]);
     expect(diff.removed).toEqual([]);
   });
 
-  it("消失且无对应新名字识别为移除；同名新项目不算改名", () => {
+  it("复制后删除原件：创建时间相同但 inode 不同，不算改名", () => {
+    const diff = diffSnapshots([e("Song", 1, 10)], [e("Song copy", 1, 11)]);
+    expect(diff.renamed).toEqual([]);
+    expect(diff.removed).toEqual([e("Song", 1, 10)]);
+  });
+
+  it("一个消失项对应多个候选时判为歧义，不自动处理", () => {
+    const diff = diffSnapshots([e("A", 1)], [e("X", 1), e("Y", 1)]);
+    expect(diff.renamed).toEqual([]);
+    expect(diff.removed).toEqual([]);
+    expect(diff.ambiguous).toEqual([e("A", 1)]);
+  });
+
+  it("一个新文件夹被多个消失项认领时判为歧义", () => {
+    const diff = diffSnapshots([e("A", 1), e("B", 1)], [e("C", 1)]);
+    expect(diff.renamed).toEqual([]);
+    expect(diff.ambiguous).toEqual([e("A", 1), e("B", 1)]);
+  });
+
+  it("消失且无对应识别为移除；同名新项目不算改名", () => {
     const diff = diffSnapshots([e("A", 1), e("B", 2), e("C", 3)], [e("A", 1), e("B", 2), e("D", 9)]);
     expect(diff.removed).toEqual([e("C", 3)]);
     expect(diff.renamed).toEqual([]);
@@ -33,15 +52,15 @@ describe("diffSnapshots", () => {
   });
 });
 
-describe("readTrashBirthtimes", () => {
-  it("读出废纸篓里文件夹的创建时间；不存在的废纸篓视为空", () => {
+describe("readTrashFolders", () => {
+  it("读出废纸篓里文件夹的创建时间与 inode；不存在的废纸篓视为空", () => {
     const trash = fs.mkdtempSync(path.join(os.tmpdir(), "asm-trash-"));
     const folder = path.join(trash, "Song 21.30.12");
     fs.mkdirSync(folder);
-    const birth = Math.floor(fs.statSync(folder).birthtimeMs);
+    const stats = fs.statSync(folder);
 
-    const births = readTrashBirthtimes([trash, path.join(trash, "no-such-volume-trash")]);
-    expect(births?.has(birth)).toBe(true);
+    const folders = readTrashFolders([trash, path.join(trash, "no-such-volume-trash")]);
+    expect(folders?.some((f) => f.inode === stats.ino && f.birthtimeMs === stats.birthtimeMs)).toBe(true);
 
     fs.rmSync(trash, { recursive: true, force: true });
   });
@@ -50,7 +69,7 @@ describe("readTrashBirthtimes", () => {
     const locked = fs.mkdtempSync(path.join(os.tmpdir(), "asm-locked-"));
     fs.chmodSync(locked, 0o000);
     try {
-      expect(readTrashBirthtimes([locked])).toBeNull();
+      expect(readTrashFolders([locked])).toBeNull();
     } finally {
       fs.chmodSync(locked, 0o700);
       fs.rmSync(locked, { recursive: true, force: true });

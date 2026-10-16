@@ -80,6 +80,7 @@ type TranslationKeys = {
   docSaveFailed: string;
   useProjectFolders: string;
   manyProjectsMissing: string;
+  ambiguousFinderChanges: string;
   renameConfirmTitle: string;
   renameConfirmMessage: string;
   rename: string;
@@ -217,6 +218,7 @@ const translations: Record<Language, TranslationKeys> = {
     docSaveFailed: "Couldn't save",
     useProjectFolders: "Store in Project Folders Instead",
     manyProjectsMissing: "Many projects disappeared at once — nothing was changed. Is the drive connected?",
+    ambiguousFinderChanges: "Some changes made in Finder couldn't be matched safely and were skipped",
     renameConfirmTitle: "Rename project?",
     renameConfirmMessage:
       "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
@@ -354,6 +356,7 @@ const translations: Record<Language, TranslationKeys> = {
     docSaveFailed: "保存失败",
     useProjectFolders: "改为存进项目文件夹",
     manyProjectsMissing: "检测到大量项目同时消失，未做任何处理。项目所在的磁盘是否已连接？",
+    ambiguousFinderChanges: "有些在 Finder 中的改动无法安全识别，已跳过",
     renameConfirmTitle: "重命名项目?",
     renameConfirmMessage: "请确认该项目已在 Ableton Live 中关闭。开着时重命名可能让工程与文件失联。",
     rename: "重命名",

@@ -375,19 +375,21 @@ export function archiveDocFiles(title: string): ArchivedDoc[] {
 }
 
 // 项目从废纸篓放回后，把归档的文档移回原位。原位置已被占用时不覆盖，保留归档。
+// unavailable = 文档文件夹暂时不可用（外接盘未挂载、文件夹失效等），值得下次重试；
+// gone = 文件夹在、但归档文件已不在（如被手动删除），不必再试。
 export function restoreArchivedDoc(
   project: { title: string; folderPath: string },
   doc: ArchivedDoc,
-): "restored" | "conflict" | "missing" {
+): "restored" | "conflict" | "unavailable" | "gone" {
   const folder = getDocFolder(doc.kind);
-  if (!folder) return "missing";
+  if (!folder || !fs.existsSync(folder)) return "unavailable";
   const source = path.join(folder, doc.relativePath);
-  if (!fs.existsSync(source)) return "missing";
+  if (!fs.existsSync(source)) return "gone";
 
   try {
     fs.linkSync(source, docFilePath(project, doc.kind));
   } catch (error) {
-    return (error as NodeJS.ErrnoException)?.code === "EEXIST" ? "conflict" : "missing";
+    return (error as NodeJS.ErrnoException)?.code === "EEXIST" ? "conflict" : "unavailable";
   }
   try {
     fs.unlinkSync(source);
