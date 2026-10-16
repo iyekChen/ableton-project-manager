@@ -17,7 +17,7 @@ import path from "node:path";
 import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "../../project-metadata";
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
-import { renameDocFiles, type DocRenameResult } from "../../docs";
+import { alteredDocChars, renameDocFiles, type DocRenameResult } from "../../docs";
 import { renameProjectInAllOrders } from "../../collection-order";
 import { renameProjectInAllRoles } from "../../collection-roles";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "../../taxonomies";
@@ -169,6 +169,9 @@ export function EditInfo({
       }
     >
       <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
+      {alteredDocChars(name.trim()).length > 0 && (
+        <Form.Description text={t.docNameHint.replace("{chars}", alteredDocChars(name.trim()).join(" "))} />
+      )}{" "}
       <Form.Dropdown id="stage" title={t.stage} value={stageId} onChange={setStageId}>
         <Form.Dropdown.Item value="none" title={t.none} icon={Icon.Circle} />
         {stageOptions.map((option) => (

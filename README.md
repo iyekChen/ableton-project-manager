@@ -94,6 +94,7 @@ Most actions are discoverable via the Action Panel (`⌘K`). A few highlights:
 ## Known limitations
 
 - **Queue collection in player** writes a standard `.m3u` playlist and opens it with your default `.m3u` handler. Use a player that supports playlists (IINA, VLC, Swinsian, …). **QuickTime Player does not support `.m3u`** and will not play the collection as a queue.
+- **Notes / lyrics in a custom folder** are named after the project. Characters that are unsafe in filenames or special in Obsidian (`\ * ? " < > | # ^ [ ]`) are replaced with `-`, and a short ID is appended (e.g. `Beat #3` → `Beat -3 ~1a2b3c.md`) so two projects never share a file.
 
 ## Roadmap
 

@@ -1,9 +1,9 @@
 import { getPreferenceValues } from "@raycast/api";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
 export type DocKind = "notes" | "lyrics";
-
 type DocPreferences = {
   notesFolder?: string;
   lyricsFolder?: string;
@@ -50,11 +50,28 @@ function customFoldersCollide(): boolean {
   return notes !== "" && notes === lyrics;
 }
 
-// 清洗文件名里的非法字符（含 Obsidian 禁用的 # ^ [ ] |）。保留 @。
+// 文件名里的非法字符（含 Windows 非法字符与 Obsidian 禁用的 # ^ [ ] |）。保留 @。
+const ILLEGAL_FILE_CHARS = /[/\\:*?"<>|#^[\]]/g;
+
+// 清洗文件名里的非法字符。
 function sanitizeFileName(name: string): string {
-  return name.replace(/[/\\:*?"<>|#^[\]]/g, "-").trim();
+  return name.replace(ILLEGAL_FILE_CHARS, "-").trim();
 }
 
+// 文档文件的基础名：清洗没改动名字时就用原名；改动了则追加原名的短哈希，
+// 让 Song?A 与 Song-A 落到不同文件。哈希只取决于原名，同一名字永远得到同一路径。
+function docBaseName(title: string): string {
+  const base = sanitizeFileName(title);
+  if (base === title) return base;
+  const hash = createHash("sha1").update(title).digest("hex").slice(0, 6);
+  return `${base} ~${hash}`;
+}
+
+// 设了自定义文档文件夹时，返回名字里会被替换掉的字符（去重），供表单提示；否则返回空。
+export function alteredDocChars(title: string): string[] {
+  if (!getDocFolder("notes") && !getDocFolder("lyrics")) return [];
+  return [...new Set(title.match(ILLEGAL_FILE_CHARS) ?? [])];
+}
 // 解析某项目某类文档的目标 .md 路径，遵循三条命名规则。
 export function docFilePath(project: { title: string; folderPath: string }, kind: DocKind): string {
   const folder = getDocFolder(kind);
@@ -62,7 +79,7 @@ export function docFilePath(project: { title: string; folderPath: string }, kind
     // 规则 1：项目文件夹 + 固定名。
     return path.join(project.folderPath, FIXED_FILE_NAME[kind]);
   }
-  const base = sanitizeFileName(project.title);
+  const base = docBaseName(project.title);
   // 规则 3：相同文件夹 → 带类型后缀；规则 2：不同文件夹 → 纯项目名。
   const fileName = customFoldersCollide() ? `${base}${COLLISION_SUFFIX[kind]}.md` : `${base}.md`;
   return path.join(folder, fileName);
