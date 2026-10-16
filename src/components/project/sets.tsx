@@ -29,6 +29,7 @@ import {
 import type { CachedAlsMetadata } from "../../projects/als-cache";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "../../sorting";
 import type { SortOption } from "../../sorting";
+import { GroupBySubmenu, groupItems, useGroupOption } from "../../grouping";
 import { getSettings } from "../../settings";
 import { getTranslations } from "../../i18n";
 import type { Project } from "../../projects/types";
@@ -37,6 +38,7 @@ const settings = getSettings();
 const t = getTranslations(settings.language);
 
 const SETS_SORT_STORAGE_KEY = "sets-sort-option";
+const SETS_GROUP_STORAGE_KEY = "sets-group-option";
 
 const SETS_SORT_OPTIONS: SortOption[] = [
   "modified-desc",
@@ -142,6 +144,7 @@ export function Sets({ project }: { project: Project }) {
   const [sets, setSets] = useState<ProjectSet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useSortOption(SETS_SORT_STORAGE_KEY, SETS_SORT_OPTIONS, "created-desc");
+  const [groupBy, setGroupBy] = useGroupOption(SETS_GROUP_STORAGE_KEY, "created");
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -285,70 +288,78 @@ export function Sets({ project }: { project: Project }) {
 
   return (
     <List isLoading={isLoading} isShowingDetail navigationTitle={project.title}>
-      <List.Section title={sortOptionTitle(sortBy)}>
-        {sortedSets.map((set) => (
-          <List.Item
-            key={set.path}
-            icon="set.png"
-            title={set.name}
-            detail={
-              <List.Item.Detail
-                metadata={
-                  <List.Item.Detail.Metadata>
-                    <List.Item.Detail.Metadata.Label title="Key" text={set.key ?? "—"} />
-                    <List.Item.Detail.Metadata.Label title="BPM" text={set.bpm === null ? "—" : String(set.bpm)} />
-                    <List.Item.Detail.Metadata.Label title="Time Signature" text={set.timeSignature ?? "—"} />
-                  </List.Item.Detail.Metadata>
-                }
-              />
-            }
-            actions={
-              <ActionPanel>
-                <Action.Open
-                  title={t.openInAbletonLive}
-                  icon={abletonApp ? { fileIcon: abletonApp.path } : undefined}
-                  target={set.path}
+      {groupItems(
+        sortedSets,
+        groupBy,
+        (set) => ({ created: set.createdAt, modified: set.modifiedAt }),
+        sortOptionTitle(sortBy),
+      ).map((group) => (
+        <List.Section key={group.key} title={group.title} subtitle={group.subtitle}>
+          {group.items.map((set) => (
+            <List.Item
+              key={set.path}
+              icon="set.png"
+              title={set.name}
+              detail={
+                <List.Item.Detail
+                  metadata={
+                    <List.Item.Detail.Metadata>
+                      <List.Item.Detail.Metadata.Label title="Key" text={set.key ?? "—"} />
+                      <List.Item.Detail.Metadata.Label title="BPM" text={set.bpm === null ? "—" : String(set.bpm)} />
+                      <List.Item.Detail.Metadata.Label title="Time Signature" text={set.timeSignature ?? "—"} />
+                    </List.Item.Detail.Metadata>
+                  }
                 />
-                <Action.ShowInFinder path={set.path} title={t.showInFinder} />
-                <Action.CopyToClipboard
-                  content={set.path.split("/").pop() ?? ""}
-                  title={t.copySetName}
-                  shortcut={{ modifiers: ["cmd"], key: "c" }}
-                />
-                <Action.CopyToClipboard
-                  content={set.path}
-                  title={t.copySetPath}
-                  shortcut={Keyboard.Shortcut.Common.CopyPath}
-                />
-                <ActionPanel.Section>
-                  <Action.Push
-                    title={t.renameSet}
-                    icon={Icon.Pencil}
-                    shortcut={Keyboard.Shortcut.Common.Edit}
-                    target={<RenameSetForm set={set} onRenamed={() => setReloadToken((n) => n + 1)} />}
+              }
+              actions={
+                <ActionPanel>
+                  <Action.Open
+                    title={t.openInAbletonLive}
+                    icon={abletonApp ? { fileIcon: abletonApp.path } : undefined}
+                    target={set.path}
                   />
-                  <Action
-                    title={t.duplicateSet}
-                    icon={Icon.Duplicate}
-                    shortcut={Keyboard.Shortcut.Common.Duplicate}
-                    onAction={() => handleDuplicate(set)}
+                  <Action.ShowInFinder path={set.path} title={t.showInFinder} />
+                  <Action.CopyToClipboard
+                    content={set.path.split("/").pop() ?? ""}
+                    title={t.copySetName}
+                    shortcut={{ modifiers: ["cmd"], key: "c" }}
                   />
-                  <Action
-                    title={t.moveToTrash}
-                    icon={Icon.Trash}
-                    style={Action.Style.Destructive}
-                    shortcut={Keyboard.Shortcut.Common.Remove}
-                    onAction={() => handleTrash(set)}
+                  <Action.CopyToClipboard
+                    content={set.path}
+                    title={t.copySetPath}
+                    shortcut={Keyboard.Shortcut.Common.CopyPath}
                   />
-                </ActionPanel.Section>
-                <ActionPanel.Section>
-                  <SortBySubmenu allowed={SETS_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
-                </ActionPanel.Section>
-              </ActionPanel>
-            }
-          />
-        ))}
-      </List.Section>
+                  <ActionPanel.Section>
+                    <Action.Push
+                      title={t.renameSet}
+                      icon={Icon.Pencil}
+                      shortcut={Keyboard.Shortcut.Common.Edit}
+                      target={<RenameSetForm set={set} onRenamed={() => setReloadToken((n) => n + 1)} />}
+                    />
+                    <Action
+                      title={t.duplicateSet}
+                      icon={Icon.Duplicate}
+                      shortcut={Keyboard.Shortcut.Common.Duplicate}
+                      onAction={() => handleDuplicate(set)}
+                    />
+                    <Action
+                      title={t.moveToTrash}
+                      icon={Icon.Trash}
+                      style={Action.Style.Destructive}
+                      shortcut={Keyboard.Shortcut.Common.Remove}
+                      onAction={() => handleTrash(set)}
+                    />
+                  </ActionPanel.Section>
+                  <ActionPanel.Section>
+                    <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
+                    <SortBySubmenu allowed={SETS_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+                  </ActionPanel.Section>
+                </ActionPanel>
+              }
+            />
+          ))}
+        </List.Section>
+      ))}
     </List>
   );
 }

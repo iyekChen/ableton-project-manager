@@ -52,6 +52,15 @@ type TranslationKeys = {
   pinned: string;
   sortBy: string;
   sortProjects: string;
+  groupBy: string;
+  groupByCreated: string;
+  groupByModified: string;
+  groupNone: string;
+  bandToday: string;
+  bandThisWeek: string;
+  bandThisMonth: string;
+  bandThisYear: string;
+  bandEarlier: string;
   select: string;
   modifiedNewest: string;
   modifiedOldest: string;
@@ -201,6 +210,15 @@ const translations: Record<Language, TranslationKeys> = {
     pinned: "Pinned",
     sortBy: "Sort By",
     sortProjects: "Sort Projects",
+    groupBy: "Group By",
+    groupByCreated: "Created",
+    groupByModified: "Modified",
+    groupNone: "None",
+    bandToday: "Today",
+    bandThisWeek: "This Week",
+    bandThisMonth: "This Month",
+    bandThisYear: "This Year",
+    bandEarlier: "Earlier",
     select: "Select",
     modifiedNewest: "Modified — Newest",
     modifiedOldest: "Modified — Oldest",
@@ -353,6 +371,15 @@ const translations: Record<Language, TranslationKeys> = {
     pinned: "已固定",
     sortBy: "排序方式",
     sortProjects: "排序项目",
+    groupBy: "分组方式",
+    groupByCreated: "创建时间",
+    groupByModified: "修改时间",
+    groupNone: "不分组",
+    bandToday: "今天",
+    bandThisWeek: "本周",
+    bandThisMonth: "本月",
+    bandThisYear: "今年",
+    bandEarlier: "更早",
     select: "选择",
     modifiedNewest: "修改时间 — 最新",
     modifiedOldest: "修改时间 — 最旧",

@@ -28,6 +28,7 @@ import { removeProjectFromAllRoles } from "./collection-roles";
 import { getTranslations } from "./i18n";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "./sorting";
 import type { SortOption } from "./sorting";
+import { GroupBySubmenu, groupItems, useGroupOption } from "./grouping";
 import { Bounces } from "./bounces";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "./taxonomies";
 import type { TaxonomyOption } from "./taxonomy";
@@ -48,6 +49,7 @@ const settings = getSettings();
 const t = getTranslations(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
+const GROUP_STORAGE_KEY = "project-group-option";
 const VIEW_MODE_STORAGE_KEY = "view-mode:projects";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:projects";
 const PLAYER_PATH = ensureAudioPlayerBinary();
@@ -92,6 +94,7 @@ export default function Command() {
   const [collectionOptions, setCollectionOptions] = useState<TaxonomyOption[]>([]);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
+  const [groupBy, setGroupBy] = useGroupOption(GROUP_STORAGE_KEY, "created");
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(true);
@@ -647,6 +650,9 @@ export default function Command() {
                   onAction={toggleDetailDoc}
                 />
               )}
+            </ActionPanel.Section>
+            <ActionPanel.Section>
+              <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
             </ActionPanel.Section>
           </ActionPanel>
@@ -693,7 +699,16 @@ export default function Command() {
       }
     >
       {pinnedProjects.length > 0 && <List.Section title={t.pinned}>{pinnedProjects.map(renderProject)}</List.Section>}
-      <List.Section title={currentSortTitle}>{unpinnedProjects.map(renderProject)}</List.Section>
+      {groupItems(
+        unpinnedProjects,
+        groupBy,
+        (p) => ({ created: p.createdAt, modified: p.modifiedAt }),
+        currentSortTitle,
+      ).map((group) => (
+        <List.Section key={group.key} title={group.title} subtitle={group.subtitle}>
+          {group.items.map(renderProject)}
+        </List.Section>
+      ))}
     </List>
   );
 }
