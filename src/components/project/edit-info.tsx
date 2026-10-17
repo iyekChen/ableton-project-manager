@@ -36,6 +36,13 @@ const t = getTranslations(settings.language);
 /** 改名成功时回传给调用方，便于其刷新内存中以旧 id 为键的状态。 */
 export type ProjectRename = { oldId: string; newId: string; folderPath: string };
 
+// 顺序无关的 id 集合比较，用于判断表单是否有改动。
+function sameIds(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  return b.every((id) => set.has(id));
+}
+
 export function EditInfo({
   project,
   onSaved,
@@ -59,6 +66,7 @@ export function EditInfo({
   const [stageId, setStageId] = useState("none");
   const [genreIds, setGenreIds] = useState<string[]>([]);
   const [collectionIds, setCollectionIds] = useState<string[]>([]);
+  const [originalCollectionIds, setOriginalCollectionIds] = useState<string[]>([]);
   const [roleOptions, setRoleOptions] = useState<TaxonomyOption[]>([]);
   const [role, setRole] = useState(currentRole ?? "none");
   useEffect(() => {
@@ -76,6 +84,7 @@ export function EditInfo({
       setStageId(metadata.stageId ?? "none");
       setGenreIds(metadata.genreIds);
       setCollectionIds(metadata.collectionIds);
+      setOriginalCollectionIds(metadata.collectionIds);
 
       if (collectionId) {
         setRoleOptions(await roleTaxonomy.get());
@@ -88,6 +97,38 @@ export function EditInfo({
   async function handleSubmit() {
     const trimmedName = name.trim();
     const nameChanged = trimmedName !== "" && trimmedName !== project.title;
+
+    // 读原始元数据：判断是否有改动、以及哪些合集被移除。
+    const original = await getProjectMetadata(project.id);
+    const nextStageId = stageId === "none" ? null : stageId;
+    const nextRole = role === "none" ? null : role;
+    const removedCollections = (original.collectionIds ?? []).filter((id) => !collectionIds.includes(id));
+
+    const changed =
+      nameChanged ||
+      nextStageId !== (original.stageId ?? null) ||
+      !sameIds(genreIds, original.genreIds ?? []) ||
+      !sameIds(collectionIds, original.collectionIds ?? []) ||
+      (collectionId !== undefined && nextRole !== (currentRole ?? null));
+
+    if (!changed) {
+      await showToast({ style: Toast.Style.Success, title: t.noChanges });
+      pop();
+      return;
+    }
+
+    // 移出了合集：独立确认（点明会清掉那些合集里的排序与角色），放在改名确认之前，
+    // 避免改完名/写完盘后用户才在这一步取消、留下半成品。
+    if (removedCollections.length > 0) {
+      const names = removedCollections.map((id) => collectionOptions.find((c) => c.id === id)?.name ?? id).join(", ");
+      const confirmed = await confirmAlert({
+        icon: { source: Icon.Trash, tintColor: Color.Red },
+        title: t.removeCollectionsConfirmTitle,
+        message: t.removeCollectionsConfirmHint.replace("{names}", names),
+        primaryAction: { title: t.removeFromCollection, style: Alert.ActionStyle.Destructive },
+      });
+      if (!confirmed) return;
+    }
 
     let targetId = project.id;
     let docRenameResult: DocRenameResult | null = null;
@@ -164,7 +205,6 @@ export function EditInfo({
     const metadata = await getProjectMetadata(targetId);
     // 被移出的合集：和 Remove from Tracklist 一样清掉本曲在那里的轨号和角色，
     // 免得日后再加回来时旧轨号"复活"、与别的曲目撞号。
-    const removedCollections = (metadata.collectionIds ?? []).filter((id) => !collectionIds.includes(id));
     for (const id of removedCollections) {
       const trackMap = await getTrackMap(id);
       if (targetId in trackMap) await setTrackMap(id, removeNumber(trackMap, targetId));
@@ -179,8 +219,6 @@ export function EditInfo({
     });
 
     if (collectionId && onRoleChanged && !removedCollections.includes(collectionId)) {
-      const nextRole = role === "none" ? null : role;
-
       if (nextRole !== (currentRole ?? null)) {
         await onRoleChanged(nextRole, targetId);
       }
@@ -204,7 +242,7 @@ export function EditInfo({
       navigationTitle={`${t.editInfo} — ${project.title}`}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.save} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={t.save} icon={Icon.Check} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
@@ -237,6 +275,9 @@ export function EditInfo({
           <Form.TagPicker.Item key={option.id} value={option.id} title={option.name} />
         ))}
       </Form.TagPicker>
+      {originalCollectionIds.some((id) => !collectionIds.includes(id)) && (
+        <Form.Description text={t.removeCollectionsFormHint} />
+      )}
       {collectionId && (
         <Form.Dropdown id="role" title={t.role} value={role} onChange={setRole}>
           <Form.Dropdown.Item value="none" title={t.none} />

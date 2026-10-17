@@ -233,7 +233,7 @@ export default function Command() {
                   <Action
                     title={t.moveToTop}
                     icon={Icon.ArrowUpCircle}
-                    // eslint-disable-next-line @raycast/prefer-common-shortcut
+
                     shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
                     onAction={() => reorder(index, 0)}
                   />
@@ -258,7 +258,7 @@ export default function Command() {
                   <Action
                     title={t.moveToBottom}
                     icon={Icon.ArrowDownCircle}
-                    // eslint-disable-next-line @raycast/prefer-common-shortcut
+
                     shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
                     onAction={() => reorder(index, options.length - 1)}
                   />

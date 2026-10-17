@@ -177,13 +177,18 @@ type TranslationKeys = {
   sectionCopy: string;
   sectionPin: string;
   sectionTracklist: string;
-  removeFromCollection: string;
-  removeFromCollectionHint: string;
   sectionView: string;
   sectionArrange: string;
   sectionNavigate: string;
   sectionDangerZone: string;
+  removeFromCollection: string;
+  removeFromCollectionHint: string;
+  noChanges: string;
+  removeCollectionsConfirmTitle: string;
+  removeCollectionsConfirmHint: string;
+  removeCollectionsFormHint: string;
 };
+
 
 const translations: Record<Language, TranslationKeys> = {
   en: {
@@ -368,13 +373,16 @@ const translations: Record<Language, TranslationKeys> = {
     sectionCopy: "Copy",
     sectionPin: "Pin",
     sectionTracklist: "Tracklist",
-    removeFromCollection: "Remove from Collection",
-    removeFromCollectionHint:
-      "This clears the track's order and role in this collection. The project itself won't be deleted.",
     sectionView: "View",
     sectionArrange: "Arrange",
     sectionNavigate: "Navigate",
     sectionDangerZone: "Danger Zone",
+    removeFromCollection: "Remove from Collection",
+    removeFromCollectionHint: "This clears the track's order and role in this collection. The project itself won't be deleted.",
+    noChanges: "No Changes",
+    removeCollectionsConfirmTitle: "Remove from collection?",
+    removeCollectionsConfirmHint: "This project will be removed from {names}, clearing its order and role there. The project itself won't be deleted.",
+    removeCollectionsFormHint: "Removing a collection clears this project's order and role there.",
   },
 
   "zh-CN": {
@@ -557,12 +565,16 @@ const translations: Record<Language, TranslationKeys> = {
     sectionCopy: "拷贝",
     sectionPin: "固定",
     sectionTracklist: "曲目列表",
-    removeFromCollection: "移出合集",
-    removeFromCollectionHint: "将清除该曲目在本合集的排序与角色。项目本身不会被删除。",
     sectionView: "视图",
     sectionArrange: "排列",
     sectionNavigate: "导航",
     sectionDangerZone: "危险操作",
+    removeFromCollection: "移出合集",
+    removeFromCollectionHint: "将清除该曲目在本合集的排序与角色。项目本身不会被删除。",
+    noChanges: "无改动",
+    removeCollectionsConfirmTitle: "移出合集？",
+    removeCollectionsConfirmHint: "该项目将从 {names} 中移出，并清除在其中的排序与角色。项目本身不会被删除。",
+    removeCollectionsFormHint: "移除合集会清除该项目在其中的排序与角色。",
   },
 };
 
