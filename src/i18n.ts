@@ -172,11 +172,12 @@ type TranslationKeys = {
   storageUnreadable: string;
   trashFailed: string;
   sectionPlayback: string;
-  sectionDocs: string;
+  sectionDetails: string;
   sectionFile: string;
   sectionCopy: string;
-  sectionPinOrder: string;
+  sectionPin: string;
   sectionView: string;
+  sectionArrange: string;
   sectionDangerZone: string;
 };
 
@@ -358,11 +359,12 @@ const translations: Record<Language, TranslationKeys> = {
     storageUnreadable: "Couldn't read your saved data — the change was skipped to avoid overwriting it",
     trashFailed: "Couldn't move to Trash",
     sectionPlayback: "Playback",
-    sectionDocs: "Docs",
+    sectionDetails: "Details",
     sectionFile: "File",
     sectionCopy: "Copy",
-    sectionPinOrder: "Pin & Order",
+    sectionPin: "Pin",
     sectionView: "View",
+    sectionArrange: "Arrange",
     sectionDangerZone: "Danger Zone",
   },
 
@@ -541,11 +543,12 @@ const translations: Record<Language, TranslationKeys> = {
     storageUnreadable: "读取已保存的数据失败——为避免覆盖，已跳过本次改动",
     trashFailed: "移到废纸篓失败",
     sectionPlayback: "播放",
-    sectionDocs: "笔记与歌词",
+    sectionDetails: "详情",
     sectionFile: "文件",
     sectionCopy: "拷贝",
-    sectionPinOrder: "固定与排序",
+    sectionPin: "固定",
     sectionView: "视图",
+    sectionArrange: "排列",
     sectionDangerZone: "危险操作",
   },
 };

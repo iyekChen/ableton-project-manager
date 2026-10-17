@@ -521,12 +521,6 @@ export default function Command() {
                   void collectionTaxonomy.get().then(setCollectionOptions);
                 }}
               />
-              <Action.Push
-                title={t.editInfo}
-                icon={Icon.Pencil}
-                shortcut={Keyboard.Shortcut.Common.Edit}
-                target={<EditInfo project={item} onSaved={reloadProjects} />}
-              />
             </ActionPanel.Section>
             {isAnythingPlaying && (
               <ActionPanel.Section title={t.sectionPlayback}>
@@ -561,7 +555,13 @@ export default function Command() {
                 />
               </ActionPanel.Section>
             )}
-            <ActionPanel.Section title={t.sectionDocs}>
+            <ActionPanel.Section title={t.sectionDetails}>
+              <Action.Push
+                title={t.editInfo}
+                icon={Icon.Pencil}
+                shortcut={Keyboard.Shortcut.Common.Edit}
+                target={<EditInfo project={item} onSaved={reloadProjects} />}
+              />
               <Action.Push
                 title={t.editNote}
                 icon={Icon.Highlight}
@@ -641,7 +641,7 @@ export default function Command() {
                 shortcut={Keyboard.Shortcut.Common.CopyPath}
               />
             </ActionPanel.Section>
-            <ActionPanel.Section title={t.sectionPinOrder}>
+            <ActionPanel.Section title={t.sectionPin}>
               <Action
                 title={item.pinned ? t.unpinProject : t.pinProject}
                 icon={item.pinned ? Icon.TackDisabled : Icon.Tack}
@@ -678,6 +678,8 @@ export default function Command() {
                   onAction={toggleDetailDoc}
                 />
               )}
+            </ActionPanel.Section>
+            <ActionPanel.Section title={t.sectionArrange}>
               <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
             </ActionPanel.Section>
