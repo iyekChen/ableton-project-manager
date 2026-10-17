@@ -176,6 +176,9 @@ type TranslationKeys = {
   sectionFile: string;
   sectionCopy: string;
   sectionPin: string;
+  sectionTracklist: string;
+  removeFromCollection: string;
+  removeFromCollectionHint: string;
   sectionView: string;
   sectionArrange: string;
   sectionNavigate: string;
@@ -364,6 +367,10 @@ const translations: Record<Language, TranslationKeys> = {
     sectionFile: "File",
     sectionCopy: "Copy",
     sectionPin: "Pin",
+    sectionTracklist: "Tracklist",
+    removeFromCollection: "Remove from Collection",
+    removeFromCollectionHint:
+      "This clears the track's order and role in this collection. The project itself won't be deleted.",
     sectionView: "View",
     sectionArrange: "Arrange",
     sectionNavigate: "Navigate",
@@ -549,6 +556,9 @@ const translations: Record<Language, TranslationKeys> = {
     sectionFile: "文件",
     sectionCopy: "拷贝",
     sectionPin: "固定",
+    sectionTracklist: "曲目列表",
+    removeFromCollection: "移出合集",
+    removeFromCollectionHint: "将清除该曲目在本合集的排序与角色。项目本身不会被删除。",
     sectionView: "视图",
     sectionArrange: "排列",
     sectionNavigate: "导航",

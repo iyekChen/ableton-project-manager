@@ -17,7 +17,7 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import { getTranslations } from "./i18n";
@@ -413,7 +413,7 @@ function CollectionPanel({
     return (
       <Action
         title={title}
-        icon={toggleIsPause ? Icon.Pause : Icon.Play}
+        icon={isThisPlaying ? (toggleIsPause ? Icon.PauseFilled : Icon.PlayFilled) : Icon.Play}
         onAction={() => {
           if (isThisPlaying) {
             if (playbackStatus === "Stopping") {
@@ -435,17 +435,22 @@ function CollectionPanel({
   // 播放时才出现的停止、seek / restart 控制，作用于全局播放器。
   const renderPlaybackControls = () =>
     playingId !== null ? (
-      <ActionPanel.Section>
-        <Action title={t.stopPlayback} icon={Icon.Stop} shortcut={{ modifiers: ["cmd"], key: "-" }} onAction={stop} />
+      <ActionPanel.Section title={t.sectionPlayback}>
+        <Action
+          title={t.stopPlayback}
+          icon={Icon.StopFilled}
+          shortcut={{ modifiers: ["cmd"], key: "-" }}
+          onAction={stop}
+        />
         <Action
           title={t.seekBackward}
-          icon={Icon.ArrowLeft}
+          icon={Icon.RewindFilled}
           shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
           onAction={() => seek(-SEEK_STEP_SECONDS)}
         />
         <Action
           title={t.seekForward}
-          icon={Icon.ArrowRight}
+          icon={Icon.ForwardFilled}
           shortcut={{ modifiers: ["opt"], key: "arrowRight" }}
           onAction={() => seek(SEEK_STEP_SECONDS)}
         />
@@ -575,6 +580,27 @@ function CollectionPanel({
     await applyRoles(clearRole(roles, id));
   }
 
+  // 把该项目整个移出本 collection：清掉成员关系 + 本合集轨号 + Role（项目本身与文件不受影响）。
+  async function removeFromCollection(p: Project) {
+    const confirmed = await confirmAlert({
+      title: t.removeFromCollection,
+      icon: { source: Icon.Trash, tintColor: Color.Red },
+      message: t.removeFromCollectionHint,
+      primaryAction: { title: t.removeFromCollection, style: Alert.ActionStyle.Destructive },
+    });
+    if (!confirmed) return;
+    await removeFromTracklist(p.id);
+    const store = await getAllProjectMetadata();
+    const meta = store[p.id];
+    if (meta) {
+      await saveProjectMetadata(p.id, {
+        ...meta,
+        collectionIds: (meta.collectionIds ?? []).filter((id) => id !== collection.id),
+      });
+    }
+    await reloadMetadata();
+  }
+
   // 按 Track Number 顺序（tracked 在前，unsorted 在后）把成员的 latest bounce 写成 .m3u，
   // 交系统默认 App 打开。不支持无播放列表的播放器（如 QuickTime Player）——见 README。
   async function queueCollection() {
@@ -625,14 +651,12 @@ function CollectionPanel({
   }
 
   const renderQueueCollection = () => (
-    <ActionPanel.Section>
-      <Action
-        title={t.queueCollection}
-        icon={Icon.List}
-        shortcut={{ modifiers: ["cmd", "shift"], key: "return" }}
-        onAction={queueCollection}
-      />
-    </ActionPanel.Section>
+    <Action
+      title={t.queueCollection}
+      icon={Icon.AppWindow}
+      shortcut={{ modifiers: ["cmd", "shift"], key: "return" }}
+      onAction={queueCollection}
+    />
   );
 
   // 角色 pill（设了才显示，放在 accessories 最左）。
@@ -643,10 +667,16 @@ function CollectionPanel({
 
   // 打开 Note / Lyrics 的外部编辑动作。Note 文件存在才出现；Lyrics 打开即建（可套模板）。
   const renderDocActions = (p: Project) => (
-    <ActionPanel.Section>
+    <>
+      <Action.Push
+        title={t.editNote}
+        icon={Icon.Highlight}
+        shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
+        target={<EditNote project={p} onSaved={() => reloadNote(p)} />}
+      />
       <Action
         title={t.openNote}
-        icon={Icon.Document}
+        icon={Icon.Book}
         shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
         onAction={async () => {
           await openDoc(p, "notes");
@@ -654,13 +684,13 @@ function CollectionPanel({
       />
       <Action
         title={t.openLyrics}
-        icon={Icon.Music}
+        icon={Icon.Book}
         shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
         onAction={async () => {
           await openDoc(p, "lyrics");
         }}
       />
-    </ActionPanel.Section>
+    </>
   );
 
   // 视图切换 Action（Detail / Overview，本视图独立记忆）。
@@ -683,7 +713,7 @@ function CollectionPanel({
 
   // 返回 Search Projects（跨层直接回根视图）。
   const renderBackToProjects = () => (
-    <ActionPanel.Section>
+    <ActionPanel.Section title={t.sectionNavigate}>
       <Action
         title={t.backToProjects}
         icon={Icon.ArrowLeftCircle}
@@ -692,6 +722,40 @@ function CollectionPanel({
           pop();
           setTimeout(() => pop(), 0);
         }}
+      />
+    </ActionPanel.Section>
+  );
+
+  const renderOpenInFinder = (p: Project) => (
+    <Action.Open
+      title={t.openInFinder}
+      icon={Icon.Finder}
+      shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+      target={p.folderPath}
+    />
+  );
+
+  const renderCopySection = (p: Project) => (
+    <ActionPanel.Section title={t.sectionCopy}>
+      {p.bouncesCount > 0 && (
+        <Action
+          title={t.copyLatestBounce}
+          icon={Icon.CopyClipboard}
+          shortcut={Keyboard.Shortcut.Common.Copy}
+          onAction={() => copyLatestBounce(p)}
+        />
+      )}
+      <Action.CopyToClipboard
+        content={p.title}
+        title={t.copyProjectName}
+        icon={Icon.CopyClipboard}
+        shortcut={Keyboard.Shortcut.Common.CopyName}
+      />
+      <Action.CopyToClipboard
+        content={p.folderPath}
+        title={t.copyProjectPath}
+        icon={Icon.CopyClipboard}
+        shortcut={Keyboard.Shortcut.Common.CopyPath}
       />
     </ActionPanel.Section>
   );
@@ -781,6 +845,120 @@ function CollectionPanel({
     );
   };
 
+  const renderTrackedTracklist = (p: Project, i: number) => (
+    <ActionPanel.Section title={t.sectionTracklist}>
+      <Action
+        title={t.removeFromTracklist}
+        icon={Icon.Minus}
+        shortcut={Keyboard.Shortcut.Common.Pin}
+        onAction={() => removeFromTracklist(p.id)}
+      />
+      {i > 0 && (
+        <Action
+          title={t.swapUp}
+          icon={Icon.ArrowUp}
+          shortcut={Keyboard. Shortcut.Common.MoveUp}
+          onAction={() => apply(swapNumbers(map, p.id, tracked[i - 1].id))}
+        />
+      )}
+      {i < tracked.length - 1 && (
+        <Action
+          title={t.swapDown}
+          icon={Icon.ArrowDown}
+          shortcut={Keyboard.Shortcut.Common.MoveDown}
+          onAction={() => apply(swapNumbers(map, p.id, tracked[i + 1].id))}
+        />
+      )}
+      {i > 0 && (
+        <Action
+          title={t.moveToTop}
+          icon={Icon.ArrowUpCircle}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
+          onAction={() => {
+            const ids = [p.id, ...tracked.filter((x) => x.id !== p.id).map((x) => x.id)];
+            const next: TrackMap = { ...map };
+            ids.forEach((id, idx) => {
+              next[id] = idx + 1;
+            });
+            void apply(next);
+          }}
+        />
+      )}
+      {i < tracked.length - 1 && (
+        <Action
+          title={t.moveToBottom}
+          icon={Icon.ArrowDownCircle}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
+          onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
+        />
+      )}
+    </ActionPanel.Section>
+  );
+
+  const renderUnsortedTracklist = (p: Project) => (
+    <ActionPanel.Section title={t.sectionTracklist}>
+      <Action
+        title={t.addToTracklist}
+        icon={Icon.Plus}
+        shortcut={Keyboard.Shortcut.Common.Pin}
+        onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
+      />
+    </ActionPanel.Section>
+  );
+
+  const renderItemActions = (p: Project, tracklist: ReactNode, trackCurrent: number) => (
+    <ActionPanel>
+      <Action.Push
+        title={t.setTrackNumber}
+        icon={Icon.Hashtag}
+        target={
+          <SetTrackNumberForm
+            current={trackCurrent}
+            onSubmit={(n) => (n === null ? removeFromTracklist(p.id) : apply(assignNumber(map, p.id, n)))}
+          />
+        }
+      />
+      {renderPlayToggle(p)}
+      {renderQueueCollection()}
+      {renderOpenInFinder(p)}
+      {renderPlaybackControls()}
+      {tracklist}
+      <ActionPanel.Section title={t.sectionDetails}>
+        <Action.Push
+          title={t.editInfo}
+          icon={Icon.Pencil}
+          shortcut={Keyboard.Shortcut.Common.Edit}
+          target={
+            <EditInfo
+              project={p}
+              onSaved={reloadMetadata}
+              collectionId={collection.id}
+              currentRole={roles[p.id]}
+              onRoleChanged={async (nextRole, projectId) => {
+                // 读存储里的最新表（同一次保存可能刚做过改名迁移），按 EditInfo 给的 id 写入。
+                const fresh = await getRoleMap(collection.id);
+                await applyRoles(nextRole ? assignRole(fresh, projectId, nextRole) : clearRole(fresh, projectId));
+              }}
+            />
+          }
+        />
+        {renderDocActions(p)}
+      </ActionPanel.Section>
+      {renderCopySection(p)}
+      {renderViewToggle()}
+      {renderBackToProjects()}
+      <ActionPanel.Section title={t.sectionDangerZone}>
+        <Action
+          title={t.removeFromCollection}
+          icon={Icon.Trash}
+          style={Action.Style.Destructive}
+          shortcut={Keyboard.Shortcut.Common.Remove}
+          onAction={() => removeFromCollection(p)}
+        />
+      </ActionPanel.Section>
+    </ActionPanel>
+  );
+
   return (
     <List
       navigationTitle={collection.name}
@@ -842,91 +1020,7 @@ function CollectionPanel({
                     title={p.title}
                     accessories={showDetail ? [] : accessories}
                     detail={showDetail ? renderDetail(p) : undefined}
-                    actions={
-                      <ActionPanel>
-                        <Action.Push
-                          title={t.setTrackNumber}
-                          icon={Icon.Hashtag}
-                          target={
-                            <SetTrackNumberForm
-                              current={num}
-                              onSubmit={(n) =>
-                                n === null ? removeFromTracklist(p.id) : apply(assignNumber(map, p.id, n))
-                              }
-                            />
-                          }
-                        />
-                        {renderPlayToggle(p)}
-                        <Action
-                          title={t.copyLatestBounce}
-                          icon={Icon.CopyClipboard}
-                          shortcut={{ modifiers: ["cmd"], key: "c" }}
-                          onAction={() => copyLatestBounce(p)}
-                        />
-                        <Action.Push
-                          title={t.editInfo}
-                          icon={Icon.Pencil}
-                          shortcut={Keyboard.Shortcut.Common.Edit}
-                          target={
-                            <EditInfo
-                              project={p}
-                              onSaved={reloadMetadata}
-                              collectionId={collection.id}
-                              currentRole={roles[p.id]}
-                              onRoleChanged={async (nextRole, projectId) => {
-                                // 读存储里的最新表（同一次保存可能刚做过改名迁移），按 EditInfo 给的 id 写入。
-                                const fresh = await getRoleMap(collection.id);
-                                await applyRoles(
-                                  nextRole ? assignRole(fresh, projectId, nextRole) : clearRole(fresh, projectId),
-                                );
-                              }}
-                            />
-                          }
-                        />
-                        <Action.Push
-                          title={t.editNote}
-                          icon={Icon.Pencil}
-                          shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
-                          target={<EditNote project={p} onSaved={() => reloadNote(p)} />}
-                        />
-                        <Action
-                          title={t.removeFromTracklist}
-                          icon={Icon.MinusCircle}
-                          shortcut={Keyboard.Shortcut.Common.Pin}
-                          onAction={() => removeFromTracklist(p.id)}
-                        />
-                        {renderPlaybackControls()}
-                        <ActionPanel.Section>
-                          {i > 0 && (
-                            <Action
-                              title={t.swapUp}
-                              icon={Icon.ArrowUp}
-                              shortcut={Keyboard.Shortcut.Common.MoveUp}
-                              onAction={() => apply(swapNumbers(map, p.id, tracked[i - 1].id))}
-                            />
-                          )}
-                          {i < tracked.length - 1 && (
-                            <Action
-                              title={t.swapDown}
-                              icon={Icon.ArrowDown}
-                              shortcut={Keyboard.Shortcut.Common.MoveDown}
-                              onAction={() => apply(swapNumbers(map, p.id, tracked[i + 1].id))}
-                            />
-                          )}
-                          {i < tracked.length - 1 && (
-                            <Action
-                              title={t.moveToBottom}
-                              icon={Icon.ArrowDownCircle}
-                              onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
-                            />
-                          )}
-                        </ActionPanel.Section>
-                        {renderDocActions(p)}
-                        {renderViewToggle()}
-                        {renderQueueCollection()}
-                        {renderBackToProjects()}
-                      </ActionPanel>
-                    }
+                    actions={renderItemActions(p, renderTrackedTracklist(p, i), num)}
                   />
                 );
               })}
@@ -942,53 +1036,7 @@ function CollectionPanel({
                     icon="icon.png"
                     title={p.title}
                     detail={showDetail ? renderDetail(p) : undefined}
-                    actions={
-                      <ActionPanel>
-                        <Action.Push
-                          title={t.setTrackNumber}
-                          icon={Icon.Hashtag}
-                          target={
-                            <SetTrackNumberForm
-                              current={nextNumber(map)}
-                              onSubmit={(n) =>
-                                n === null ? removeFromTracklist(p.id) : apply(assignNumber(map, p.id, n))
-                              }
-                            />
-                          }
-                        />
-                        {renderPlayToggle(p)}
-                        <Action
-                          title={t.copyLatestBounce}
-                          icon={Icon.CopyClipboard}
-                          onAction={() => copyLatestBounce(p)}
-                        />
-                        <Action.Push
-                          title={t.editInfo}
-                          icon={Icon.Pencil}
-                          shortcut={Keyboard.Shortcut.Common.Edit}
-                          target={
-                            <EditInfo
-                              project={p}
-                              onSaved={reloadMetadata}
-                              collectionId={collection.id}
-                              currentRole={roles[p.id]}
-                              onRoleChanged={(nextRole) =>
-                                applyRoles(nextRole ? assignRole(roles, p.id, nextRole) : clearRole(roles, p.id))
-                              }
-                            />
-                          }
-                        />{" "}
-                        <Action
-                          title={t.addToTracklist}
-                          icon={Icon.PlusCircle}
-                          shortcut={Keyboard.Shortcut.Common.Pin}
-                          onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
-                        />
-                        {renderPlaybackControls()}
-                        {renderDocActions(p)}
-                        {renderViewToggle()}
-                      </ActionPanel>
-                    }
+                    actions={renderItemActions(p, renderUnsortedTracklist(p), nextNumber(map))}
                   />
                 );
               })}
