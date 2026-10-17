@@ -171,6 +171,13 @@ type TranslationKeys = {
   noLyricsYet: string;
   storageUnreadable: string;
   trashFailed: string;
+  sectionPlayback: string;
+  sectionDocs: string;
+  sectionFile: string;
+  sectionCopy: string;
+  sectionPinOrder: string;
+  sectionView: string;
+  sectionDangerZone: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -350,6 +357,13 @@ const translations: Record<Language, TranslationKeys> = {
     noLyricsYet: "_No lyrics yet_",
     storageUnreadable: "Couldn't read your saved data — the change was skipped to avoid overwriting it",
     trashFailed: "Couldn't move to Trash",
+    sectionPlayback: "Playback",
+    sectionDocs: "Docs",
+    sectionFile: "File",
+    sectionCopy: "Copy",
+    sectionPinOrder: "Pin & Order",
+    sectionView: "View",
+    sectionDangerZone: "Danger Zone",
   },
 
   "zh-CN": {
@@ -526,6 +540,13 @@ const translations: Record<Language, TranslationKeys> = {
     noLyricsYet: "_暂无歌词_",
     storageUnreadable: "读取已保存的数据失败——为避免覆盖，已跳过本次改动",
     trashFailed: "移到废纸篓失败",
+    sectionPlayback: "播放",
+    sectionDocs: "笔记与歌词",
+    sectionFile: "文件",
+    sectionCopy: "拷贝",
+    sectionPinOrder: "固定与排序",
+    sectionView: "视图",
+    sectionDangerZone: "危险操作",
   },
 };
 

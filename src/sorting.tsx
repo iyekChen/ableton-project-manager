@@ -107,7 +107,7 @@ export function SortBySubmenu(props: {
   const options = ALL_SORT_OPTIONS.filter((option) => props.allowed.includes(option.value));
 
   return (
-    <ActionPanel.Submenu title={t.sortBy} icon={Icon.BulletPoints}>
+    <ActionPanel.Submenu title={t.sortBy} icon={Icon.NumberList}>
       {options.map((option) => (
         <Action
           key={option.value}

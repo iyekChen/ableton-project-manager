@@ -407,6 +407,8 @@ export default function Command() {
           : t.pausePlayback
       : t.playLatestBounce;
 
+    const toggleIcon = isThisPlaying ? (toggleIsPause ? Icon.PauseFilled : Icon.PlayFilled) : Icon.Play;
+
     return (
       <List.Item
         key={item.id}
@@ -420,7 +422,7 @@ export default function Command() {
                 { text: String(item.setsCount), tooltip: `${item.setsCount} Sets` },
                 { icon: Icon.Document, tooltip: `${item.setsCount} Sets` },
                 { text: String(item.bouncesCount), tooltip: `${item.bouncesCount} Bounces` },
-                { icon: Icon.Music, tooltip: `${item.bouncesCount} Bounces` },
+                { icon: Icon.Waveform, tooltip: `${item.bouncesCount} Bounces` },
               ]
         }
         detail={
@@ -471,28 +473,31 @@ export default function Command() {
         actions={
           <ActionPanel>
             <ActionPanel.Section>
-              <Action.Push title={t.viewSets} icon={Icon.Eye} target={<Sets project={item} />} />
-              <Action
-                title={toggleTitle}
-                icon={toggleIsPause ? Icon.Pause : Icon.Play}
-                onAction={() => {
-                  if (isThisPlaying) {
-                    if (playbackStatus === "Stopping") {
+              <Action.Push title={t.viewSets} icon={Icon.Document} target={<Sets project={item} />} />
+              {item.bouncesCount > 0 && (
+                <Action
+                  title={toggleTitle}
+                  icon={toggleIcon}
+                  shortcut={{ modifiers: ["cmd"], key: "return" }}
+                  onAction={() => {
+                    if (isThisPlaying) {
+                      if (playbackStatus === "Stopping") {
+                        return;
+                      }
+                      if (playbackStatus === "Paused") {
+                        resume();
+                      } else {
+                        pause();
+                      }
                       return;
                     }
-                    if (playbackStatus === "Paused") {
-                      resume();
-                    } else {
-                      pause();
-                    }
-                    return;
-                  }
-                  playProjectBounce(item);
-                }}
-              />
+                    playProjectBounce(item);
+                  }}
+                />
+              )}
               <Action
                 title={t.browseBounces}
-                icon={Icon.Eye}
+                icon={Icon.Waveform}
                 shortcut={{ modifiers: ["opt"], key: "return" }}
                 onAction={async () => {
                   if (item.bouncesCount === 0) {
@@ -507,7 +512,7 @@ export default function Command() {
               />
               <Action.Push
                 title={t.browseCollections}
-                icon={Icon.Cd}
+                icon={Icon.Tray}
                 shortcut={{ modifiers: ["ctrl"], key: "return" }}
                 target={<CollectionList projects={projects} collections={collectionOptions} stages={stageOptions} />}
                 onPop={() => {
@@ -516,54 +521,30 @@ export default function Command() {
                   void collectionTaxonomy.get().then(setCollectionOptions);
                 }}
               />
-            </ActionPanel.Section>
-            <ActionPanel.Section>
               <Action.Push
                 title={t.editInfo}
                 icon={Icon.Pencil}
                 shortcut={Keyboard.Shortcut.Common.Edit}
                 target={<EditInfo project={item} onSaved={reloadProjects} />}
               />
-              <Action.Push
-                title={t.editNote}
-                icon={Icon.Pencil}
-                shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
-                target={<EditNote project={item} onSaved={reloadProjects} />}
-              />
-              <Action
-                title={t.openNote}
-                icon={Icon.Document}
-                shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
-                onAction={async () => {
-                  await openDoc(item, "notes");
-                }}
-              />
-              <Action
-                title={t.openLyrics}
-                icon={Icon.Music}
-                shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
-                onAction={async () => {
-                  await openDoc(item, "lyrics");
-                }}
-              />
             </ActionPanel.Section>
             {isAnythingPlaying && (
-              <ActionPanel.Section>
+              <ActionPanel.Section title={t.sectionPlayback}>
                 <Action
                   title={t.stopPlayback}
-                  icon={Icon.Stop}
+                  icon={Icon.StopFilled}
                   shortcut={{ modifiers: ["cmd"], key: "-" }}
                   onAction={stop}
                 />
                 <Action
                   title={t.seekBackward}
-                  icon={Icon.ArrowLeft}
+                  icon={Icon.RewindFilled}
                   shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
                   onAction={() => seek(-SEEK_STEP_SECONDS)}
                 />
                 <Action
                   title={t.seekForward}
-                  icon={Icon.ArrowRight}
+                  icon={Icon.ForwardFilled}
                   shortcut={{ modifiers: ["opt"], key: "arrowRight" }}
                   onAction={() => seek(SEEK_STEP_SECONDS)}
                 />
@@ -580,10 +561,40 @@ export default function Command() {
                 />
               </ActionPanel.Section>
             )}
-            <ActionPanel.Section>
+            <ActionPanel.Section title={t.sectionDocs}>
+              <Action.Push
+                title={t.editNote}
+                icon={Icon.Highlight}
+                shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
+                target={<EditNote project={item} onSaved={reloadProjects} />}
+              />
+              <Action
+                title={t.openNote}
+                icon={Icon.Book}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
+                onAction={async () => {
+                  await openDoc(item, "notes");
+                }}
+              />
+              <Action
+                title={t.openLyrics}
+                icon={Icon.Book}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
+                onAction={async () => {
+                  await openDoc(item, "lyrics");
+                }}
+              />
+            </ActionPanel.Section>
+            <ActionPanel.Section title={t.sectionFile}>
+              <Action.Open
+                title={t.openInFinder}
+                icon={Icon.Finder}
+                shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+                target={item.folderPath}
+              />
               <Action
                 title={t.newLiveSet}
-                icon={abletonApp ? { fileIcon: abletonApp.path } : Icon.Plus}
+                icon={abletonApp ? { fileIcon: abletonApp.path } : Icon.NewDocument}
                 shortcut={Keyboard.Shortcut.Common.New}
                 onAction={async () => {
                   if (!abletonApp) {
@@ -607,30 +618,30 @@ export default function Command() {
                 shortcut={Keyboard.Shortcut.Common.Duplicate}
                 target={<DuplicateProject project={item} onDuplicated={reloadProjects} />}
               />
-              <Action.Open
-                title={t.openInFinder}
-                icon={Icon.Finder}
-                shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-                target={item.folderPath}
-              />
-              <Action
-                title={t.copyLatestBounce}
-                icon={Icon.CopyClipboard}
-                shortcut={{ modifiers: ["cmd"], key: "c" }}
-                onAction={() => copyLatestBounce(item)}
-              />
+            </ActionPanel.Section>
+            <ActionPanel.Section title={t.sectionCopy}>
+              {item.bouncesCount > 0 && (
+                <Action
+                  title={t.copyLatestBounce}
+                  icon={Icon.CopyClipboard}
+                  shortcut={Keyboard.Shortcut.Common.Copy}
+                  onAction={() => copyLatestBounce(item)}
+                />
+              )}
               <Action.CopyToClipboard
                 content={item.title}
                 title={t.copyProjectName}
+                icon={Icon.CopyClipboard}
                 shortcut={Keyboard.Shortcut.Common.CopyName}
               />
               <Action.CopyToClipboard
                 content={item.folderPath}
                 title={t.copyProjectPath}
+                icon={Icon.CopyClipboard}
                 shortcut={Keyboard.Shortcut.Common.CopyPath}
               />
             </ActionPanel.Section>
-            <ActionPanel.Section>
+            <ActionPanel.Section title={t.sectionPinOrder}>
               <Action
                 title={item.pinned ? t.unpinProject : t.pinProject}
                 icon={item.pinned ? Icon.TackDisabled : Icon.Tack}
@@ -642,28 +653,19 @@ export default function Command() {
                   <Action
                     title={t.moveUp}
                     icon={Icon.ArrowUp}
-                    shortcut={{ modifiers: ["cmd", "opt"], key: "arrowUp" }}
+                    shortcut={Keyboard.Shortcut.Common.MoveUp}
                     onAction={() => handleMovePinnedProject(item, "up")}
                   />
                   <Action
                     title={t.moveDown}
                     icon={Icon.ArrowDown}
-                    shortcut={{ modifiers: ["cmd", "opt"], key: "arrowDown" }}
+                    shortcut={Keyboard.Shortcut.Common.MoveDown}
                     onAction={() => handleMovePinnedProject(item, "down")}
                   />
                 </>
               )}
             </ActionPanel.Section>
-            <ActionPanel.Section>
-              <Action
-                title={t.moveToTrash}
-                icon={Icon.Trash}
-                style={Action.Style.Destructive}
-                shortcut={Keyboard.Shortcut.Common.Remove}
-                onAction={() => handleTrashProject(item)}
-              />
-            </ActionPanel.Section>
-            <ActionPanel.Section>
+            <ActionPanel.Section title={t.sectionView}>
               <Action
                 title={showDetail ? t.showOverview : t.showDetail}
                 icon={Icon.AppWindowSidebarRight}
@@ -672,14 +674,21 @@ export default function Command() {
               {showDetail && (
                 <Action
                   title={detailDoc === "notes" ? t.showLyrics : t.showNotes}
-                  icon={Icon.Text}
+                  icon={Icon.Paragraph}
                   onAction={toggleDetailDoc}
                 />
               )}
-            </ActionPanel.Section>
-            <ActionPanel.Section>
               <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+            </ActionPanel.Section>
+            <ActionPanel.Section title={t.sectionDangerZone}>
+              <Action
+                title={t.moveToTrash}
+                icon={Icon.Trash}
+                style={Action.Style.Destructive}
+                shortcut={Keyboard.Shortcut.Common.Remove}
+                onAction={() => handleTrashProject(item)}
+              />
             </ActionPanel.Section>
           </ActionPanel>
         }

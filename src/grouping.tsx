@@ -115,7 +115,7 @@ export function GroupBySubmenu(props: {
     modified: t.groupByModified,
   };
   return (
-    <ActionPanel.Submenu title={t.groupBy} icon={Icon.Calendar}>
+    <ActionPanel.Submenu title={t.groupBy} icon={Icon.List}>
       {props.allowed.map((option) => (
         <Action
           key={option}
