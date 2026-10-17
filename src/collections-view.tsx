@@ -300,7 +300,7 @@ export function CollectionList({
             <ActionPanel.Section title={t.sectionNavigate}>
               <Action
                 title={t.backToProjects}
-                icon={Icon.ArrowLeftCircle}
+                icon={Icon.Compass}
                 shortcut={{ modifiers: ["ctrl"], key: "return" }}
                 onAction={pop}
               />
@@ -716,7 +716,7 @@ function CollectionPanel({
     <ActionPanel.Section title={t.sectionNavigate}>
       <Action
         title={t.backToProjects}
-        icon={Icon.ArrowLeftCircle}
+        icon={Icon.Compass}
         shortcut={{ modifiers: ["ctrl"], key: "return" }}
         onAction={() => {
           pop();
@@ -857,7 +857,7 @@ function CollectionPanel({
         <Action
           title={t.swapUp}
           icon={Icon.ArrowUp}
-          shortcut={Keyboard. Shortcut.Common.MoveUp}
+          shortcut={Keyboard.Shortcut.Common.MoveUp}
           onAction={() => apply(swapNumbers(map, p.id, tracked[i - 1].id))}
         />
       )}
@@ -873,7 +873,7 @@ function CollectionPanel({
         <Action
           title={t.moveToTop}
           icon={Icon.ArrowUpCircle}
-          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
+          shortcut={Keyboard.Shortcut.Common.MoveUp}
           onAction={() => {
             const ids = [p.id, ...tracked.filter((x) => x.id !== p.id).map((x) => x.id)];
             const next: TrackMap = { ...map };
@@ -888,7 +888,7 @@ function CollectionPanel({
         <Action
           title={t.moveToBottom}
           icon={Icon.ArrowDownCircle}
-          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
+          shortcut={Keyboard.Shortcut.Common.MoveDown}
           onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
         />
       )}
