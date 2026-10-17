@@ -88,7 +88,7 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
   return (
     <List isLoading={isLoading} navigationTitle={`${t.browseBounces} — ${props.projectName}`}>
       {sorted.length === 0 ? (
-        <List.EmptyView icon={Icon.Music} title={t.noBounces} />
+        <List.EmptyView icon={Icon.Waveform} title={t.noBounces} />
       ) : (
         groupItems(
           sorted,
@@ -108,52 +108,57 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
                   <ActionPanel>
                     <ActionPanel.Section>
                       <Action.ToggleQuickLook />
+                      <Action.Open
+                        title={t.openInDefaultApp}
+                        icon={Icon.AppWindow}
+                        target={b.path}
+                        shortcut={Keyboard.Shortcut.Common.Open}
+                      />
                       <Action.ShowInFinder
                         title={t.showInFinder}
                         path={b.path}
                         shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                       />
-                      <Action.Open
-                        title={t.openInDefaultApp}
-                        target={b.path}
-                        shortcut={Keyboard.Shortcut.Common.Open}
-                      />
+                    </ActionPanel.Section>
+                    <ActionPanel.Section title={t.sectionCopy}>
                       <Action
                         title={t.copyBounce}
                         icon={Icon.CopyClipboard}
-                        shortcut={{ modifiers: ["cmd"], key: "c" }}
+                        shortcut={Keyboard.Shortcut.Common.Copy}
                         onAction={() => handleCopy(b)}
                       />
                       <Action.CopyToClipboard
                         content={b.name}
                         title={t.copyBounceName}
+                        icon={Icon.CopyClipboard}
                         shortcut={Keyboard.Shortcut.Common.CopyName}
                       />
                       <Action.CopyToClipboard
                         content={b.path}
                         title={t.copyBouncePath}
+                        icon={Icon.CopyClipboard}
                         shortcut={Keyboard.Shortcut.Common.CopyPath}
                       />
                     </ActionPanel.Section>
-                    <ActionPanel.Section>
+                    <ActionPanel.Section title={t.sectionArrange}>
+                      <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
+                      <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+                    </ActionPanel.Section>
+                    <ActionPanel.Section title={t.sectionNavigate}>
+                      <Action
+                        title={t.backToProjects}
+                        icon={Icon.Compass}
+                        shortcut={{ modifiers: ["opt"], key: "return" }}
+                        onAction={pop}
+                      />
+                    </ActionPanel.Section>
+                    <ActionPanel.Section title={t.sectionDangerZone}>
                       <Action
                         title={t.moveToTrash}
                         icon={Icon.Trash}
                         style={Action.Style.Destructive}
                         shortcut={Keyboard.Shortcut.Common.Remove}
                         onAction={() => handleTrash(b)}
-                      />
-                    </ActionPanel.Section>
-                    <ActionPanel.Section>
-                      <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
-                      <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
-                    </ActionPanel.Section>
-                    <ActionPanel.Section>
-                      <Action
-                        title={t.backToProjects}
-                        icon={Icon.ArrowLeftCircle}
-                        shortcut={{ modifiers: ["opt"], key: "return" }}
-                        onAction={pop}
                       />
                     </ActionPanel.Section>
                   </ActionPanel>

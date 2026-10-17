@@ -178,6 +178,7 @@ type TranslationKeys = {
   sectionPin: string;
   sectionView: string;
   sectionArrange: string;
+  sectionNavigate: string;
   sectionDangerZone: string;
 };
 
@@ -365,6 +366,7 @@ const translations: Record<Language, TranslationKeys> = {
     sectionPin: "Pin",
     sectionView: "View",
     sectionArrange: "Arrange",
+    sectionNavigate: "Navigate",
     sectionDangerZone: "Danger Zone",
   },
 
@@ -549,6 +551,7 @@ const translations: Record<Language, TranslationKeys> = {
     sectionPin: "固定",
     sectionView: "视图",
     sectionArrange: "排列",
+    sectionNavigate: "导航",
     sectionDangerZone: "危险操作",
   },
 };
