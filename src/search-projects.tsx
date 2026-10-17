@@ -594,7 +594,7 @@ export default function Command() {
               />
               <Action
                 title={t.newLiveSet}
-                icon={abletonApp ? { fileIcon: abletonApp.path } : Icon.NewDocument}
+                icon={Icon.NewDocument}
                 shortcut={Keyboard.Shortcut.Common.New}
                 onAction={async () => {
                   if (!abletonApp) {
