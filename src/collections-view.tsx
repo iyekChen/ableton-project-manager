@@ -255,11 +255,12 @@ export function CollectionList({
           <ActionPanel>
             <Action.Push
               title={t.open}
-              icon={Icon.Cd}
+              icon={Icon.Tray}
               target={
                 <CollectionPanel collection={c} projects={projects} stages={stages} onProjectsChanged={setProjects} />
               }
             />
+            {createAction}
             <Action.Push
               title={t.rename}
               icon={Icon.Pencil}
@@ -272,44 +273,45 @@ export function CollectionList({
                 />
               }
             />
-            {createAction}
-            <Action
-              title={options.isPinned ? t.unpinProject : t.pinProject}
-              icon={options.isPinned ? Icon.TackDisabled : Icon.Tack}
-              shortcut={Keyboard.Shortcut.Common.Pin}
-              onAction={() => togglePin(c.id)}
-            />
-            {options.isPinned && options.index > 0 && (
+            <ActionPanel.Section title={t.sectionPin}>
               <Action
-                title={t.moveUp}
-                icon={Icon.ArrowUp}
-                shortcut={Keyboard.Shortcut.Common.MoveUp}
-                onAction={() => movePin(c.id, "up")}
+                title={options.isPinned ? t.unpinProject : t.pinProject}
+                icon={options.isPinned ? Icon.TackDisabled : Icon.Tack}
+                shortcut={Keyboard.Shortcut.Common.Pin}
+                onAction={() => togglePin(c.id)}
               />
-            )}
-            {options.isPinned && options.index < options.total - 1 && (
+              {options.isPinned && options.index > 0 && (
+                <Action
+                  title={t.moveUp}
+                  icon={Icon.ArrowUp}
+                  shortcut={Keyboard.Shortcut.Common.MoveUp}
+                  onAction={() => movePin(c.id, "up")}
+                />
+              )}
+              {options.isPinned && options.index < options.total - 1 && (
+                <Action
+                  title={t.moveDown}
+                  icon={Icon.ArrowDown}
+                  shortcut={Keyboard.Shortcut.Common.MoveDown}
+                  onAction={() => movePin(c.id, "down")}
+                />
+              )}
+            </ActionPanel.Section>
+            <ActionPanel.Section title={t.sectionNavigate}>
               <Action
-                title={t.moveDown}
-                icon={Icon.ArrowDown}
-                shortcut={Keyboard.Shortcut.Common.MoveDown}
-                onAction={() => movePin(c.id, "down")}
+                title={t.backToProjects}
+                icon={Icon.ArrowLeftCircle}
+                shortcut={{ modifiers: ["ctrl"], key: "return" }}
+                onAction={pop}
               />
-            )}
-            <ActionPanel.Section>
+            </ActionPanel.Section>
+            <ActionPanel.Section title={t.sectionDangerZone}>
               <Action
                 title={t.delete}
                 icon={Icon.Trash}
                 style={Action.Style.Destructive}
                 shortcut={Keyboard.Shortcut.Common.Remove}
                 onAction={() => deleteCollection(c)}
-              />
-            </ActionPanel.Section>
-            <ActionPanel.Section>
-              <Action
-                title={t.backToProjects}
-                icon={Icon.ArrowLeftCircle}
-                shortcut={{ modifiers: ["ctrl"], key: "return" }}
-                onAction={pop}
               />
             </ActionPanel.Section>
           </ActionPanel>
