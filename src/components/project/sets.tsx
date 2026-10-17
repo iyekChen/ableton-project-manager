@@ -321,23 +321,17 @@ export function Sets({ project }: { project: Project }) {
               }
               actions={
                 <ActionPanel>
-                  <Action.Open
-                    title={t.openInAbletonLive}
-                    icon={abletonApp ? { fileIcon: abletonApp.path } : undefined}
-                    target={set.path}
-                  />
-                  <Action.ShowInFinder path={set.path} title={t.showInFinder} />
-                  <Action.CopyToClipboard
-                    content={set.path.split("/").pop() ?? ""}
-                    title={t.copySetName}
-                    shortcut={{ modifiers: ["cmd"], key: "c" }}
-                  />
-                  <Action.CopyToClipboard
-                    content={set.path}
-                    title={t.copySetPath}
-                    shortcut={Keyboard.Shortcut.Common.CopyPath}
-                  />
                   <ActionPanel.Section>
+                    <Action.Open
+                      title={t.openInAbletonLive}
+                      icon={abletonApp ? { fileIcon: abletonApp.path } : Icon.Document}
+                      target={set.path}
+                    />
+                    <Action.ShowInFinder
+                      path={set.path}
+                      title={t.showInFinder}
+                      shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+                    />
                     <Action.Push
                       title={t.renameSet}
                       icon={Icon.Pencil}
@@ -350,6 +344,26 @@ export function Sets({ project }: { project: Project }) {
                       shortcut={Keyboard.Shortcut.Common.Duplicate}
                       onAction={() => handleDuplicate(set)}
                     />
+                  </ActionPanel.Section>
+                  <ActionPanel.Section title={t.sectionCopy}>
+                    <Action.CopyToClipboard
+                      content={set.path.split("/").pop() ?? ""}
+                      title={t.copySetName}
+                      icon={Icon.CopyClipboard}
+                      shortcut={Keyboard.Shortcut.Common.CopyName}
+                    />
+                    <Action.CopyToClipboard
+                      content={set.path}
+                      title={t.copySetPath}
+                      icon={Icon.CopyClipboard}
+                      shortcut={Keyboard.Shortcut.Common.CopyPath}
+                    />
+                  </ActionPanel.Section>
+                  <ActionPanel.Section title={t.sectionArrange}>
+                    <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
+                    <SortBySubmenu allowed={SETS_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+                  </ActionPanel.Section>
+                  <ActionPanel.Section title={t.sectionDangerZone}>
                     <Action
                       title={t.moveToTrash}
                       icon={Icon.Trash}
@@ -357,10 +371,6 @@ export function Sets({ project }: { project: Project }) {
                       shortcut={Keyboard.Shortcut.Common.Remove}
                       onAction={() => handleTrash(set)}
                     />
-                  </ActionPanel.Section>
-                  <ActionPanel.Section>
-                    <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
-                    <SortBySubmenu allowed={SETS_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
                   </ActionPanel.Section>
                 </ActionPanel>
               }
