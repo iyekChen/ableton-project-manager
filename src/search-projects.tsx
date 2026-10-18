@@ -37,7 +37,9 @@ import { docPlaceholder, openDoc } from "./doc-actions";
 import { archiveDeletedProject, restorePutBackProjects } from "./deleted-projects";
 import { StorageUnreadableError } from "./storage";
 import { syncFinderChanges } from "./finder-sync";
+import { removedProjectIds } from "./removed-projects";
 import { CollectionList } from "./collections-view";
+import { CleanUpRemovedProjects } from "./clean-up-removed-projects";
 import { EditInfo } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
 import { DuplicateProject } from "./components/project/duplicate-project";
@@ -98,10 +100,13 @@ export default function Command() {
   const [groupBy, setGroupBy] = useGroupOption(GROUP_STORAGE_KEY, "created");
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [orphanIds, setOrphanIds] = useState<string[]>([]);
   const [showDetail, setShowDetail] = useState(true);
   const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
   const baseProjectsRef = useRef<Project[]>([]);
+  // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
+  const leftoverToastShownRef = useRef(false);
 
   const { playbackStatus, playingId, positionSeconds, durationSeconds, play, pause, resume, stop, seek, restart } =
     useAudioPlayer({
@@ -216,24 +221,42 @@ export default function Command() {
       } else if (restored.length > 0) {
         await showToast({ style: Toast.Style.Success, title: t.projectsRestored, message: restored.join(", ") });
       }
+      // 扫描「孤儿」数据：metadata 还在、但项目文件夹已不在根目录（根目录读不到时为 null，按无残留处理）。
+      const orphans = removedProjectIds(PROJECTS_ROOT, Object.keys(await getAllProjectMetadata())) ?? [];
+      setOrphanIds(orphans);
+      return orphans;
     } catch (error) {
       console.error("[Ableton Session Manager] Failed to load projects:", error);
       setProjects([]);
+      setOrphanIds([]);
       await showToast({
         style: Toast.Style.Failure,
         title: error instanceof StorageUnreadableError ? t.storageUnreadable : t.loadProjectsFailed,
         message: error instanceof StorageUnreadableError ? undefined : t.loadProjectsFailedHint,
       });
     }
+    return [] as string[];
   }, [applyMetadata]);
 
   useEffect(() => {
     async function load() {
-      await reloadProjects();
+      const orphans = await reloadProjects();
       setIsLoading(false);
+      if (orphans.length > 0 && !leftoverToastShownRef.current) {
+        leftoverToastShownRef.current = true;
+        await showToast({
+          style: Toast.Style.Success,
+          title: t.leftoversFound,
+          message: t.leftoversFoundMessage.replace("{count}", String(orphans.length)),
+          primaryAction: {
+            title: t.cleanUpLeftovers,
+            onAction: () => push(<CleanUpRemovedProjects />, () => void reloadProjects()),
+          },
+        });
+      }
     }
     void load();
-  }, [reloadProjects]);
+  }, [reloadProjects, push]);
 
   // 监听项目根目录（fs.watch 为 Node 内置，底层走 FSEvents）：Finder 里新建、删除、改名或从废纸篓放回项目时自动重载。
   // 去抖 0.5 秒，合并 Finder 连续触发的多次事件。
@@ -684,6 +707,14 @@ export default function Command() {
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
             </ActionPanel.Section>
             <ActionPanel.Section title={t.sectionDangerZone}>
+              {orphanIds.length > 0 && (
+                <Action.Push
+                  title={t.cleanUpLeftovers}
+                  icon={Icon.Eraser}
+                  target={<CleanUpRemovedProjects />}
+                  onPop={() => void reloadProjects()}
+                />
+              )}
               <Action
                 title={t.moveToTrash}
                 icon={Icon.Trash}

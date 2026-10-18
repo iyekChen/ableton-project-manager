@@ -154,7 +154,9 @@ type TranslationKeys = {
   trashProjectHint: string;
   trashSetHint: string;
   trashBounceHint: string;
-  cleanUpRemoved: string;
+  cleanUpLeftovers: string;
+  leftoversFound: string;
+  leftoversFoundMessage: string;
   noRemovedProjects: string;
   removedNotOnDisk: string;
   cleanUp: string;
@@ -188,7 +190,6 @@ type TranslationKeys = {
   removeCollectionsConfirmHint: string;
   removeCollectionsFormHint: string;
 };
-
 
 const translations: Record<Language, TranslationKeys> = {
   en: {
@@ -349,7 +350,9 @@ const translations: Record<Language, TranslationKeys> = {
     trashProjectHint: "This moves the entire project folder to the Trash:",
     trashSetHint: "This moves the Set to the Trash:",
     trashBounceHint: "This moves the bounce to the Trash:",
-    cleanUpRemoved: "Clean up Removed Projects",
+    cleanUpLeftovers: "Clean up Leftovers",
+    leftoversFound: "Found leftover project data",
+    leftoversFoundMessage: "{count} to clean up",
     noRemovedProjects: "Nothing to clean up",
     removedNotOnDisk: "Not in Projects folder",
     cleanUp: "Clean Up",
@@ -378,10 +381,12 @@ const translations: Record<Language, TranslationKeys> = {
     sectionNavigate: "Navigate",
     sectionDangerZone: "Danger Zone",
     removeFromCollection: "Remove from Collection",
-    removeFromCollectionHint: "This clears the track's order and role in this collection. The project itself won't be deleted.",
+    removeFromCollectionHint:
+      "This clears the track's order and role in this collection. The project itself won't be deleted.",
     noChanges: "No Changes",
     removeCollectionsConfirmTitle: "Remove from collection?",
-    removeCollectionsConfirmHint: "This project will be removed from {names}, clearing its order and role there. The project itself won't be deleted.",
+    removeCollectionsConfirmHint:
+      "This project will be removed from {names}, clearing its order and role there. The project itself won't be deleted.",
     removeCollectionsFormHint: "Removing a collection clears this project's order and role there.",
   },
 
@@ -541,7 +546,9 @@ const translations: Record<Language, TranslationKeys> = {
     trashProjectHint: "这会把整个项目文件夹移到废纸篓：",
     trashSetHint: "这会把该 Set 移到废纸篓：",
     trashBounceHint: "这会把该 bounce 移到废纸篓：",
-    cleanUpRemoved: "清理已移除的项目",
+    cleanUpLeftovers: "清理残留数据",
+    leftoversFound: "发现残留的项目数据",
+    leftoversFoundMessage: "{count} 条可清理",
     noRemovedProjects: "没有需要清理的项目",
     removedNotOnDisk: "已不在项目文件夹中",
     cleanUp: "清理",

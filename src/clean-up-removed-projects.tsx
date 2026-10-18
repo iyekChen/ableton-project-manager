@@ -14,7 +14,7 @@ const PROJECTS_ROOT = settings.projectsFolder;
 
 // 手动清理「孤儿」数据：metadata 里还存着、但项目文件夹已不在根目录里的项目。
 // 没有完全磁盘访问权限时的安全兜底——由用户亲自确认，不会把「移走」误判成「删除」。
-export default function Command() {
+export function CleanUpRemovedProjects() {
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -62,7 +62,7 @@ export default function Command() {
   }
 
   return (
-    <List isLoading={isLoading} navigationTitle={t.cleanUpRemoved}>
+    <List isLoading={isLoading} navigationTitle={t.cleanUpLeftovers}>
       <List.EmptyView icon={Icon.CheckCircle} title={t.noRemovedProjects} />
       {removedIds.map((id) => (
         <List.Item
