@@ -76,6 +76,9 @@ type TranslationKeys = {
   renameAnyway: string;
   collectionNameExists: string;
   tagNameExists: string;
+  docChangedExternally: string;
+  docChangedExternallyHint: string;
+  overwriteDoc: string;
   projectsRestored: string;
   restoreDocConflict: string;
   docFolderMissing: string;
@@ -283,6 +286,10 @@ const translations: Record<Language, TranslationKeys> = {
     renameAnyway: "Rename Anyway",
     collectionNameExists: "A collection with that name already exists",
     tagNameExists: "A tag with that name already exists",
+    docChangedExternally: "Note Changed Elsewhere",
+    docChangedExternallyHint:
+      "This note was edited outside Raycast (e.g. in Obsidian) after you opened it. Saving will replace those changes.",
+    overwriteDoc: "Overwrite",
     projectsRestored: "Restored put-back project",
     restoreDocConflict: "Restored — but a note file name was already taken",
     docFolderMissing: "Notes / lyrics folder not found",

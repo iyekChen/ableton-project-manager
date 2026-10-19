@@ -1,6 +1,6 @@
-import { ActionPanel, Action, Form, showToast, Toast, useNavigation } from "@raycast/api";
-import { useEffect, useState } from "react";
-import { readDocFile, stripFrontmatter, writeDocBody } from "@/core/docs/docs";
+import { ActionPanel, Action, Alert, Form, Icon, confirmAlert, showToast, Toast, useNavigation } from "@raycast/api";
+import { useEffect, useRef, useState } from "react";
+import { docFileMtime, readDocFile, stripFrontmatter, writeDocBody } from "@/core/docs/docs";
 import { showDocError } from "@/core/docs/doc-actions";
 import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
@@ -12,12 +12,26 @@ const t = getTranslations(settings.language);
 export function EditNote({ project, onSaved }: { project: Project; onSaved: () => void }) {
   const { pop } = useNavigation();
   const [note, setNote] = useState("");
+  // 打开时文件的修改时间：保存前比对，发现表单开着期间别处（如 Obsidian）改过这份笔记。
+  const loadedMtime = useRef<number | null>(null);
 
   useEffect(() => {
+    loadedMtime.current = docFileMtime(project, "notes");
     setNote(stripFrontmatter(readDocFile(project, "notes")));
   }, [project]);
 
   async function handleSubmit() {
+    if (docFileMtime(project, "notes") !== loadedMtime.current) {
+      const confirmed = await confirmAlert({
+        icon: Icon.Warning,
+        title: t.docChangedExternally,
+        message: t.docChangedExternallyHint,
+        primaryAction: { title: t.overwriteDoc, style: Alert.ActionStyle.Destructive },
+      });
+      // 不覆盖：留在表单里，已输入的内容不丢。
+      if (!confirmed) return;
+    }
+
     try {
       writeDocBody(project, "notes", note);
     } catch (error) {

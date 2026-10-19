@@ -375,6 +375,15 @@ export function readDocFile(project: { title: string; folderPath: string }, kind
   }
 }
 
+/** 文档文件当前的修改时间（不存在为 null）。编辑前记下、保存前比对，用来发现外部改动。 */
+export function docFileMtime(project: { title: string; folderPath: string }, kind: DocKind): number | null {
+  try {
+    return fs.statSync(docFilePath(project, kind)).mtimeMs;
+  } catch {
+    return null;
+  }
+}
+
 // 确保文件存在（不存在就按模板创建），返回路径。供 Open 使用。自定义文件夹失效时抛 DocFolderMissingError。
 export function ensureDocFile(project: { title: string; folderPath: string }, kind: DocKind): string {
   assertDocWritable(project.title, kind);

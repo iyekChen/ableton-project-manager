@@ -32,7 +32,11 @@ function writePidFile(pid: number, id: string): void {
   }
 }
 
-// 查当前后台播放：返回仍存活的 { pid, id }，否则 null(并清理僵尸记录)。
+// 已确认过身份的播放器 PID：状态轮询每 0.5s 调一次 getActivePlayer，同一个 PID 只用 ps 查一次。
+let verifiedPid: number | null = null;
+
+// 查当前后台播放：返回仍存活、且确实是我们播放器的 { pid, id }，否则 null（并清理残留记录）。
+// 只探活不够：播放器自然结束后 PID 文件没人清理，这个 PID 若被别的进程复用，会显示一个永远“播放中”的状态。
 export function getActivePlayer(): { pid: number; id: string } | null {
   const info = readPidFile();
   if (!info) {
@@ -41,8 +45,16 @@ export function getActivePlayer(): { pid: number; id: string } | null {
   try {
     process.kill(info.pid, 0); // 探活
   } catch {
+    verifiedPid = null;
     clearPidFile();
     return null;
+  }
+  if (verifiedPid !== info.pid) {
+    if (!isOurPlayerProcess(info.pid)) {
+      clearPidFile();
+      return null;
+    }
+    verifiedPid = info.pid;
   }
   return { pid: info.pid, id: info.id };
 }
@@ -214,7 +226,7 @@ export function startAudioPlayer(options: AudioPlayerOptions): AudioPlayerContro
   const { audioPath, id, playerPath, onStatusChange, onError, onProgress } = options;
 
   const instanceId = nextInstanceId++;
-  const logPrefix = `[ASM Audio Player][Instance ${instanceId}]`;
+  const logPrefix = `[APM Audio Player][Instance ${instanceId}]`;
 
   let active = true;
   let child: ChildProcess | null = null;
