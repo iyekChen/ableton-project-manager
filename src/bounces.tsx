@@ -2,24 +2,30 @@ import {
   List,
   ActionPanel,
   Action,
+  Form,
   Icon,
   Keyboard,
   Alert,
   Clipboard,
+  Color,
   confirmAlert,
   showToast,
   Toast,
   trash,
   useNavigation,
+  LocalStorage,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
+import fs from "node:fs";
+import path from "node:path";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "./sorting";
 import type { SortOption } from "./sorting";
-import { GroupBySubmenu, groupItems, useGroupOption } from "./grouping";
-import { listBounces, resolveBouncesFolder } from "./projects/bounces";
-import type { Bounce } from "./projects/bounces";
+import { groupItems } from "./grouping";
+import { collectBounces, resolveBouncesFolder } from "./projects/bounces";
+import type { BounceWithSource } from "./projects/bounces";
+import { setExternalBounces } from "./project-metadata";
 
 const t = getTranslations(getSettings().language);
 
@@ -36,6 +42,14 @@ const BOUNCES_SORT_OPTIONS: SortOption[] = [
   "size-asc",
 ];
 
+// Browse Bounces 本地分组维度：在共享的日期分组之外额外支持按来源分组，
+// 不污染共享的 grouping 模块（其 GroupOption 还被 Search Projects 复用）。
+type BounceGroup = "source" | "created" | "modified" | "none";
+
+function isBounceGroup(value: string): value is BounceGroup {
+  return value === "source" || value === "created" || value === "modified" || value === "none";
+}
+
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   const units = ["KB", "MB", "GB", "TB"];
@@ -48,20 +62,90 @@ function formatSize(bytes: number): string {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
-export function Bounces(props: { projectName: string; projectPath: string }) {
+function BounceGroupSubmenu(props: { value: BounceGroup; onChange: (next: BounceGroup) => void }) {
+  const options: [BounceGroup, string][] = [
+    ["source", t.groupBySource],
+    ["created", t.groupByCreated],
+    ["modified", t.groupByModified],
+    ["none", t.groupNone],
+  ];
+  return (
+    <ActionPanel.Submenu title={t.groupBy} icon={Icon.List}>
+      {options.map(([value, title]) => (
+        <Action
+          key={value}
+          title={title}
+          icon={props.value === value ? Icon.CheckCircle : Icon.Circle}
+          onAction={() => props.onChange(value)}
+        />
+      ))}
+    </ActionPanel.Submenu>
+  );
+}
+
+function RenameBounceForm({ current, onSubmit }: { current: string; onSubmit: (name: string) => void }) {
   const { pop } = useNavigation();
-  const [bounces, setBounces] = useState<Bounce[]>([]);
+  const [value, setValue] = useState(current);
+  function handleSubmit() {
+    onSubmit(value);
+    pop();
+  }
+  return (
+    <Form
+      navigationTitle={t.renameBounce}
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm title={t.save} icon={Icon.Check} onSubmit={handleSubmit} />
+        </ActionPanel>
+      }
+    >
+      <Form.TextField id="name" title={t.name} value={value} onChange={setValue} />
+    </Form>
+  );
+}
+
+export function Bounces(props: {
+  projectId: string;
+  projectName: string;
+  projectPath: string;
+  externalFolders: string[];
+  externalFiles: string[];
+  onChanged?: () => void;
+}) {
+  const { pop } = useNavigation();
+  const [folders, setFolders] = useState<string[]>(props.externalFolders);
+  const [files, setFiles] = useState<string[]>(props.externalFiles);
+  const [bounces, setBounces] = useState<BounceWithSource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useSortOption(BOUNCES_SORT_STORAGE_KEY, BOUNCES_SORT_OPTIONS, "created-desc");
-  const [groupBy, setGroupBy] = useGroupOption(BOUNCES_GROUP_STORAGE_KEY, "created");
+  const [groupBy, setGroupByState] = useState<BounceGroup>("source");
   const [reloadToken, setReloadToken] = useState(0);
 
+  // 读取持久化的分组选择（含 "source"）。
   useEffect(() => {
-    setBounces(listBounces(resolveBouncesFolder(props.projectPath)));
-    setIsLoading(false);
-  }, [props.projectPath, reloadToken]);
+    void LocalStorage.getItem<string>(BOUNCES_GROUP_STORAGE_KEY).then((stored) => {
+      if (stored && isBounceGroup(stored)) setGroupByState(stored);
+    });
+  }, []);
 
-  const handleTrash = async (bounce: Bounce) => {
+  const setGroupBy = (next: BounceGroup) => {
+    setGroupByState(next);
+    void LocalStorage.setItem(BOUNCES_GROUP_STORAGE_KEY, next);
+  };
+
+  // 列表 = 默认 Bounces 文件夹 + 外部来源（去重、带来源标记、含不可用占位）。
+  useEffect(() => {
+    setBounces(
+      collectBounces({
+        defaultFolder: resolveBouncesFolder(props.projectPath),
+        externalFolders: folders,
+        externalFiles: files,
+      }),
+    );
+    setIsLoading(false);
+  }, [props.projectPath, folders, files, reloadToken]);
+
+  const handleTrash = async (bounce: BounceWithSource) => {
     const confirmed = await confirmAlert({
       title: t.moveToTrash,
       icon: Icon.Trash,
@@ -70,78 +154,170 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
     });
     if (!confirmed) return;
     await trash(bounce.path);
+    // 若删掉的正是被登记的外部文件来源，顺手移除记录（用户经 ASM 主动删除，确知已不存在）。
+    if (files.includes(bounce.path)) {
+      const nextFiles = files.filter((f) => f !== bounce.path);
+      setFiles(nextFiles);
+      await setExternalBounces(props.projectId, folders, nextFiles);
+      props.onChanged?.();
+    }
     setReloadToken((n) => n + 1);
     await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: bounce.name });
   };
-  const handleCopy = async (bounce: Bounce) => {
+
+  const handleCopy = async (bounce: BounceWithSource) => {
     await Clipboard.copy({ file: bounce.path });
     await showToast({ style: Toast.Style.Success, title: t.bounceCopied, message: bounce.name });
   };
 
-  const sorted = sortItems(bounces, sortBy, (b) => ({
-    created: b.createdAt,
-    modified: b.modifiedAt,
-    name: b.name,
-    size: b.size,
-  }));
+  const handleRename = async (bounce: BounceWithSource, rawName: string) => {
+    const base = rawName.trim();
+    if (base === "" || base.includes("/") || base.includes(":")) {
+      await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+      return;
+    }
+    const ext = path.extname(bounce.path);
+    const finalName = path.extname(base) ? base : `${base}${ext}`;
+    const newPath = path.join(path.dirname(bounce.path), finalName);
+    if (newPath === bounce.path) return;
+    if (fs.existsSync(newPath)) {
+      await showToast({ style: Toast.Style.Failure, title: t.bounceNameExists });
+      return;
+    }
+    try {
+      fs.renameSync(bounce.path, newPath);
+    } catch (error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: t.renameFailed,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
+    // 外部「文件」来源：路径即登记路径，改名后同步更新记录，否则记录会指向旧名而失效。
+    if (files.includes(bounce.path)) {
+      const nextFiles = files.map((f) => (f === bounce.path ? newPath : f));
+      setFiles(nextFiles);
+      await setExternalBounces(props.projectId, folders, nextFiles);
+      props.onChanged?.();
+    }
+    setReloadToken((n) => n + 1);
+    await showToast({ style: Toast.Style.Success, title: t.bounceRenamed, message: finalName });
+  };
 
-  return (
-    <List isLoading={isLoading} navigationTitle={`${t.browseBounces} — ${props.projectName}`}>
-      {sorted.length === 0 ? (
-        <List.EmptyView icon={Icon.Waveform} title={t.noBounces} />
-      ) : (
-        groupItems(
-          sorted,
+  const removeSource = async (sourcePath: string) => {
+    const confirmed = await confirmAlert({
+      icon: Icon.MinusCircle,
+      title: t.removeExternalSourceConfirmTitle,
+      message: `${t.removeExternalSourceConfirmHint}\n${sourcePath}`,
+      primaryAction: { title: t.removeExternalSource, style: Alert.ActionStyle.Default },
+    });
+    if (!confirmed) return;
+    const nextFolders = folders.filter((f) => f !== sourcePath);
+    const nextFiles = files.filter((f) => f !== sourcePath);
+    setFolders(nextFolders);
+    setFiles(nextFiles);
+    await setExternalBounces(props.projectId, nextFolders, nextFiles);
+    props.onChanged?.();
+    await showToast({ style: Toast.Style.Success, title: t.externalSourceRemoved });
+  };
+
+  const bySort = (items: BounceWithSource[]) =>
+    sortItems(items, sortBy, (b) => ({ created: b.createdAt, modified: b.modifiedAt, name: b.name, size: b.size }));
+
+  const groups: { key: string; title: string; subtitle: string; items: BounceWithSource[] }[] =
+    groupBy === "source"
+      ? (["project", "external"] as const)
+          .map((kind) => {
+            const items = bySort(bounces.filter((b) => b.source === kind));
+            return {
+              key: kind,
+              title: kind === "project" ? t.sourceProjectFolder : t.sourceExternal,
+              subtitle: String(items.length),
+              items,
+            };
+          })
+          .filter((group) => group.items.length > 0)
+      : groupItems(
+          bySort(bounces),
           groupBy,
           (b) => ({ created: b.createdAt, modified: b.modifiedAt }),
           sortOptionTitle(sortBy),
-        ).map((group) => (
+        );
+
+  return (
+    <List isLoading={isLoading} navigationTitle={`${t.browseBounces} — ${props.projectName}`}>
+      {groups.length === 0 ? (
+        <List.EmptyView icon={Icon.Waveform} title={t.noBounces} />
+      ) : (
+        groups.map((group) => (
           <List.Section key={group.key} title={group.title} subtitle={group.subtitle}>
             {group.items.map((b) => (
               <List.Item
                 key={b.path}
                 title={b.name}
                 icon="bounce.png"
-                accessories={[{ text: formatSize(b.size) }]}
-                quickLook={{ path: b.path, name: b.name }}
+                accessories={
+                  b.available ? [{ text: formatSize(b.size) }] : [{ tag: { value: t.unavailable, color: Color.Red } }]
+                }
+                quickLook={b.available ? { path: b.path, name: b.name } : undefined}
                 actions={
                   <ActionPanel>
-                    <ActionPanel.Section>
-                      <Action.ToggleQuickLook />
-                      <Action.Open
-                        title={t.openInDefaultApp}
-                        icon={Icon.AppWindow}
-                        target={b.path}
-                        shortcut={Keyboard.Shortcut.Common.Open}
-                      />
-                      <Action.ShowInFinder
-                        title={t.showInFinder}
-                        path={b.path}
-                        shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-                      />
-                    </ActionPanel.Section>
-                    <ActionPanel.Section title={t.sectionCopy}>
-                      <Action
-                        title={t.copyBounce}
-                        icon={Icon.CopyClipboard}
-                        shortcut={Keyboard.Shortcut.Common.Copy}
-                        onAction={() => handleCopy(b)}
-                      />
-                      <Action.CopyToClipboard
-                        content={b.name}
-                        title={t.copyBounceName}
-                        icon={Icon.CopyClipboard}
-                        shortcut={Keyboard.Shortcut.Common.CopyName}
-                      />
-                      <Action.CopyToClipboard
-                        content={b.path}
-                        title={t.copyBouncePath}
-                        icon={Icon.CopyClipboard}
-                        shortcut={Keyboard.Shortcut.Common.CopyPath}
-                      />
-                    </ActionPanel.Section>
+                    {b.available && (
+                      <ActionPanel.Section>
+                        <Action.ToggleQuickLook />
+                        <Action.Open
+                          title={t.openInDefaultApp}
+                          icon={Icon.AppWindow}
+                          target={b.path}
+                          shortcut={Keyboard.Shortcut.Common.Open}
+                        />
+                        <Action.ShowInFinder
+                          title={t.showInFinder}
+                          path={b.path}
+                          shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+                        />
+                        <Action.Push
+                          title={t.renameBounce}
+                          icon={Icon.Pencil}
+                          shortcut={Keyboard.Shortcut.Common.Edit}
+                          target={<RenameBounceForm current={b.name} onSubmit={(name) => void handleRename(b, name)} />}
+                        />
+                      </ActionPanel.Section>
+                    )}
+                    {b.available ? (
+                      <ActionPanel.Section title={t.sectionCopy}>
+                        <Action
+                          title={t.copyBounce}
+                          icon={Icon.CopyClipboard}
+                          shortcut={Keyboard.Shortcut.Common.Copy}
+                          onAction={() => handleCopy(b)}
+                        />
+                        <Action.CopyToClipboard
+                          content={b.name}
+                          title={t.copyBounceName}
+                          icon={Icon.CopyClipboard}
+                          shortcut={Keyboard.Shortcut.Common.CopyName}
+                        />
+                        <Action.CopyToClipboard
+                          content={b.path}
+                          title={t.copyBouncePath}
+                          icon={Icon.CopyClipboard}
+                          shortcut={Keyboard.Shortcut.Common.CopyPath}
+                        />
+                      </ActionPanel.Section>
+                    ) : (
+                      <ActionPanel.Section title={t.sectionCopy}>
+                        <Action.CopyToClipboard
+                          content={b.path}
+                          title={t.copyBouncePath}
+                          icon={Icon.CopyClipboard}
+                          shortcut={Keyboard.Shortcut.Common.CopyPath}
+                        />
+                      </ActionPanel.Section>
+                    )}
                     <ActionPanel.Section title={t.sectionArrange}>
-                      <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
+                      <BounceGroupSubmenu value={groupBy} onChange={setGroupBy} />
                       <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
                     </ActionPanel.Section>
                     <ActionPanel.Section title={t.sectionNavigate}>
@@ -152,15 +328,26 @@ export function Bounces(props: { projectName: string; projectPath: string }) {
                         onAction={pop}
                       />
                     </ActionPanel.Section>
-                    <ActionPanel.Section title={t.sectionDangerZone}>
-                      <Action
-                        title={t.moveToTrash}
-                        icon={Icon.Trash}
-                        style={Action.Style.Destructive}
-                        shortcut={Keyboard.Shortcut.Common.Remove}
-                        onAction={() => handleTrash(b)}
-                      />
-                    </ActionPanel.Section>
+                    {b.source === "external" && b.externalSource !== undefined && (
+                      <ActionPanel.Section title={t.sectionExternalBounce}>
+                        <Action
+                          title={t.removeExternalSource}
+                          icon={Icon.MinusCircle}
+                          onAction={() => removeSource(b.externalSource as string)}
+                        />
+                      </ActionPanel.Section>
+                    )}
+                    {b.available && (
+                      <ActionPanel.Section title={t.sectionDangerZone}>
+                        <Action
+                          title={t.moveToTrash}
+                          icon={Icon.Trash}
+                          style={Action.Style.Destructive}
+                          shortcut={Keyboard.Shortcut.Common.Remove}
+                          onAction={() => handleTrash(b)}
+                        />
+                      </ActionPanel.Section>
+                    )}
                   </ActionPanel>
                 }
               />

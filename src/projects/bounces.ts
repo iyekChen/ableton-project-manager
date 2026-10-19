@@ -87,6 +87,8 @@ export type BounceWithSource = Bounce & {
   source: BounceSourceKind;
   /** false = 记录在案但当前读不到（如外接盘未连接 / 文件被删）。保留路径，不计入可用。 */
   available: boolean;
+  /** 外部来源的登记路径（外部文件夹或外部文件）；默认目录的 bounce 为 undefined。用于按来源移除。 */
+  externalSource?: string;
 };
 
 export type BounceSourceInput = {
@@ -118,33 +120,33 @@ export function collectBounces(input: BounceSourceInput): BounceWithSource[] {
   const seen = new Set<string>();
   const result: BounceWithSource[] = [];
 
-  const push = (bounce: Bounce, source: BounceSourceKind, available: boolean) => {
+  const push = (bounce: Bounce, source: BounceSourceKind, available: boolean, externalSource?: string) => {
     const key = canonicalPath(bounce.path);
     if (seen.has(key)) return;
     seen.add(key);
-    result.push({ ...bounce, source, available });
+    result.push({ ...bounce, source, available, externalSource });
   };
 
   // 1) 默认文件夹：优先占住去重键
   for (const bounce of listBounces(input.defaultFolder)) push(bounce, "project", true);
 
-  // 2) 外部文件夹：实时扫描；路径读不到则整条记为不可用占位
+  // 2) 外部文件夹：实时扫描；路径读不到则整条记为不可用占位。externalSource 记文件夹本身，供整体移除。
   for (const folder of input.externalFolders ?? []) {
     try {
       fs.accessSync(folder);
     } catch {
-      push(unavailablePlaceholder(folder), "external", false);
+      push(unavailablePlaceholder(folder), "external", false, folder);
       continue;
     }
-    for (const bounce of listBounces(folder)) push(bounce, "external", true);
+    for (const bounce of listBounces(folder)) push(bounce, "external", true, folder);
   }
 
-  // 3) 外部单文件
+  // 3) 外部单文件：externalSource 即文件自身路径
   for (const file of input.externalFiles ?? []) {
     try {
       const stats = fs.statSync(file);
       if (!stats.isFile()) {
-        push(unavailablePlaceholder(file), "external", false);
+        push(unavailablePlaceholder(file), "external", false, file);
         continue;
       }
       push(
@@ -157,9 +159,10 @@ export function collectBounces(input: BounceSourceInput): BounceWithSource[] {
         },
         "external",
         true,
+        file,
       );
     } catch {
-      push(unavailablePlaceholder(file), "external", false);
+      push(unavailablePlaceholder(file), "external", false, file);
     }
   }
 

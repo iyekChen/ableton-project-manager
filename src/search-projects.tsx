@@ -549,7 +549,17 @@ export default function Command() {
                     });
                     return;
                   }
-                  push(<Bounces projectName={item.title} projectPath={item.folderPath} />);
+                  push(
+                    <Bounces
+                      projectId={item.id}
+                      projectName={item.title}
+                      projectPath={item.folderPath}
+                      externalFolders={item.externalBounceFolders}
+                      externalFiles={item.externalBounceFiles}
+                      onChanged={reloadProjects}
+                    />,
+                    () => void reloadProjects(),
+                  );
                 }}
               />
               <Action.Push

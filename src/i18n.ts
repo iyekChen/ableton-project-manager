@@ -194,6 +194,18 @@ type TranslationKeys = {
   removeCollectionsConfirmTitle: string;
   removeCollectionsConfirmHint: string;
   removeCollectionsFormHint: string;
+  groupBySource: string;
+  sourceProjectFolder: string;
+  sourceExternal: string;
+  unavailable: string;
+  renameBounce: string;
+  bounceRenamed: string;
+  bounceNameExists: string;
+  sectionExternalBounce: string;
+  removeExternalSource: string;
+  externalSourceRemoved: string;
+  removeExternalSourceConfirmTitle: string;
+  removeExternalSourceConfirmHint: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -399,6 +411,19 @@ const translations: Record<Language, TranslationKeys> = {
     removeCollectionsConfirmHint:
       "This project will be removed from {names}, clearing its order and role there. The project itself won't be deleted.",
     removeCollectionsFormHint: "Removing a collection clears this project's order and role there.",
+    groupBySource: "Source",
+    sourceProjectFolder: "Project Folder",
+    sourceExternal: "External",
+    unavailable: "Unavailable",
+    renameBounce: "Rename Bounce",
+    bounceRenamed: "Bounce Renamed",
+    bounceNameExists: "A file with that name already exists",
+    sectionExternalBounce: "External Bounce",
+    removeExternalSource: "Remove External Source",
+    externalSourceRemoved: "External Source Removed",
+    removeExternalSourceConfirmTitle: "Remove external source?",
+    removeExternalSourceConfirmHint:
+      "This only removes it from this project's bounces. The file on disk is not deleted.",
   },
 
   "zh-CN": {
@@ -599,6 +624,18 @@ const translations: Record<Language, TranslationKeys> = {
     removeCollectionsConfirmTitle: "移出合集？",
     removeCollectionsConfirmHint: "该项目将从 {names} 中移出，并清除在其中的排序与角色。项目本身不会被删除。",
     removeCollectionsFormHint: "移除合集会清除该项目在其中的排序与角色。",
+    groupBySource: "来源",
+    sourceProjectFolder: "项目文件夹",
+    sourceExternal: "外部",
+    unavailable: "不可用",
+    renameBounce: "重命名 Bounce",
+    bounceRenamed: "已重命名 Bounce",
+    bounceNameExists: "已存在同名文件",
+    sectionExternalBounce: "外部 Bounce",
+    removeExternalSource: "移除外部来源",
+    externalSourceRemoved: "已移除外部来源",
+    removeExternalSourceConfirmTitle: "移除外部来源？",
+    removeExternalSourceConfirmHint: "只会把它从本项目的 bounce 中移除，不会删除磁盘上的文件。",
   },
 };
 
