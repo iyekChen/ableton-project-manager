@@ -46,7 +46,7 @@ import { DuplicateProject } from "./components/project/duplicate-project";
 import { Sets } from "./components/project/sets";
 import type { Project } from "./projects/types";
 import { loadProjects } from "./projects/load-projects";
-import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
+import { countBouncesWithSources, findLatestBounceWithSources, resolveBouncesFolder } from "./projects/bounces";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -172,6 +172,8 @@ export default function Command() {
     const updatedProjects = baseProjectsRef.current.map((project) => {
       const metadata = metadataStore[project.id];
       const notes = showDetail ? stripFrontmatter(readDocFile(project, "notes")) : "";
+      const externalBounceFolders = metadata?.externalBounceFolders ?? [];
+      const externalBounceFiles = metadata?.externalBounceFiles ?? [];
       return {
         ...project,
         stageId: metadata?.stageId ?? null,
@@ -180,6 +182,14 @@ export default function Command() {
         notes,
         pinned: metadata?.pinned ?? false,
         pinOrder: metadata?.pinOrder ?? null,
+        externalBounceFolders,
+        externalBounceFiles,
+        // 计数改走聚合器：默认 Bounces 文件夹 + 外部来源（去重、排除不可用）。
+        bouncesCount: countBouncesWithSources({
+          defaultFolder: resolveBouncesFolder(project.folderPath),
+          externalFolders: externalBounceFolders,
+          externalFiles: externalBounceFiles,
+        }),
       };
     });
     setProjects(updatedProjects);
@@ -311,7 +321,11 @@ export default function Command() {
 
   const playProjectBounce = useCallback(
     (project: Project) => {
-      const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
+      const latestBouncePath = findLatestBounceWithSources({
+        defaultFolder: resolveBouncesFolder(project.folderPath),
+        externalFolders: project.externalBounceFolders,
+        externalFiles: project.externalBounceFiles,
+      });
       if (!latestBouncePath) {
         void showToast({ style: Toast.Style.Failure, title: t.noBounces });
         return;
@@ -325,7 +339,11 @@ export default function Command() {
     [play],
   );
   const copyLatestBounce = useCallback(async (project: Project) => {
-    const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
+    const latestBouncePath = findLatestBounceWithSources({
+      defaultFolder: resolveBouncesFolder(project.folderPath),
+      externalFolders: project.externalBounceFolders,
+      externalFiles: project.externalBounceFiles,
+    });
     if (!latestBouncePath) {
       await showToast({ style: Toast.Style.Failure, title: t.noBounces });
       return;

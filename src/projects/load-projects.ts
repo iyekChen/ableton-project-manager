@@ -41,6 +41,8 @@ export function loadProjects(projectsRoot: string): Project[] {
         pinOrder: null,
         setsCount: setFiles.length,
         bouncesCount: countBounces(resolveBouncesFolder(folderPath)),
+        externalBounceFolders: [],
+        externalBounceFiles: [],
       });
     } catch {
       // 跳过无法读取的条目
