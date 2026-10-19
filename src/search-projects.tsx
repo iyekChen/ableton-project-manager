@@ -48,7 +48,7 @@ import { ManageExternalBounces } from "./components/project/manage-external-boun
 import type { Project } from "./projects/types";
 import { loadProjects } from "./projects/load-projects";
 import { countBouncesWithSources, findLatestBounceWithSources, resolveBouncesFolder } from "./projects/bounces";
-import { daw } from "./daws";
+import { daw } from "@/daws";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
