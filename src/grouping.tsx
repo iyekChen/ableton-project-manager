@@ -32,16 +32,14 @@ export function useGroupOption(storageKey: string, fallback: GroupOption) {
   return [groupBy, setGroupBy] as const;
 }
 
-const isZh = getSettings().language.startsWith("zh");
-
-// 月份段标题：中文「9月」，英文「September」。
+// 月份段标题，如「September」。
 function monthTitle(date: Date): string {
-  return isZh ? `${date.getMonth() + 1}月` : date.toLocaleString("en-US", { month: "long" });
+  return date.toLocaleString("en-US", { month: "long" });
 }
 
-// 年份段标题：中文「2025年」，英文「2025」。
+// 年份段标题，如「2025」。
 function yearTitle(date: Date): string {
-  return isZh ? `${date.getFullYear()}年` : String(date.getFullYear());
+  return String(date.getFullYear());
 }
 
 export type Group<T> = { key: string; title: string; subtitle: string; items: T[] };
