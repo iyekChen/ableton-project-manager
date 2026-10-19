@@ -1,14 +1,15 @@
 {
 	"$schema": "https://www.raycast.com/schemas/extension.json",
-	"name": "ableton-session-manager",
-	"title": "Ableton Session Manager",
-	"description": "Manage and search Ableton Live projects",
+	"name": "ableton-project-manager",
+	"title": "Ableton Project Manager",
+	"description": "Manage, search, and organize your Ableton Live projects — a DAW project manager for music producers",
 	"icon": "icon.png",	"author": "iyek",
 	"platforms": [
 		"macOS"
 	],
 	"categories": [
-		"Productivity"
+		"Productivity",
+		"Media"
 	],
 	"license": "MIT",
 	"preferences": [
@@ -148,14 +149,35 @@
 			"title": "Search Projects",
 			"description": "Search and open Ableton Live projects",
 			"mode": "view",
-			"subtitle": "Ableton Session Manager"
+			"subtitle": "Ableton Project Manager",
+			"keywords": [
+				"ableton",
+				"ableton live",
+				"als",
+				"daw",
+				"music",
+				"music production",
+				"producer",
+				"projects",
+				"sets",
+				"bounce"
+			]
 		},
 		{
 			"name": "manage-categories",
 			"title": "Manage Tags",
 			"description": "Create and manage Stages, Genres, and Track Roles",
 			"mode": "view",
-			"subtitle": "Ableton Session Manager"
+			"subtitle": "Ableton Project Manager",
+			"keywords": [
+				"ableton",
+				"ableton live",
+				"tags",
+				"stages",
+				"genres",
+				"track roles",
+				"music production"
+			]
 		}
 	],
 	"tools": [],

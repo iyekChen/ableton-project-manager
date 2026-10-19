@@ -89,7 +89,7 @@ export function getAlsMetadata(filePath: string): Promise<AlsMetadata> {
         return;
       }
 
-      console.error(`[Ableton Session Manager] Failed to parse ALS: ${filePath}`, error);
+      console.error(`[Ableton Project Manager] Failed to parse ALS: ${filePath}`, error);
       finish(emptyMetadata());
       input.destroy();
       gunzip.destroy();

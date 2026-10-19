@@ -57,7 +57,7 @@ export async function loadPersistentAudioAnalysisCache() {
 
         evictOldest();
       } catch (error) {
-        console.error("[Ableton Session Manager] Failed to load audio analysis cache:", error);
+        console.error("[Ableton Project Manager] Failed to load audio analysis cache:", error);
       }
     })();
   }
@@ -76,7 +76,7 @@ function schedulePersistAudioAnalysisCache() {
     const snapshot = Object.fromEntries(audioAnalysisCache);
 
     void LocalStorage.setItem(AUDIO_ANALYSIS_STORAGE_KEY, JSON.stringify(snapshot)).catch((error) => {
-      console.error("[Ableton Session Manager] Failed to persist audio analysis cache:", error);
+      console.error("[Ableton Project Manager] Failed to persist audio analysis cache:", error);
     });
   }, 200);
 }

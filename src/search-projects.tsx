@@ -248,7 +248,7 @@ export default function Command() {
       setOrphanIds(orphans);
       return orphans;
     } catch (error) {
-      console.error("[Ableton Session Manager] Failed to load projects:", error);
+      console.error("[Ableton Project Manager] Failed to load projects:", error);
       setProjects([]);
       setOrphanIds([]);
       await showToast({

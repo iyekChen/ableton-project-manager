@@ -207,7 +207,7 @@ export function Sets({ project }: { project: Project }) {
             item.set.timeSignature = normalizedMetadata.timeSignature;
             item.set.key = normalizedMetadata.key;
           } catch (error) {
-            console.error(`[Ableton Session Manager] Failed to load ALS metadata: ${item.set.path}`, error);
+            console.error(`[Ableton Project Manager] Failed to load ALS metadata: ${item.set.path}`, error);
           }
         }
 
@@ -229,7 +229,7 @@ export function Sets({ project }: { project: Project }) {
         setSets(pendingSets.map((item) => item.set));
       } catch (error) {
         if (!cancelled) {
-          console.error("[Ableton Session Manager] Failed to load Sets:", error);
+          console.error("[Ableton Project Manager] Failed to load Sets:", error);
           setSets([]);
         }
       } finally {

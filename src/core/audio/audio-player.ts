@@ -66,7 +66,7 @@ function isOurPlayerProcess(pid: number): boolean {
       encoding: "utf8",
       timeout: 1000,
     });
-    return command.includes("asm-audio-player");
+    return command.includes("audio-player");
   } catch {
     return false;
   }

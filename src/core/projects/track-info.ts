@@ -118,7 +118,7 @@ async function loadAudioPart(project: Project): Promise<{
       activity: nonNegOrNull(analysis.flux),
     };
   } catch (error) {
-    console.error(`[Ableton Session Manager] Failed to analyze bounce: ${bouncePath}`, error);
+    console.error(`[Ableton Project Manager] Failed to analyze bounce: ${bouncePath}`, error);
     return { duration: null, rms: null, crest: null, brightness: null, activity: null };
   }
 }
@@ -154,7 +154,7 @@ async function loadAlsPart(
     }
     return { bpm: normalized.bpm, key: normalized.key, timeSignature: normalized.timeSignature };
   } catch (error) {
-    console.error(`[Ableton Session Manager] Failed to parse ALS: ${alsPath}`, error);
+    console.error(`[Ableton Project Manager] Failed to parse ALS: ${alsPath}`, error);
     return { bpm: null, key: null, timeSignature: null };
   }
 }

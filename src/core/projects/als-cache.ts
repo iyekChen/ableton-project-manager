@@ -61,7 +61,7 @@ export async function loadPersistentAlsMetadataCache() {
 
         evictOldest();
       } catch (error) {
-        console.error("[Ableton Session Manager] Failed to load ALS cache:", error);
+        console.error("[Ableton Project Manager] Failed to load ALS cache:", error);
       }
     })();
   }
@@ -80,7 +80,7 @@ function schedulePersistAlsMetadataCache() {
     const snapshot = Object.fromEntries(alsMetadataCache);
 
     void LocalStorage.setItem(ALS_METADATA_STORAGE_KEY, JSON.stringify(snapshot)).catch((error) => {
-      console.error("[Ableton Session Manager] Failed to persist ALS cache:", error);
+      console.error("[Ableton Project Manager] Failed to persist ALS cache:", error);
     });
   }, 200);
 }

@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-const BINARY_NAME = "asm-audio-player";
+const BINARY_NAME = "audio-player";
 
 let cachedPlayerPath: string | null = null;
 
@@ -47,7 +47,7 @@ export function ensureAudioPlayerBinary(): string {
     cachedPlayerPath = target;
     return target;
   } catch (error) {
-    console.error("[Ableton Session Manager] Failed to prepare audio player binary:", error);
+    console.error("[Ableton Project Manager] Failed to prepare audio player binary:", error);
     return source;
   }
 }

@@ -1,4 +1,4 @@
-# Ableton Session Manager
+# Ableton Project Manager
 
 A Raycast extension to browse, organize, and preview your Ableton Live projects — without leaving the keyboard. Search by name, tag projects by stage / genre / collection, keep per-project notes, preview the latest bounce with inline playback, and arrange tracks into collections (EPs / albums) with automatic energy analysis.
 
@@ -32,8 +32,8 @@ _Coming soon._
 ## Setup (Development)
 
 ```bash
-git clone https://github.com/iyekChen/ableton-session-manager.git
-cd ableton-session-manager
+git clone https://github.com/iyekChen/ableton-project-manager.git
+cd ableton-project-manager
 npm install
 npm run build:player   # build the bundled Swift (AVFoundation) audio helper
 npm run dev            # run the extension in Raycast (development mode)
@@ -49,7 +49,7 @@ npm run build      # production build
 
 ## Configuration
 
-Set these in Raycast → Extensions → **Ableton Session Manager**:
+Set these in Raycast → Extensions → **Ableton Project Manager**:
 
 | Preference                                         | Required | Description                                                                                                                   |
 | -------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -61,10 +61,10 @@ Set these in Raycast → Extensions → **Ableton Session Manager**:
 
 ## Commands
 
-| Command               | Description                                                     |
-| --------------------- | --------------------------------------------------------------- |
-| **Search Projects**   | Search, open, tag, play, and manage your Ableton Live projects. |
-| **Manage Categories** | Create and manage genres and collections.                       |
+| Command             | Description                                                     |
+| ------------------- | --------------------------------------------------------------- |
+| **Search Projects** | Search, open, tag, play, and manage your Ableton Live projects. |
+| **Manage Tags**     | Create and manage Stages, Genres, and Track Roles.              |
 
 ## How it works
 
@@ -99,17 +99,6 @@ Most actions are discoverable via the Action Panel (`⌘K`). A few highlights:
 - **Moving a project to the Trash** moves its custom-folder notes / lyrics into a `Deleted Projects/` subfolder and remembers its tags, track numbers and roles for **30 days**. Put the project back from the Trash within that time and everything is restored the next time you open Search Projects. A new project that merely has the same name is not affected.
 - **Renaming or deleting projects in Finder** is picked up automatically (projects are matched by folder creation date). With **Full Disk Access** granted to Raycast, a deletion is confirmed against the Trash; without it, a vanished project is treated as deleted and fully restored if it comes back. If many projects vanish at once (e.g. an external drive is unplugged), nothing is changed.
 - If the custom notes / lyrics folder is renamed or moved, the extension shows a warning and **won't write anything** until you choose the folder again in Extension Preferences.
-
-## Roadmap
-
-- Filter / search by BPM & key
-- Missing-media (sample) check
-- New project from a template `.als`
-
-## Contributing
-
-Commit messages follow **Conventional Commits** with Chinese descriptions and English technical terms — e.g. `feat(bounces): 新增 Show in Finder 与 Open in Default App`.
-| **Strict Line Breaks** | — | Off (default): a single line break shows as a line break, like Obsidian. On: standard Markdown. Display only. |
 
 ## License
 
