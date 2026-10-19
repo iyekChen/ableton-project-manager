@@ -33,14 +33,24 @@ export function ensureAudioPlayerBinary(): string {
 
     if (needsCopy) {
       fs.mkdirSync(environment.supportPath, { recursive: true });
-      fs.copyFileSync(source, target);
-      fs.chmodSync(target, 0o755);
-
-      // 清除隔离标记。属性不存在时 xattr 会报错，属正常情况，忽略即可。
+      // 先写临时文件再原子改名：原地覆盖可执行文件时，macOS 可能因代码签名缓存对不上而杀掉之后启动的进程。
+      // rename 换上的是新 inode，正在后台播放的旧进程也不受影响。
+      const temp = `${target}.tmp-${process.pid}`;
       try {
-        execFileSync("/usr/bin/xattr", ["-d", "com.apple.quarantine", target]);
-      } catch {
-        // 没有隔离标记时无需处理。
+        fs.copyFileSync(source, temp);
+        fs.chmodSync(temp, 0o755);
+
+        // 清除隔离标记。属性不存在时 xattr 会报错，属正常情况，忽略即可。
+        try {
+          execFileSync("/usr/bin/xattr", ["-d", "com.apple.quarantine", temp]);
+        } catch {
+          // 没有隔离标记时无需处理。
+        }
+
+        fs.renameSync(temp, target);
+      } catch (error) {
+        fs.rmSync(temp, { force: true });
+        throw error;
       }
     }
 

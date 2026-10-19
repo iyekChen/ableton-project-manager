@@ -4,7 +4,7 @@ import AVFoundation
 import Darwin
 import Foundation
 
-// 与 src/audio-player.ts 约定的进程间通信协议。
+// 与 src/core/audio/audio-player.ts 约定的进程间通信协议。
 // 这是跨语言契约：修改任一端的字符串时，另一端必须同步更新。
 let readyMessage = "READY"  // 经 stdout 输出 = 已开始播放
 let stopCommand = "STOP"    // 经命令文件收到 = 请求淡出停止
@@ -14,7 +14,7 @@ let restartCommand = "SEEK0" // 经命令文件收到 = 跳回开头
 let seekCommandPrefix = "SEEK " // 其后跟秒数（可正负），如 "SEEK 5" / "SEEK -5" = 相对跳转
 let positionPrefix = "POS " // 经 stdout 输出，其后跟 "<当前秒> <总秒>" = 播放进度
 
-// analyze 模式：与 src/projects/audio-analysis.ts 约定。
+// analyze 模式：与 src/core/projects/audio-analysis.ts 约定。
 // 调用 `AudioPlayer analyze <path>`，向 stdout 输出一行 JSON：
 //   {"duration": 秒(Double), "rms": 0..1(Double), "peak": 0..1(Double), "centroid": 0..1 或 -1(Double), "flux": 0..1 或 -1(Double)}
 // 修改字段名或格式时，audio-analysis.ts 必须同步更新。
@@ -31,6 +31,8 @@ func runAnalyze(_ path: String) -> Never {
         var sampleCount = 0
         var peak = 0.0
         var mono: [Float] = [] // 下混单声道，供频谱分析
+        // 按总帧数一次预留：在循环里每块小步 reserveCapacity 会破坏倍增扩容，长文件会退化成反复整体复制。
+        mono.reserveCapacity(Int(max(0, file.length)))
         let chunkFrames: AVAudioFrameCount = 65536
 
         while true {
@@ -49,7 +51,6 @@ func runAnalyze(_ path: String) -> Never {
                 break
             }
             if let channels = buffer.floatChannelData {
-                mono.reserveCapacity(mono.count + frames)
                 for i in 0..<frames {
                     var frameSum = 0.0
                     for channel in 0..<channelCount {
