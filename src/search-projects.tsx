@@ -1,13 +1,13 @@
 import {
   ActionPanel,
   Action,
+  Cache,
   Clipboard,
   Color,
   getApplications,
   Icon,
   Keyboard,
   List,
-  LocalStorage,
   open,
   showToast,
   Toast,
@@ -62,6 +62,8 @@ const SORT_STORAGE_KEY = "project-sort-option";
 const GROUP_STORAGE_KEY = "project-group-option";
 const VIEW_MODE_STORAGE_KEY = "view-mode:projects";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:projects";
+// 视图偏好存同步的 Cache：首帧就按记忆渲染。LocalStorage 是异步的，会先按默认值画一帧再跳。
+const viewCache = new Cache();
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
 // 正在由扩展执行 Move to Trash 的项目：已归档，目录监听触发的重载不要再当成 Finder 删除处理。
@@ -108,8 +110,11 @@ export default function Command() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [orphanIds, setOrphanIds] = useState<string[]>([]);
-  const [showDetail, setShowDetail] = useState(true);
-  const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
+  // 默认 Detail；只有记过 Overview 才进 Overview。
+  const [showDetail, setShowDetail] = useState(() => viewCache.get(VIEW_MODE_STORAGE_KEY) !== "overview");
+  const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">(() =>
+    viewCache.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
+  );
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
   const baseProjectsRef = useRef<Project[]>([]);
   // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
@@ -138,30 +143,10 @@ export default function Command() {
     void collectionTaxonomy.get().then(setCollectionOptions);
   }, []);
 
-  useEffect(() => {
-    void LocalStorage.getItem<string>(VIEW_MODE_STORAGE_KEY).then((stored) => {
-      if (stored === "overview") {
-        setShowDetail(false);
-      } else if (stored === "detail") {
-        setShowDetail(true);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    void LocalStorage.getItem<string>(DETAIL_DOC_STORAGE_KEY).then((stored) => {
-      if (stored === "lyrics") {
-        setDetailDoc("lyrics");
-      } else if (stored === "notes") {
-        setDetailDoc("notes");
-      }
-    });
-  }, []);
-
   const toggleDetail = useCallback(() => {
     setShowDetail((prev) => {
       const next = !prev;
-      void LocalStorage.setItem(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
+      viewCache.set(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
       return next;
     });
   }, []);
@@ -169,7 +154,7 @@ export default function Command() {
   const toggleDetailDoc = useCallback(() => {
     setDetailDoc((prev) => {
       const next = prev === "notes" ? "lyrics" : "notes";
-      void LocalStorage.setItem(DETAIL_DOC_STORAGE_KEY, next);
+      viewCache.set(DETAIL_DOC_STORAGE_KEY, next);
       return next;
     });
   }, []);
@@ -178,7 +163,8 @@ export default function Command() {
     const metadataStore = await getAllProjectMetadata();
     const updatedProjects = baseProjectsRef.current.map((project) => {
       const metadata = metadataStore[project.id];
-      const notes = showDetail ? stripFrontmatter(readDocFile(project, "notes")) : "";
+      // 总是读：applyMetadata 只在挂载时创建一次，按 showDetail 判断会锁死首帧的值，切到 Detail 时笔记为空。
+      const notes = stripFrontmatter(readDocFile(project, "notes"));
       const externalBounceFolders = metadata?.externalBounceFolders ?? [];
       const externalBounceFiles = metadata?.externalBounceFiles ?? [];
       // 无外部来源时复用 loadProjects 已算好的默认文件夹计数，省去重复扫描；
