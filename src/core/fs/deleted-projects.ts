@@ -6,7 +6,7 @@ import { assignNumber, getProjectOrders, getTrackMap, nextNumber, setTrackMap } 
 import { assignRole, getProjectRoles, getRoleMap, setRoleMap } from "@/core/metadata/collection-roles";
 import { collectionTaxonomy } from "@/core/metadata/taxonomies";
 import { sameFolder, type FolderIdentity } from "./project-snapshot";
-import type { Project } from "./projects/types";
+import type { Project } from "@/projects/types";
 
 const STORAGE_KEY = "deleted-projects";
 // 与 Finder 的"30 天后从废纸篓中移除项目"对齐。过期只丢弃记录，归档的文档文件保留。

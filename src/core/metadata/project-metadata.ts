@@ -1,5 +1,5 @@
 import { LocalStorage } from "@raycast/api";
-import { isCorruptJson, StorageUnreadableError } from "@/storage";
+import { isCorruptJson, StorageUnreadableError } from "@/core/fs/storage";
 
 export type ProjectMetadata = {
   stageId: string | null;

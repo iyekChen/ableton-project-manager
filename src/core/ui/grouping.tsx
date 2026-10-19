@@ -1,7 +1,7 @@
 import { Action, ActionPanel, Icon, LocalStorage } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { getSettings } from "./settings";
-import { getTranslations } from "./i18n";
+import { getSettings } from "@/settings";
+import { getTranslations } from "@/i18n";
 
 const t = getTranslations(getSettings().language);
 

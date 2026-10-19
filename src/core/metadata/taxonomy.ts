@@ -1,5 +1,5 @@
 import { Color, LocalStorage } from "@raycast/api";
-import { isCorruptJson, StorageUnreadableError } from "@/storage";
+import { isCorruptJson, StorageUnreadableError } from "@/core/fs/storage";
 
 // 一个分类选项:名字必填;颜色、顺序可选(Stage 用颜色+顺序,Genre/Collection 不用)。
 export type TaxonomyOption = {
