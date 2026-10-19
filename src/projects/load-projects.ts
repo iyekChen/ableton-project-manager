@@ -1,7 +1,29 @@
 import fs from "node:fs";
 import path from "node:path";
+import { Cache } from "@raycast/api";
 import type { Project } from "./types";
 import { countBounces, resolveBouncesFolder } from "./bounces";
+
+const bounceCountCache = new Cache({ namespace: "bounce-count-cache" });
+
+// 用 Bounces 文件夹的 mtime 做 key 缓存计数：只有增删 Bounce 才会改 mtime，
+// 一失效即重新扫描，结果始终正确，重复打开时省去再次 readdir。
+function cachedBouncesCount(folderPath: string): number {
+  const bouncesFolder = resolveBouncesFolder(folderPath);
+  let key: string;
+  try {
+    key = `${bouncesFolder}:${fs.statSync(bouncesFolder).mtimeMs}`;
+  } catch {
+    return countBounces(bouncesFolder);
+  }
+  const cached = bounceCountCache.get(key);
+  if (cached !== undefined) {
+    return Number(cached);
+  }
+  const count = countBounces(bouncesFolder);
+  bounceCountCache.set(key, String(count));
+  return count;
+}
 
 export function loadProjects(projectsRoot: string): Project[] {
   const projects: Project[] = [];
@@ -40,7 +62,7 @@ export function loadProjects(projectsRoot: string): Project[] {
         pinned: false,
         pinOrder: null,
         setsCount: setFiles.length,
-        bouncesCount: countBounces(resolveBouncesFolder(folderPath)),
+        bouncesCount: cachedBouncesCount(folderPath),
         externalBounceFolders: [],
         externalBounceFiles: [],
       });

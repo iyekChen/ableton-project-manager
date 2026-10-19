@@ -175,6 +175,16 @@ export default function Command() {
       const notes = showDetail ? stripFrontmatter(readDocFile(project, "notes")) : "";
       const externalBounceFolders = metadata?.externalBounceFolders ?? [];
       const externalBounceFiles = metadata?.externalBounceFiles ?? [];
+      // 无外部来源时复用 loadProjects 已算好的默认文件夹计数，省去重复扫描；
+      // 有外部来源才走聚合器（默认文件夹 + 外部来源，去重、排除不可用）。
+      const hasExternal = externalBounceFolders.length > 0 || externalBounceFiles.length > 0;
+      const bouncesCount = hasExternal
+        ? countBouncesWithSources({
+            defaultFolder: resolveBouncesFolder(project.folderPath),
+            externalFolders: externalBounceFolders,
+            externalFiles: externalBounceFiles,
+          })
+        : project.bouncesCount;
       return {
         ...project,
         stageId: metadata?.stageId ?? null,
@@ -185,12 +195,7 @@ export default function Command() {
         pinOrder: metadata?.pinOrder ?? null,
         externalBounceFolders,
         externalBounceFiles,
-        // 计数改走聚合器：默认 Bounces 文件夹 + 外部来源（去重、排除不可用）。
-        bouncesCount: countBouncesWithSources({
-          defaultFolder: resolveBouncesFolder(project.folderPath),
-          externalFolders: externalBounceFolders,
-          externalFiles: externalBounceFiles,
-        }),
+        bouncesCount,
       };
     });
     setProjects(updatedProjects);
