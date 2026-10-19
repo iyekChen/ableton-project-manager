@@ -48,6 +48,7 @@ import { ManageExternalBounces } from "./components/project/manage-external-boun
 import type { Project } from "./projects/types";
 import { loadProjects } from "./projects/load-projects";
 import { countBouncesWithSources, findLatestBounceWithSources, resolveBouncesFolder } from "./projects/bounces";
+import { daw } from "./daws";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -117,7 +118,7 @@ export default function Command() {
   // 解析 Ableton Live，用于 New Live Set（取其图标 + 启动）。
   useEffect(() => {
     void getApplications().then((apps) => {
-      setAbletonApp(apps.find((app) => app.name.toLowerCase().includes("ableton live")) ?? null);
+      setAbletonApp(apps.find((app) => app.name.toLowerCase().includes(daw.appNameMatch)) ?? null);
     });
   }, []);
 

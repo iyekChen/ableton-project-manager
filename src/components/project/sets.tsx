@@ -18,7 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { getAlsMetadata } from "../../als-metadata";
+import { daw } from "../../daws";
 import {
   cacheAlsMetadata,
   EMPTY_METADATA,
@@ -151,7 +151,7 @@ export function Sets({ project }: { project: Project }) {
   // 解析 Ableton Live，仅用于 Open in Ableton Live 的图标。
   useEffect(() => {
     void getApplications().then((apps) => {
-      setAbletonApp(apps.find((app) => app.name.toLowerCase().includes("ableton live")) ?? null);
+      setAbletonApp(apps.find((app) => app.name.toLowerCase().includes(daw.appNameMatch)) ?? null);
     });
   }, []);
 
@@ -170,7 +170,7 @@ export function Sets({ project }: { project: Project }) {
 
         if (cancelled) return;
 
-        const files = fs.readdirSync(project.folderPath).filter((file) => file.endsWith(".als"));
+        const files = fs.readdirSync(project.folderPath).filter((file) => file.endsWith(daw.projectFileExtension));
 
         const pendingSets: PendingSet[] = files.map((file) => {
           const setPath = path.join(project.folderPath, file);
@@ -181,7 +181,7 @@ export function Sets({ project }: { project: Project }) {
 
           return {
             set: {
-              name: path.basename(file, ".als"),
+              name: path.basename(file, daw.projectFileExtension),
               path: setPath,
               createdAt: stats.birthtimeMs,
               modifiedAt: stats.mtimeMs,
@@ -196,17 +196,11 @@ export function Sets({ project }: { project: Project }) {
 
         async function parseSet(item: PendingSet) {
           try {
-            const metadata = await getAlsMetadata(item.set.path);
+            const normalizedMetadata: CachedAlsMetadata = await daw.parseProjectFile(item.set.path);
 
             if (cancelled) return;
 
             if (fileSignature(fs.statSync(item.set.path)) !== item.signature) return;
-
-            const normalizedMetadata: CachedAlsMetadata = {
-              bpm: metadata.bpm,
-              timeSignature: metadata.timeSignature,
-              key: metadata.inKey === false ? null : metadata.key,
-            };
 
             cacheAlsMetadata(item.set.path, item.signature, normalizedMetadata);
             item.set.bpm = normalizedMetadata.bpm;

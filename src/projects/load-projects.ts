@@ -3,6 +3,7 @@ import path from "node:path";
 import { Cache } from "@raycast/api";
 import type { Project } from "./types";
 import { countBounces, resolveBouncesFolder } from "./bounces";
+import { daw } from "../daws";
 
 const bounceCountCache = new Cache({ namespace: "bounce-count-cache" });
 
@@ -37,7 +38,7 @@ export function loadProjects(projectsRoot: string): Project[] {
         continue;
       }
 
-      const setFiles = fs.readdirSync(folderPath).filter((file) => file.endsWith(".als"));
+      const setFiles = fs.readdirSync(folderPath).filter((file) => file.endsWith(daw.projectFileExtension));
 
       if (setFiles.length === 0) {
         continue;
