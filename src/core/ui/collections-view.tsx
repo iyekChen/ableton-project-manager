@@ -904,7 +904,7 @@ function CollectionPanel({
         <Action
           title={t.moveToTop}
           icon={Icon.ArrowUpCircle}
-          shortcut={Keyboard.Shortcut.Common.MoveUp}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
           onAction={() => {
             const ids = [p.id, ...tracked.filter((x) => x.id !== p.id).map((x) => x.id)];
             const next: TrackMap = { ...map };
@@ -919,7 +919,7 @@ function CollectionPanel({
         <Action
           title={t.moveToBottom}
           icon={Icon.ArrowDownCircle}
-          shortcut={Keyboard.Shortcut.Common.MoveDown}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
           onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
         />
       )}
