@@ -37,7 +37,6 @@ type TranslationKeys = {
   removeFromTracklist: string;
   trackNumber: string;
   invalidPosition: string;
-  allTags: string;
   filter: string;
   all: string;
   notes: string;
@@ -49,7 +48,6 @@ type TranslationKeys = {
   none: string;
   pinned: string;
   sortBy: string;
-  sortProjects: string;
   groupBy: string;
   groupByCreated: string;
   groupByModified: string;
@@ -58,7 +56,6 @@ type TranslationKeys = {
   bandYesterday: string;
   bandPrev7Days: string;
   bandPrev30Days: string;
-  select: string;
   modifiedNewest: string;
   modifiedOldest: string;
   createdNewest: string;
@@ -102,8 +99,6 @@ type TranslationKeys = {
   playingLatestBounce: string;
   playbackFailed: string;
   stoppingPlayback: string;
-  nothingIsPlaying: string;
-  playbackStopped: string;
   noBounces: string;
   manageExternalBounce: string;
   externalBounceSaved: string;
@@ -115,7 +110,6 @@ type TranslationKeys = {
   collection: string;
   collections: string;
   deleteCollectionHint: string;
-  category: string;
   role: string;
   create: string;
   delete: string;
@@ -123,8 +117,6 @@ type TranslationKeys = {
   renamed: string;
   deleted: string;
   noCategories: string;
-  setTrackRole: string;
-  clearRole: string;
   tracklistDuration: string;
   queueCollection: string;
   collectionQueued: string;
@@ -243,7 +235,6 @@ const translations: Record<Language, TranslationKeys> = {
     removeFromTracklist: "Remove from Tracklist",
     trackNumber: "Track Number",
     invalidPosition: "Enter a valid number",
-    allTags: "All Tags",
     filter: "Filter",
     all: "All",
     notes: "Notes",
@@ -255,7 +246,6 @@ const translations: Record<Language, TranslationKeys> = {
     none: "None",
     pinned: "Pinned",
     sortBy: "Sort By",
-    sortProjects: "Sort Projects",
     groupBy: "Group By",
     groupByCreated: "Created",
     groupByModified: "Modified",
@@ -264,7 +254,6 @@ const translations: Record<Language, TranslationKeys> = {
     bandYesterday: "Yesterday",
     bandPrev7Days: "Previous 7 Days",
     bandPrev30Days: "Previous 30 Days",
-    select: "Select",
     modifiedNewest: "Modified — Newest",
     modifiedOldest: "Modified — Oldest",
     createdNewest: "Created — Newest",
@@ -311,8 +300,6 @@ const translations: Record<Language, TranslationKeys> = {
     playingLatestBounce: "Playing Latest Bounce",
     playbackFailed: "Playback Failed",
     stoppingPlayback: "Stopping Playback",
-    nothingIsPlaying: "Nothing Is Playing",
-    playbackStopped: "Playback Stopped",
     noBounces: "No Bounces Found",
     manageExternalBounce: "Manage External Bounce",
     externalBounceSaved: "External Bounces Updated",
@@ -325,7 +312,6 @@ const translations: Record<Language, TranslationKeys> = {
     collection: "Collection",
     collections: "Collections",
     deleteCollectionHint: "This only removes the collection. Your projects are not deleted.",
-    category: "Category",
     role: "Role",
     create: "Create",
     delete: "Delete",
@@ -333,8 +319,6 @@ const translations: Record<Language, TranslationKeys> = {
     renamed: "Renamed",
     deleted: "Deleted",
     noCategories: "Nothing here yet",
-    setTrackRole: "Set Track Role",
-    clearRole: "Clear Role",
     tracklistDuration: "Tracklist Duration",
     queueCollection: "Queue Collection in Player",
     collectionQueued: "Collection Queued",
