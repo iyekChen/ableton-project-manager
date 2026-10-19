@@ -1,5 +1,6 @@
-import { Action, ActionPanel, Icon, LocalStorage } from "@raycast/api";
-import { useEffect, useState } from "react";
+import { Action, ActionPanel, Icon } from "@raycast/api";
+import { useState } from "react";
+import { readCachedChoice, viewPrefs } from "./view-prefs";
 import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
 
@@ -73,26 +74,20 @@ export function sortItems<T>(items: T[], sortBy: SortOption, get: (item: T) => S
   });
 }
 
-// 读取/持久化某个界面的排序选择。
-// allowed = 这个界面开放哪些选项;若存储里的值不在 allowed 内(或非法),回落到 fallback。
+// 读取/持久化某个界面的排序选择（同步读，首帧即为记住的值）。
+// allowed = 这个界面开放哪些选项；若存储里的值不在 allowed 内（或非法），回落到 fallback。
 export function useSortOption(storageKey: string, allowed: SortOption[], fallback: SortOption) {
-  const [sortBy, setSortByState] = useState<SortOption>(fallback);
+  const [sortBy, setSortByState] = useState<SortOption>(() =>
+    readCachedChoice(
+      storageKey,
+      (value): value is SortOption => isSortOption(value) && allowed.includes(value),
+      fallback,
+    ),
+  );
 
-  useEffect(() => {
-    async function load() {
-      const stored = await LocalStorage.getItem<string>(storageKey);
-      if (stored && isSortOption(stored) && allowed.includes(stored)) {
-        setSortByState(stored);
-      }
-    }
-
-    void load();
-    // allowed 对每个界面固定,按 storageKey 加载一次即可
-  }, [storageKey]);
-
-  const setSortBy = async (next: SortOption) => {
+  const setSortBy = (next: SortOption) => {
     setSortByState(next);
-    await LocalStorage.setItem(storageKey, next);
+    viewPrefs.set(storageKey, next);
   };
 
   return [sortBy, setSortBy] as const;

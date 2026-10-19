@@ -1,7 +1,6 @@
 import {
   ActionPanel,
   Action,
-  Cache,
   Clipboard,
   Color,
   getApplications,
@@ -53,6 +52,7 @@ import { ManageExternalBounces } from "@/core/ui/components/project/manage-exter
 import type { Project } from "@/core/projects/types";
 import { loadProjects } from "@/core/projects/load-projects";
 import { countProjectBounces, findLatestProjectBounce } from "@/core/projects/bounces";
+import { viewPrefs } from "@/core/ui/view-prefs";
 import { daw } from "@/daws";
 
 const settings = getSettings();
@@ -62,8 +62,6 @@ const SORT_STORAGE_KEY = "project-sort-option";
 const GROUP_STORAGE_KEY = "project-group-option";
 const VIEW_MODE_STORAGE_KEY = "view-mode:projects";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:projects";
-// 视图偏好存同步的 Cache：首帧就按记忆渲染。LocalStorage 是异步的，会先按默认值画一帧再跳。
-const viewCache = new Cache();
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
 // 正在由扩展执行 Move to Trash 的项目：已归档，目录监听触发的重载不要再当成 Finder 删除处理。
@@ -111,9 +109,9 @@ export default function Command() {
   const [isLoading, setIsLoading] = useState(true);
   const [orphanIds, setOrphanIds] = useState<string[]>([]);
   // 默认 Detail；只有记过 Overview 才进 Overview。
-  const [showDetail, setShowDetail] = useState(() => viewCache.get(VIEW_MODE_STORAGE_KEY) !== "overview");
+  const [showDetail, setShowDetail] = useState(() => viewPrefs.get(VIEW_MODE_STORAGE_KEY) !== "overview");
   const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">(() =>
-    viewCache.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
+    viewPrefs.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
   );
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
   const baseProjectsRef = useRef<Project[]>([]);
@@ -146,7 +144,7 @@ export default function Command() {
   const toggleDetail = useCallback(() => {
     setShowDetail((prev) => {
       const next = !prev;
-      viewCache.set(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
+      viewPrefs.set(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
       return next;
     });
   }, []);
@@ -154,7 +152,7 @@ export default function Command() {
   const toggleDetailDoc = useCallback(() => {
     setDetailDoc((prev) => {
       const next = prev === "notes" ? "lyrics" : "notes";
-      viewCache.set(DETAIL_DOC_STORAGE_KEY, next);
+      viewPrefs.set(DETAIL_DOC_STORAGE_KEY, next);
       return next;
     });
   }, []);

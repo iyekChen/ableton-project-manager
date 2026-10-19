@@ -1,5 +1,6 @@
-import { Action, ActionPanel, Icon, LocalStorage } from "@raycast/api";
-import { useEffect, useState } from "react";
+import { Action, ActionPanel, Icon } from "@raycast/api";
+import { useState } from "react";
+import { readCachedChoice, viewPrefs } from "./view-prefs";
 import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
 
@@ -12,21 +13,13 @@ export function isGroupOption(value: string): value is GroupOption {
   return value === "created" || value === "modified" || value === "none";
 }
 
-// 读取/持久化某界面的分组选择。
+// 读取/持久化某界面的分组选择（同步读，首帧即为记住的值）。
 export function useGroupOption(storageKey: string, fallback: GroupOption) {
-  const [groupBy, setGroupByState] = useState<GroupOption>(fallback);
+  const [groupBy, setGroupByState] = useState<GroupOption>(() => readCachedChoice(storageKey, isGroupOption, fallback));
 
-  useEffect(() => {
-    async function load() {
-      const stored = await LocalStorage.getItem<string>(storageKey);
-      if (stored && isGroupOption(stored)) setGroupByState(stored);
-    }
-    void load();
-  }, [storageKey]);
-
-  const setGroupBy = async (next: GroupOption) => {
+  const setGroupBy = (next: GroupOption) => {
     setGroupByState(next);
-    await LocalStorage.setItem(storageKey, next);
+    viewPrefs.set(storageKey, next);
   };
 
   return [groupBy, setGroupBy] as const;

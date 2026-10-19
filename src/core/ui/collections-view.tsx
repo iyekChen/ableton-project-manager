@@ -2,7 +2,6 @@ import {
   Action,
   ActionPanel,
   Alert,
-  Cache,
   Clipboard,
   Color,
   Form,
@@ -23,6 +22,7 @@ import { getTranslations } from "@/i18n";
 import { getSettings } from "@/settings";
 import type { Project } from "@/core/projects/types";
 import { slugify, type TaxonomyOption } from "@/core/metadata/taxonomy";
+import { viewPrefs } from "@/core/ui/view-prefs";
 import {
   TrackMap,
   assignNumber,
@@ -76,8 +76,6 @@ type Collection = { id: string; name: string };
 
 const VIEW_MODE_STORAGE_KEY = "view-mode:collections";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:collections";
-// 视图偏好存同步的 Cache：首帧就按记忆渲染。LocalStorage 是异步的，会先按默认值画一帧再跳。
-const viewCache = new Cache();
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
 
@@ -380,9 +378,9 @@ function CollectionPanel({
   const [infos, setInfos] = useState<Record<string, TrackInfo>>({});
   const [loading, setLoading] = useState(true);
   // 默认 Overview；只有记过 Detail 才进 Detail。
-  const [showDetail, setShowDetail] = useState(() => viewCache.get(VIEW_MODE_STORAGE_KEY) === "detail");
+  const [showDetail, setShowDetail] = useState(() => viewPrefs.get(VIEW_MODE_STORAGE_KEY) === "detail");
   const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">(() =>
-    viewCache.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
+    viewPrefs.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
   );
   const [selectedFilter, setSelectedFilter] = useState("all");
   const { playbackStatus, playingId, play, pause, resume, stop, seek, restart } = useAudioPlayer({
@@ -510,7 +508,7 @@ function CollectionPanel({
   function toggleDetail() {
     setShowDetail((prev) => {
       const next = !prev;
-      viewCache.set(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
+      viewPrefs.set(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
       return next;
     });
   }
@@ -518,7 +516,7 @@ function CollectionPanel({
   function toggleDetailDoc() {
     setDetailDoc((prev) => {
       const next = prev === "notes" ? "lyrics" : "notes";
-      viewCache.set(DETAIL_DOC_STORAGE_KEY, next);
+      viewPrefs.set(DETAIL_DOC_STORAGE_KEY, next);
       return next;
     });
   }
