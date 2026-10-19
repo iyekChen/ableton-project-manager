@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { ensureAudioPlayerBinary } from "../audio-player-path";
+import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 
 export type AudioAnalysis = {
   duration: number; // 秒
