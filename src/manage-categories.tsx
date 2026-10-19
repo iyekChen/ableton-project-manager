@@ -174,6 +174,32 @@ export default function Command() {
     await showToast({ style: Toast.Style.Success, title: t.deleted });
   }
 
+  // 恢复默认：写回默认种子，并清掉项目上指向已不存在选项的引用（Role 按名字，Stage/Genre 按 id）。
+  async function resetOptions() {
+    const confirmed = await confirmAlert({
+      icon: { source: Icon.ArrowCounterClockwise, tintColor: Color.Red },
+      title: `${t.resetToDefaults}?`,
+      message: t.resetToDefaultsHint,
+      primaryAction: { title: t.resetToDefaults, style: Alert.ActionStyle.Destructive },
+    });
+    if (!confirmed) return;
+
+    const previous = options;
+    await TAXONOMIES[kind].reset();
+    const next = await TAXONOMIES[kind].get();
+    setOptions(next);
+
+    for (const old of previous) {
+      if (kind === "role") {
+        if (!next.some((o) => o.name === old.name)) await deleteRoleEverywhere(old.name);
+      } else if (!next.some((o) => o.id === old.id)) {
+        if (kind === "stage") await removeStageEverywhere(old.id);
+        else await removeGenreEverywhere(old.id);
+      }
+    }
+    await showToast({ style: Toast.Style.Success, title: t.resetToDefaults });
+  }
+
   // 重新排序并把 order 写成 1..N 持久化。
   async function reorder(from: number, to: number) {
     const next = [...options];
@@ -193,6 +219,15 @@ export default function Command() {
     />
   );
 
+  const resetAction = (
+    <Action
+      title={t.resetToDefaults}
+      icon={Icon.ArrowCounterClockwise}
+      style={Action.Style.Destructive}
+      onAction={resetOptions}
+    />
+  );
+
   return (
     <List
       isLoading={isLoading}
@@ -204,7 +239,16 @@ export default function Command() {
         </List.Dropdown>
       }
     >
-      <List.EmptyView title={t.noCategories} icon={Icon.Tag} actions={<ActionPanel>{createAction}</ActionPanel>} />
+      <List.EmptyView
+        title={t.noCategories}
+        icon={Icon.Tag}
+        actions={
+          <ActionPanel>
+            {createAction}
+            {resetAction}
+          </ActionPanel>
+        }
+      />
 
       {options.map((option, index) => (
         <List.Item
@@ -271,6 +315,7 @@ export default function Command() {
                 shortcut={Keyboard.Shortcut.Common.Remove}
                 onAction={() => deleteOption(option)}
               />
+              {resetAction}
             </ActionPanel>
           }
         />

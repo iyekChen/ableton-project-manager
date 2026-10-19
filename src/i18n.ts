@@ -185,6 +185,8 @@ type TranslationKeys = {
   projects: string;
   projectsAdded: string;
   allProjectsInCollection: string;
+  resetToDefaults: string;
+  resetToDefaultsHint: string;
   noChanges: string;
   removeCollectionsConfirmTitle: string;
   removeCollectionsConfirmHint: string;
@@ -396,6 +398,9 @@ const translations: Record<Language, TranslationKeys> = {
     projects: "Projects",
     projectsAdded: "Projects Added",
     allProjectsInCollection: "All projects are already in this collection.",
+    resetToDefaults: "Reset to Defaults",
+    resetToDefaultsHint:
+      "Custom names, colors, and order will be lost. Projects tagged with an option that no longer exists will have that tag cleared.",
     removeCollectionsConfirmTitle: "Remove from collection?",
     removeCollectionsConfirmHint:
       "This project will be removed from {names}, clearing its order and role there. The project itself won't be deleted.",
