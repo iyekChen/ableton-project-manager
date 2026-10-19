@@ -3,14 +3,14 @@ import os from "node:os";
 import path from "node:path";
 import { LocalStorage } from "@raycast/api";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { archiveDeletedProject, restorePutBackProjects } from "../src/deleted-projects";
-import { deleteProjectMetadata, getProjectMetadata, saveProjectMetadata } from "../src/project-metadata";
-import { getTrackMap, removeProjectFromAllOrders, setTrackMap } from "../src/collection-order";
-import type { Project } from "../src/projects/types";
+import { archiveDeletedProject, restorePutBackProjects } from "../src/core/fs/deleted-projects";
+import { deleteProjectMetadata, getProjectMetadata, saveProjectMetadata } from "../src/core/metadata/project-metadata";
+import { getTrackMap, removeProjectFromAllOrders, setTrackMap } from "../src/core/metadata/collection-order";
+import type { Project } from "../src/core/projects/types";
 import { __setPreferences, environment } from "./mocks/raycast-api";
 
 // 只需要"现有合集"列表；避免加载真实的 taxonomies（可能用到 Raycast 运行时对象）。
-vi.mock("../src/taxonomies", () => ({
+vi.mock("../src/core/metadata/taxonomies", () => ({
   collectionTaxonomy: { get: async () => [{ id: "ep", name: "EP" }] },
 }));
 
@@ -32,6 +32,8 @@ function makeProject(id: string, createdAt = 1000, inode = 42): Project {
     pinOrder: null,
     setsCount: 1,
     bouncesCount: 0,
+    externalBounceFolders: [],
+    externalBounceFiles: [],
   };
 }
 
@@ -42,6 +44,8 @@ const metadata = {
   pinned: false,
   pinOrder: null,
   notes: "",
+  externalBounceFolders: [],
+  externalBounceFiles: [],
 };
 
 beforeEach(async () => {

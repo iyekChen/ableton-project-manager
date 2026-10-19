@@ -1,7 +1,7 @@
 import { LocalStorage } from "@raycast/api";
 import { beforeEach, describe, expect, it } from "vitest";
-import { getTrackMap, renameProjectInAllOrders, setTrackMap } from "../src/collection-order";
-import { getRoleMap, renameProjectInAllRoles, setRoleMap } from "../src/collection-roles";
+import { getTrackMap, renameProjectInAllOrders, setTrackMap } from "../src/core/metadata/collection-order";
+import { getRoleMap, renameProjectInAllRoles, setRoleMap } from "../src/core/metadata/collection-roles";
 
 beforeEach(async () => {
   await LocalStorage.clear();
