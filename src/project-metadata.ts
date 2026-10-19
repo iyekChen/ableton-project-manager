@@ -8,6 +8,9 @@ export type ProjectMetadata = {
   pinned: boolean;
   pinOrder: number | null;
   notes: string;
+  // 外部 bounce 来源（绝对路径）：叠加在默认 Bounces 文件夹之上，不替换它。
+  externalBounceFolders: string[];
+  externalBounceFiles: string[];
 };
 
 const PROJECT_METADATA_STORAGE_KEY = "project-metadata";
@@ -21,6 +24,8 @@ const EMPTY_PROJECT_METADATA: ProjectMetadata = {
   pinned: false,
   pinOrder: null,
   notes: "",
+  externalBounceFolders: [],
+  externalBounceFiles: [],
 };
 
 async function getStore(): Promise<ProjectMetadataStore> {
