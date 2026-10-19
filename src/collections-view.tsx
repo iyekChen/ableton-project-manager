@@ -140,10 +140,12 @@ export function CollectionList({
   projects: initialProjects,
   collections: initialCollections,
   stages,
+  genres,
 }: {
   projects: Project[];
   collections: Collection[];
   stages: TaxonomyOption[];
+  genres: TaxonomyOption[];
 }) {
   const { pop } = useNavigation();
   const [collections, setCollections] = useState<Collection[]>(initialCollections);
@@ -257,7 +259,13 @@ export function CollectionList({
               title={t.open}
               icon={Icon.Tray}
               target={
-                <CollectionPanel collection={c} projects={projects} stages={stages} onProjectsChanged={setProjects} />
+                <CollectionPanel
+                  collection={c}
+                  projects={projects}
+                  stages={stages}
+                  genres={genres}
+                  onProjectsChanged={setProjects}
+                />
               }
             />
             {createAction}
@@ -348,11 +356,13 @@ function CollectionPanel({
   collection,
   projects,
   stages,
+  genres,
   onProjectsChanged,
 }: {
   collection: Collection;
   projects: Project[];
   stages: TaxonomyOption[];
+  genres: TaxonomyOption[];
   onProjectsChanged?: (projects: Project[]) => void;
 }) {
   const { pop } = useNavigation();
@@ -369,7 +379,7 @@ function CollectionPanel({
   const [loading, setLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(true);
   const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
-  const [selectedStage, setSelectedStage] = useState("all");
+  const [selectedFilter, setSelectedFilter] = useState("all");
   const { playbackStatus, playingId, play, pause, resume, stop, seek, restart } = useAudioPlayer({
     playerPath: PLAYER_PATH,
   });
@@ -792,7 +802,15 @@ function CollectionPanel({
   const durationMinuteDigits = longestTrackSeconds >= 600 ? 2 : 1;
   const durationPlaceholder = durationMinuteDigits === 2 ? "--:--" : "-:--";
 
-  const matchesStage = (p: Project) => selectedStage === "all" || p.stageId === selectedStage;
+  const matchesFilter = (p: Project) => {
+    if (selectedFilter === "all") return true;
+    const separator = selectedFilter.indexOf(":");
+    const dimension = selectedFilter.slice(0, separator);
+    const id = selectedFilter.slice(separator + 1);
+    if (dimension === "stage") return p.stageId === id;
+    if (dimension === "genre") return p.genreIds.includes(id);
+    return true;
+  };
 
   // 单首曲目的 Detail 面板：Note 作 markdown 主体，其余作 metadata。缺数据的字段留标题、值空白。
   const renderDetail = (p: Project) => {
@@ -965,16 +983,32 @@ function CollectionPanel({
       isLoading={loading}
       isShowingDetail={showDetail}
       searchBarAccessory={
-        <List.Dropdown tooltip={t.filterByStage} value={selectedStage} onChange={setSelectedStage}>
-          <List.Dropdown.Item title={t.allStages} value="all" icon={Icon.CircleProgress100} />
-          {stages.map((option) => (
-            <List.Dropdown.Item
-              key={option.id}
-              title={option.name}
-              value={option.id}
-              icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
-            />
-          ))}
+        <List.Dropdown tooltip={t.filter} value={selectedFilter} onChange={setSelectedFilter}>
+          <List.Dropdown.Section title="">
+            <List.Dropdown.Item title={t.all} value="all" icon={Icon.CircleProgress100} />
+          </List.Dropdown.Section>
+          <List.Dropdown.Section title={t.stage}>
+            {stages.map((option) => (
+              <List.Dropdown.Item
+                key={`stage:${option.id}`}
+                title={option.name}
+                value={`stage:${option.id}`}
+                keywords={["stage", "stages", t.stage]}
+                icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
+              />
+            ))}
+          </List.Dropdown.Section>
+          <List.Dropdown.Section title={t.genre}>
+            {genres.map((option) => (
+              <List.Dropdown.Item
+                key={`genre:${option.id}`}
+                title={option.name}
+                value={`genre:${option.id}`}
+                keywords={["genre", "genres", t.genre]}
+                icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Tag}
+              />
+            ))}
+          </List.Dropdown.Section>
         </List.Dropdown>
       }
     >
@@ -985,7 +1019,7 @@ function CollectionPanel({
           {tracked.length > 0 && (
             <List.Section title={tracklistTitle}>
               {tracked.map((p, i) => {
-                if (!matchesStage(p)) return null;
+                if (!matchesFilter(p)) return null;
                 const num = map[p.id];
                 const dup = (counts.get(num) ?? 0) > 1;
                 const info = infos[p.id];
@@ -1029,7 +1063,7 @@ function CollectionPanel({
           {unsorted.length > 0 && (
             <List.Section title={t.unsorted}>
               {unsorted.map((p) => {
-                if (!matchesStage(p)) return null;
+                if (!matchesFilter(p)) return null;
                 return (
                   <List.Item
                     key={p.id}
