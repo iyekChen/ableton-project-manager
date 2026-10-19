@@ -123,6 +123,19 @@ export async function removeGenreEverywhere(genreId: string): Promise<void> {
   if (changed) await saveStore(store);
 }
 
+// 删除某个合集后，从所有项目的 collectionIds 里移除它（一次读—改—写回，避免逐个保存时并发互相覆盖）。
+export async function removeCollectionEverywhere(collectionId: string): Promise<void> {
+  const store = await getStore();
+  let changed = false;
+  for (const id of Object.keys(store)) {
+    if (store[id].collectionIds?.includes(collectionId)) {
+      store[id] = { ...store[id], collectionIds: store[id].collectionIds.filter((c) => c !== collectionId) };
+      changed = true;
+    }
+  }
+  if (changed) await saveStore(store);
+}
+
 // 项目文件夹改名后,把它的 metadata 从旧名字迁到新名字,避免丢失。
 export async function renameProjectMetadata(oldId: string, newId: string): Promise<void> {
   if (oldId === newId) {

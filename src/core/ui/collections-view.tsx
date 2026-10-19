@@ -60,7 +60,12 @@ import {
   togglePinnedCollection,
 } from "@/core/metadata/collection-pins";
 import { collectionTaxonomy } from "@/core/metadata/taxonomies";
-import { addProjectsToCollection, getAllProjectMetadata, saveProjectMetadata } from "@/core/metadata/project-metadata";
+import {
+  addProjectsToCollection,
+  removeCollectionEverywhere,
+  getAllProjectMetadata,
+  saveProjectMetadata,
+} from "@/core/metadata/project-metadata";
 import { StorageUnreadableError } from "@/core/fs/storage";
 import { EditInfo, type ProjectRename } from "@/core/ui/components/project/edit-info";
 import { EditNote } from "@/core/ui/components/project/edit-note";
@@ -228,17 +233,7 @@ export function CollectionList({
     await collectionTaxonomy.save(current.filter((o) => o.id !== c.id));
 
     // 清理与该合集 id 关联的残留数据，避免重建同名合集（slug 得出同 id）时旧状态复活。
-    const store = await getAllProjectMetadata();
-    await Promise.all(
-      Object.entries(store)
-        .filter(([, meta]) => (meta.collectionIds ?? []).includes(c.id))
-        .map(([projectId, meta]) =>
-          saveProjectMetadata(projectId, {
-            ...meta,
-            collectionIds: (meta.collectionIds ?? []).filter((id) => id !== c.id),
-          }),
-        ),
-    );
+    await removeCollectionEverywhere(c.id);
     await removeTrackMap(c.id);
     await removeRoleMap(c.id);
     setPinnedIds(await removePinnedCollection(c.id));
