@@ -1,7 +1,7 @@
 import { Action, ActionPanel, Alert, Color, confirmAlert, Icon, Keyboard, List, showToast, Toast } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { getSettings } from "./settings";
-import { getTranslations } from "./i18n";
+import { getSettings } from "@/settings";
+import { getTranslations } from "@/i18n";
 import { removedProjectIds } from "@/core/fs/removed-projects";
 import { deleteProjectMetadata, getAllProjectMetadata } from "@/core/metadata/project-metadata";
 import { removeProjectFromAllOrders } from "@/core/metadata/collection-order";

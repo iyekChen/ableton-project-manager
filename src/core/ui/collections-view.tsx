@@ -19,9 +19,9 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { getTranslations } from "./i18n";
-import { getSettings } from "./settings";
-import type { Project } from "./projects/types";
+import { getTranslations } from "@/i18n";
+import { getSettings } from "@/settings";
+import type { Project } from "@/projects/types";
 import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import {
   TrackMap,
@@ -41,10 +41,10 @@ import {
   removeRoleMap,
   setRoleMap,
 } from "@/core/metadata/collection-roles";
-import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
+import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "@/projects/track-info";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
-import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
+import { findLatestBounce, resolveBouncesFolder } from "@/projects/bounces";
 import { displayDoc, readDocFile, stripFrontmatter } from "@/core/docs/docs";
 import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
 import {

@@ -18,13 +18,13 @@ import {
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { getSettings } from "./settings";
-import { getTranslations } from "./i18n";
+import { getSettings } from "@/settings";
+import { getTranslations } from "@/i18n";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
 import type { SortOption } from "@/core/ui/sorting";
 import { groupItems } from "@/core/ui/grouping";
-import { collectBounces, resolveBouncesFolder } from "./projects/bounces";
-import type { BounceWithSource } from "./projects/bounces";
+import { collectBounces, resolveBouncesFolder } from "@/projects/bounces";
+import type { BounceWithSource } from "@/projects/bounces";
 import { setExternalBounces } from "@/core/metadata/project-metadata";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 
