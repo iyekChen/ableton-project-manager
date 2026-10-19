@@ -44,6 +44,7 @@ import { EditInfo } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
 import { DuplicateProject } from "./components/project/duplicate-project";
 import { Sets } from "./components/project/sets";
+import { ManageExternalBounces } from "./components/project/manage-external-bounces";
 import type { Project } from "./projects/types";
 import { loadProjects } from "./projects/load-projects";
 import { countBouncesWithSources, findLatestBounceWithSources, resolveBouncesFolder } from "./projects/bounces";
@@ -658,6 +659,11 @@ export default function Command() {
                 icon={Icon.Duplicate}
                 shortcut={Keyboard.Shortcut.Common.Duplicate}
                 target={<DuplicateProject project={item} onDuplicated={reloadProjects} />}
+              />
+              <Action.Push
+                title={t.manageExternalBounce}
+                icon={Icon.Link}
+                target={<ManageExternalBounces project={item} onSaved={reloadProjects} />}
               />
             </ActionPanel.Section>
             <ActionPanel.Section title={t.sectionCopy}>

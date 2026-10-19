@@ -71,6 +71,22 @@ export async function getAllProjectMetadata(): Promise<ProjectMetadataStore> {
   return getStore();
 }
 
+// 覆盖式写入某项目的外部 bounce 来源（去重、去空白）。随 ProjectMetadata 一起在改名/移动时迁移。
+export async function setExternalBounces(
+  projectId: string,
+  externalBounceFolders: string[],
+  externalBounceFiles: string[],
+): Promise<void> {
+  const store = await getStore();
+  const dedupe = (paths: string[]) => Array.from(new Set(paths.map((p) => p.trim()).filter((p) => p !== "")));
+  store[projectId] = {
+    ...(store[projectId] ?? { ...EMPTY_PROJECT_METADATA }),
+    externalBounceFolders: dedupe(externalBounceFolders),
+    externalBounceFiles: dedupe(externalBounceFiles),
+  };
+  await saveStore(store);
+}
+
 // 删除某项目的元数据（移到废纸篓时清理，避免重建同名项目复活旧标签）。
 export async function deleteProjectMetadata(projectId: string): Promise<void> {
   const store = await getStore();

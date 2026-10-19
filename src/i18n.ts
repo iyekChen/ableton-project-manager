@@ -107,6 +107,11 @@ type TranslationKeys = {
   nothingIsPlaying: string;
   playbackStopped: string;
   noBounces: string;
+  manageExternalBounce: string;
+  externalBounceSaved: string;
+  externalBounceFormHint: string;
+  externalBounceFoldersField: string;
+  externalBounceFilesField: string;
   stage: string;
   genre: string;
   collection: string;
@@ -302,6 +307,12 @@ const translations: Record<Language, TranslationKeys> = {
     nothingIsPlaying: "Nothing Is Playing",
     playbackStopped: "Playback Stopped",
     noBounces: "No Bounces Found",
+    manageExternalBounce: "Manage External Bounce",
+    externalBounceSaved: "External Bounces Updated",
+    externalBounceFormHint:
+      "Add folders or files from outside this project to count as its bounces. These are added on top of the Bounces Folder setting, not a replacement. Unreachable sources (e.g. an unplugged drive) are kept and shown as unavailable until you remove them.",
+    externalBounceFoldersField: "External Folders",
+    externalBounceFilesField: "External Files",
     stage: "Stage",
     genre: "Genre",
     collection: "Collection",
@@ -499,6 +510,12 @@ const translations: Record<Language, TranslationKeys> = {
     nothingIsPlaying: "当前没有正在播放的音频",
     playbackStopped: "已停止播放",
     noBounces: "没有找到 Bounces",
+    manageExternalBounce: "管理外部 Bounce",
+    externalBounceSaved: "外部 Bounce 已更新",
+    externalBounceFormHint:
+      "添加本项目之外的文件夹或文件，一并计入它的 bounce。它们是在 Bounces Folder 设置之上叠加，而非替换。读不到的来源（如未连接的硬盘）会保留并标记为不可用，直到你手动移除。",
+    externalBounceFoldersField: "外部文件夹",
+    externalBounceFilesField: "外部文件",
     stage: "阶段",
     genre: "风格",
     collection: "合集",
