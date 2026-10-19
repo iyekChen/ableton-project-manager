@@ -42,7 +42,7 @@ import {
   setRoleMap,
 } from "@/core/metadata/collection-roles";
 import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
-import { useAudioPlayer } from "./hooks/use-audio-player";
+import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
 import { displayDoc, readDocFile, stripFrontmatter } from "@/core/docs/docs";

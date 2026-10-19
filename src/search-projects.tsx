@@ -19,7 +19,7 @@ import {
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import fs from "node:fs";
-import { useAudioPlayer } from "./hooks/use-audio-player";
+import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { getSettings } from "./settings";
 import {
