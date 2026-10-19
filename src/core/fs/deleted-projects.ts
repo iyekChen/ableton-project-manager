@@ -1,9 +1,8 @@
-import { LocalStorage } from "@raycast/api";
-import { isCorruptJson, StorageUnreadableError } from "./storage";
+import { readJson, updateJson } from "./storage";
 import { archiveDocFiles, restoreArchivedDoc, type ArchivedDoc } from "@/core/docs/docs";
-import { getAllProjectMetadata, saveProjectMetadata, type ProjectMetadata } from "@/core/metadata/project-metadata";
-import { assignNumber, getProjectOrders, getTrackMap, nextNumber, setTrackMap } from "@/core/metadata/collection-order";
-import { assignRole, getProjectRoles, getRoleMap, setRoleMap } from "@/core/metadata/collection-roles";
+import { getAllProjectMetadata, restoreProjectMetadata, type ProjectMetadata } from "@/core/metadata/project-metadata";
+import { getProjectOrders, restoreTrackNumber } from "@/core/metadata/collection-order";
+import { getProjectRoles, restoreRole } from "@/core/metadata/collection-roles";
 import { collectionTaxonomy } from "@/core/metadata/taxonomies";
 import { sameFolder, type FolderIdentity } from "./project-snapshot";
 import type { Project } from "@/core/projects/types";
@@ -25,31 +24,31 @@ type DeletedRecord = FolderIdentity & {
 /** 用来匹配记录的文件夹信息：名字 + 创建时间 + inode（旧数据可能没有）。 */
 type FolderRef = { id: string; createdAt: number; inode?: number };
 
-async function getRecords(): Promise<DeletedRecord[]> {
-  const raw = await LocalStorage.getItem<string>(STORAGE_KEY);
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    const cutoff = Date.now() - RETENTION_MS;
-    return Array.isArray(parsed) ? (parsed as DeletedRecord[]).filter((r) => r.deletedAt >= cutoff) : [];
-  } catch {
-    // 损坏：读取时宽容返回空；写入由 saveRecords 拦截，不覆盖。
-    return [];
-  }
+// 读出时顺带丢掉过期记录；下一次写入时它们就不再存在。
+function parseRecords(value: unknown): DeletedRecord[] {
+  const cutoff = Date.now() - RETENTION_MS;
+  return Array.isArray(value) ? (value as DeletedRecord[]).filter((r) => r.deletedAt >= cutoff) : [];
 }
 
-async function saveRecords(records: DeletedRecord[]): Promise<void> {
-  const existing = await LocalStorage.getItem<string>(STORAGE_KEY);
-  if (isCorruptJson(existing)) {
-    // 损坏的删除记录仍可能可恢复，绝不覆盖。
-    throw new StorageUnreadableError();
-  }
-  await LocalStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+const noRecords = (): DeletedRecord[] => [];
+
+function getRecords(): Promise<DeletedRecord[]> {
+  return readJson(STORAGE_KEY, parseRecords, noRecords);
+}
+
+// 删除记录损坏时 updateJson 拒绝写入：损坏的记录仍可能可恢复，绝不覆盖。
+async function updateRecords(update: (records: DeletedRecord[]) => DeletedRecord[] | null): Promise<void> {
+  await updateJson(STORAGE_KEY, parseRecords, noRecords, update);
 }
 
 // 同名且是同一个文件夹（创建时间 + inode）才算"放回"：Put Back 只是挪回原处；同名新项目或复制品都对不上。
 function isSameFolder(record: DeletedRecord, folder: FolderRef): boolean {
   return record.id === folder.id && sameFolder(record, { birthtimeMs: folder.createdAt, inode: folder.inode });
+}
+
+// 同一条记录的标识：id + 删除时间（重新读出后对象引用不同，不能用 ===）。
+function recordKey(record: DeletedRecord): string {
+  return `${record.id}\n${record.deletedAt}`;
 }
 
 /** 该文件夹是否已有删除记录，用于避免重复归档。 */
@@ -62,53 +61,51 @@ export async function hasDeletedRecord(entry: { id: string; birthtimeMs: number;
 export async function pruneDeletedRecords(
   keep: (record: { id: string; birthtimeMs: number; inode?: number }) => boolean,
 ): Promise<void> {
-  const records = await getRecords();
-  const kept = records.filter((record) => keep(record));
-  if (kept.length !== records.length) await saveRecords(kept);
+  await updateRecords((records) => {
+    const kept = records.filter((record) => keep(record));
+    return kept.length !== records.length ? kept : null;
+  });
 }
 
 /** 项目移到废纸篓后、清理数据前调用：存下标签/合集轨号/角色，并把自定义文件夹里的文档移进 Deleted Projects/。 */
 export async function archiveDeletedProject(project: FolderRef & { title: string }): Promise<void> {
   const store = await getAllProjectMetadata();
-  const records = await getRecords();
-  const previous = records.find((r) => isSameFolder(r, project));
-  const record: DeletedRecord = {
-    id: project.id,
-    birthtimeMs: project.createdAt,
-    inode: project.inode,
-    deletedAt: Date.now(),
-    metadata: store[project.id] ?? null,
-    orders: await getProjectOrders(project.id),
-    roles: await getProjectRoles(project.id),
-    // 上次放回时还没还原成功的文档，继续跟着这条记录。
-    docs: [...archiveDocFiles(project.title), ...(previous?.docs ?? [])],
-  };
-  await saveRecords([...records.filter((r) => r !== previous), record]);
+  const orders = await getProjectOrders(project.id);
+  const roles = await getProjectRoles(project.id);
+  const docs = archiveDocFiles(project.title);
+  await updateRecords((records) => {
+    const previous = records.find((r) => isSameFolder(r, project));
+    const record: DeletedRecord = {
+      id: project.id,
+      birthtimeMs: project.createdAt,
+      inode: project.inode,
+      deletedAt: Date.now(),
+      // 同一文件夹已有记录、而这次读到的是空（例如数据已被前一次归档清掉）时沿用旧记录，不让空数据盖掉完整记录。
+      metadata: store[project.id] ?? previous?.metadata ?? null,
+      orders: Object.keys(orders).length > 0 ? orders : (previous?.orders ?? {}),
+      roles: Object.keys(roles).length > 0 ? roles : (previous?.roles ?? {}),
+      // 上次放回时还没还原成功的文档，继续跟着这条记录。
+      docs: [...docs, ...(previous?.docs ?? [])],
+    };
+    return [...records.filter((r) => r !== previous), record];
+  });
 }
 
 // 还原元数据与映射。只往空位里写：期间若已有新数据（或合集已被删），以现状为准。
 async function restoreData(record: DeletedRecord, existingCollections: Set<string>): Promise<void> {
-  const store = await getAllProjectMetadata();
-  if (record.metadata && !(record.id in store)) {
-    await saveProjectMetadata(record.id, {
+  if (record.metadata) {
+    await restoreProjectMetadata(record.id, {
       ...record.metadata,
       collectionIds: (record.metadata.collectionIds ?? []).filter((id) => existingCollections.has(id)),
     });
   }
 
   for (const [collectionId, number] of Object.entries(record.orders)) {
-    if (!existingCollections.has(collectionId)) continue;
-    const map = await getTrackMap(collectionId);
-    if (record.id in map) continue;
-    // 原轨号已被别的曲目占用就排到末尾，避免重号。
-    const taken = Object.values(map).includes(number);
-    await setTrackMap(collectionId, assignNumber(map, record.id, taken ? nextNumber(map) : number));
+    if (existingCollections.has(collectionId)) await restoreTrackNumber(collectionId, record.id, number);
   }
 
   for (const [collectionId, role] of Object.entries(record.roles)) {
-    if (!existingCollections.has(collectionId)) continue;
-    const map = await getRoleMap(collectionId);
-    if (!(record.id in map)) await setRoleMap(collectionId, assignRole(map, record.id, role));
+    if (existingCollections.has(collectionId)) await restoreRole(collectionId, record.id, role);
   }
 }
 
@@ -121,17 +118,14 @@ export async function restorePutBackProjects(projects: Project[]): Promise<Resto
   const records = await getRecords();
   if (records.length === 0) return result;
 
-  const next: DeletedRecord[] = [];
-  let changed = false;
+  const handled = new Set<string>();
+  const pending: DeletedRecord[] = [];
   let existingCollections: Set<string> | null = null;
 
   for (const record of records) {
     const project = projects.find((p) => isSameFolder(record, p));
-    if (!project) {
-      next.push(record);
-      continue;
-    }
-    changed = true;
+    if (!project) continue;
+    handled.add(recordKey(record));
 
     if (!record.dataRestored) {
       existingCollections ??= new Set((await collectionTaxonomy.get()).map((c) => c.id));
@@ -150,10 +144,13 @@ export async function restorePutBackProjects(projects: Project[]): Promise<Resto
 
     if (pendingDocs.length > 0) {
       // 数据已还原、清空，下次重试只处理文档，不会把用户之后的改动改回去。
-      next.push({ ...record, dataRestored: true, metadata: null, orders: {}, roles: {}, docs: pendingDocs });
+      pending.push({ ...record, dataRestored: true, metadata: null, orders: {}, roles: {}, docs: pendingDocs });
     }
   }
 
-  if (changed) await saveRecords(next);
+  if (handled.size > 0) {
+    // 只替换本次处理过的记录；期间新增的记录（如另一处刚归档的）原样保留。
+    await updateRecords((current) => [...current.filter((r) => !handled.has(recordKey(r))), ...pending]);
+  }
   return result;
 }
