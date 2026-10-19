@@ -12,7 +12,6 @@ import {
   Toast,
   confirmAlert,
   environment,
-  getPreferenceValues,
   open,
   showToast,
   useNavigation,
@@ -21,6 +20,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import { getTranslations } from "./i18n";
+import { getSettings } from "./settings";
 import type { Project } from "./projects/types";
 import type { TaxonomyOption } from "./taxonomy";
 import {
@@ -51,7 +51,7 @@ import { getAllProjectMetadata, saveProjectMetadata } from "./project-metadata";
 import { EditInfo, type ProjectRename } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
 
-const t = getTranslations(getPreferenceValues<{ language: Parameters<typeof getTranslations>[0] }>().language);
+const t = getTranslations(getSettings().language);
 
 type Collection = { id: string; name: string };
 
