@@ -2,13 +2,13 @@ import {
   Action,
   ActionPanel,
   Alert,
+  Cache,
   Clipboard,
   Color,
   Form,
   Icon,
   Keyboard,
   List,
-  LocalStorage,
   Toast,
   confirmAlert,
   environment,
@@ -16,7 +16,7 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import { getTranslations } from "@/i18n";
@@ -60,7 +60,8 @@ import {
   togglePinnedCollection,
 } from "@/core/metadata/collection-pins";
 import { collectionTaxonomy } from "@/core/metadata/taxonomies";
-import { getAllProjectMetadata, saveProjectMetadata } from "@/core/metadata/project-metadata";
+import { addProjectsToCollection, getAllProjectMetadata, saveProjectMetadata } from "@/core/metadata/project-metadata";
+import { StorageUnreadableError } from "@/core/fs/storage";
 import { EditInfo, type ProjectRename } from "@/core/ui/components/project/edit-info";
 import { EditNote } from "@/core/ui/components/project/edit-note";
 
@@ -70,6 +71,8 @@ type Collection = { id: string; name: string };
 
 const VIEW_MODE_STORAGE_KEY = "view-mode:collections";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:collections";
+// 视图偏好存同步的 Cache：首帧就按记忆渲染。LocalStorage 是异步的，会先按默认值画一帧再跳。
+const viewCache = new Cache();
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
 
@@ -390,8 +393,11 @@ function CollectionPanel({
   const [roles, setRoles] = useState<RoleMap>({});
   const [infos, setInfos] = useState<Record<string, TrackInfo>>({});
   const [loading, setLoading] = useState(true);
-  const [showDetail, setShowDetail] = useState(true);
-  const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">("notes");
+  // 默认 Overview；只有记过 Detail 才进 Detail。
+  const [showDetail, setShowDetail] = useState(() => viewCache.get(VIEW_MODE_STORAGE_KEY) === "detail");
+  const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">(() =>
+    viewCache.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
+  );
   const [selectedFilter, setSelectedFilter] = useState("all");
   const { playbackStatus, playingId, play, pause, resume, stop, seek, restart } = useAudioPlayer({
     playerPath: PLAYER_PATH,
@@ -492,26 +498,6 @@ function CollectionPanel({
     ) : null;
 
   useEffect(() => {
-    void LocalStorage.getItem<string>(VIEW_MODE_STORAGE_KEY).then((stored) => {
-      if (stored === "overview") {
-        setShowDetail(false);
-      } else if (stored === "detail") {
-        setShowDetail(true);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    void LocalStorage.getItem<string>(DETAIL_DOC_STORAGE_KEY).then((stored) => {
-      if (stored === "lyrics") {
-        setDetailDoc("lyrics");
-      } else if (stored === "notes") {
-        setDetailDoc("notes");
-      }
-    });
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
     const memberList = projects.filter((p) => p.collectionIds.includes(collection.id));
     async function load() {
@@ -538,7 +524,7 @@ function CollectionPanel({
   function toggleDetail() {
     setShowDetail((prev) => {
       const next = !prev;
-      void LocalStorage.setItem(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
+      viewCache.set(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
       return next;
     });
   }
@@ -546,7 +532,7 @@ function CollectionPanel({
   function toggleDetailDoc() {
     setDetailDoc((prev) => {
       const next = prev === "notes" ? "lyrics" : "notes";
-      void LocalStorage.setItem(DETAIL_DOC_STORAGE_KEY, next);
+      viewCache.set(DETAIL_DOC_STORAGE_KEY, next);
       return next;
     });
   }
@@ -603,6 +589,16 @@ function CollectionPanel({
     await applyRoles(clearRole(roles, id));
   }
 
+  // 置顶：本曲排 1，其余已排序曲目按原顺序依次后移（顺带把撞号 / 断号压回 1..n）。
+  async function moveToTop(id: string) {
+    const ids = [id, ...tracked.filter((x) => x.id !== id).map((x) => x.id)];
+    const next: TrackMap = { ...map };
+    ids.forEach((trackId, idx) => {
+      next[trackId] = idx + 1;
+    });
+    await apply(next);
+  }
+
   // 把该项目整个移出本 collection：清掉成员关系 + 本合集轨号 + Role（项目本身与文件不受影响）。
   async function removeFromCollection(p: Project) {
     const confirmed = await confirmAlert({
@@ -622,6 +618,29 @@ function CollectionPanel({
       });
     }
     await reloadMetadata();
+  }
+
+  // 批量加入本合集：新成员进 Unsorted（不分配轨号）。
+  async function addProjects(ids: string[]) {
+    if (ids.length === 0) return;
+    try {
+      await addProjectsToCollection(ids, collection.id);
+    } catch (error) {
+      if (error instanceof StorageUnreadableError) {
+        await showToast({ style: Toast.Style.Failure, title: t.storageUnreadable });
+        return;
+      }
+      throw error;
+    }
+    await reloadMetadata();
+    // 曲目信息只在打开面板时按快照加载一次；新成员单独补一次，否则时长等一直空着。
+    const added = projectList.filter((p) => ids.includes(p.id));
+    void loadTrackInfos(
+      added,
+      (projectId, info) => setInfos((prev) => ({ ...prev, [projectId]: info })),
+      () => false,
+    );
+    await showToast({ style: Toast.Style.Success, title: t.projectsAdded, message: String(ids.length) });
   }
 
   // 按 Track Number 顺序（tracked 在前，unsorted 在后）把成员的 latest bounce 写成 .m3u，
@@ -806,7 +825,7 @@ function CollectionPanel({
     max: activities.length ? Math.max(...activities) : 0,
   };
 
-  // 总时长：所有已排序曲目（含 Draft/Demo）。
+  // 总时长：所有已排序曲目（不分 Stage）。
   const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
   const tracklistTitle = totalSeconds > 0 ? `${t.tracklistDuration} ${formatDuration(totalSeconds)}` : t.tracklist;
 
@@ -825,17 +844,20 @@ function CollectionPanel({
     return true;
   };
 
+  // 已排序曲目的能量档位（以本合集已排序曲目为尺）；未排序或无数据 → null。
+  const energyLevelOf = (p: Project): number | null => {
+    const info = infos[p.id];
+    if (map[p.id] === undefined || !info) return null;
+    const score = energyScore(info, crestRange, brightnessRange, activityRange);
+    return score === null ? null : energyLevelFromScore(score);
+  };
+
   // 单首曲目的 Detail 面板：Note 作 markdown 主体，其余作 metadata。缺数据的字段留标题、值空白。
   const renderDetail = (p: Project) => {
     const info = infos[p.id];
     const role = roles[p.id];
     const stage = stages.find((s) => s.id === p.stageId);
-    const isTracked = map[p.id] !== undefined;
-    let level: number | null = null;
-    if (isTracked && info) {
-      const score = energyScore(info, crestRange, brightnessRange, activityRange);
-      if (score !== null) level = energyLevelFromScore(score);
-    }
+    const level = energyLevelOf(p);
     const detailBody = detailDoc === "notes" ? (p.notes ?? "") : stripFrontmatter(readDocFile(p, "lyrics"));
     const detailPlaceholder = docPlaceholder(detailDoc, p.title);
 
@@ -865,7 +887,7 @@ function CollectionPanel({
                   <List.Item.Detail.Metadata.TagList.Item
                     key={i}
                     text="●"
-                    color={level !== null && i < level ? color : Color.SecondaryText}
+                    color={i < level ? color : Color.SecondaryText}
                   />
                 ))}
               </List.Item.Detail.Metadata.TagList>
@@ -876,84 +898,100 @@ function CollectionPanel({
     );
   };
 
-  const renderTrackedTracklist = (p: Project, i: number) => (
-    <ActionPanel.Section title={t.sectionTracklist}>
-      <Action
-        title={t.removeFromTracklist}
-        icon={Icon.Minus}
-        shortcut={Keyboard.Shortcut.Common.Pin}
-        onAction={() => removeFromTracklist(p.id)}
-      />
-      {i > 0 && (
+  // Tracklist 分区：未排序只有 Add to Tracklist；已排序有移出 / 交换 / 置顶 / 置底。
+  const renderTracklistSection = (p: Project) => {
+    const i = tracked.indexOf(p);
+    if (i === -1) {
+      return (
+        <ActionPanel.Section title={t.sectionTracklist}>
+          <Action
+            title={t.addToTracklist}
+            icon={Icon.Plus}
+            shortcut={Keyboard.Shortcut.Common.Pin}
+            onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
+          />
+        </ActionPanel.Section>
+      );
+    }
+    return (
+      <ActionPanel.Section title={t.sectionTracklist}>
         <Action
-          title={t.swapUp}
-          icon={Icon.ArrowUp}
-          shortcut={Keyboard.Shortcut.Common.MoveUp}
-          onAction={() => apply(swapNumbers(map, p.id, tracked[i - 1].id))}
+          title={t.removeFromTracklist}
+          icon={Icon.Minus}
+          shortcut={Keyboard.Shortcut.Common.Pin}
+          onAction={() => removeFromTracklist(p.id)}
         />
-      )}
-      {i < tracked.length - 1 && (
-        <Action
-          title={t.swapDown}
-          icon={Icon.ArrowDown}
-          shortcut={Keyboard.Shortcut.Common.MoveDown}
-          onAction={() => apply(swapNumbers(map, p.id, tracked[i + 1].id))}
+        {i > 0 && (
+          <Action
+            title={t.swapUp}
+            icon={Icon.ArrowUp}
+            shortcut={Keyboard.Shortcut.Common.MoveUp}
+            onAction={() => apply(swapNumbers(map, p.id, tracked[i - 1].id))}
+          />
+        )}
+        {i < tracked.length - 1 && (
+          <Action
+            title={t.swapDown}
+            icon={Icon.ArrowDown}
+            shortcut={Keyboard.Shortcut.Common.MoveDown}
+            onAction={() => apply(swapNumbers(map, p.id, tracked[i + 1].id))}
+          />
+        )}
+        {i > 0 && (
+          <Action
+            title={t.moveToTop}
+            icon={Icon.ArrowUpCircle}
+            shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
+            onAction={() => moveToTop(p.id)}
+          />
+        )}
+        {i < tracked.length - 1 && (
+          <Action
+            title={t.moveToBottom}
+            icon={Icon.ArrowDownCircle}
+            shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
+            onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
+          />
+        )}
+      </ActionPanel.Section>
+    );
+  };
+
+  // 批量加入：候选只列还不在本合集的项目。空合集的 EmptyView 也挂这个入口。
+  const renderAddProjects = () => (
+    <Action.Push
+      title={t.addProjects}
+      icon={Icon.Plus}
+      shortcut={Keyboard.Shortcut.Common.New}
+      target={
+        <AddProjectsForm
+          candidates={projectList
+            .filter((p) => !p.collectionIds.includes(collection.id))
+            .sort((a, b) => a.title.localeCompare(b.title))}
+          onSubmit={addProjects}
         />
-      )}
-      {i > 0 && (
-        <Action
-          title={t.moveToTop}
-          icon={Icon.ArrowUpCircle}
-          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
-          onAction={() => {
-            const ids = [p.id, ...tracked.filter((x) => x.id !== p.id).map((x) => x.id)];
-            const next: TrackMap = { ...map };
-            ids.forEach((id, idx) => {
-              next[id] = idx + 1;
-            });
-            void apply(next);
-          }}
-        />
-      )}
-      {i < tracked.length - 1 && (
-        <Action
-          title={t.moveToBottom}
-          icon={Icon.ArrowDownCircle}
-          shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
-          onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
-        />
-      )}
-    </ActionPanel.Section>
+      }
+    />
   );
 
-  const renderUnsortedTracklist = (p: Project) => (
-    <ActionPanel.Section title={t.sectionTracklist}>
-      <Action
-        title={t.addToTracklist}
-        icon={Icon.Plus}
-        shortcut={Keyboard.Shortcut.Common.Pin}
-        onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
-      />
-    </ActionPanel.Section>
-  );
-
-  const renderItemActions = (p: Project, tracklist: ReactNode, trackCurrent: number) => (
+  const renderItemActions = (p: Project) => (
     <ActionPanel>
       <Action.Push
         title={t.setTrackNumber}
         icon={Icon.Hashtag}
         target={
           <SetTrackNumberForm
-            current={trackCurrent}
+            current={map[p.id] ?? nextNumber(map)}
             onSubmit={(n) => (n === null ? removeFromTracklist(p.id) : apply(assignNumber(map, p.id, n)))}
           />
         }
       />
       {renderPlayToggle(p)}
       {renderQueueCollection()}
+      {renderAddProjects()}
       {renderOpenInFinder(p)}
       {renderPlaybackControls()}
-      {tracklist}
+      {renderTracklistSection(p)}
       <ActionPanel.Section title={t.sectionDetails}>
         <Action.Push
           title={t.editInfo}
@@ -989,6 +1027,41 @@ function CollectionPanel({
       </ActionPanel.Section>
     </ActionPanel>
   );
+
+  // 已排序曲目的 accessories：角色 → 撞号警告 → 轨号 → 时长 → 能量。未排序不显示任何 accessory。
+  const trackAccessories = (p: Project): List.Item.Accessory[] => {
+    const num = map[p.id];
+    if (num === undefined) return [];
+    const info = infos[p.id];
+    const dup = (counts.get(num) ?? 0) > 1;
+    return [
+      ...rolePill(p),
+      ...(dup
+        ? [
+            {
+              icon: { source: Icon.Warning, tintColor: Color.Yellow },
+              tooltip: t.duplicateTrack,
+            } as List.Item.Accessory,
+          ]
+        : []),
+      { text: `Track ${String(num).padStart(2, "0")}` },
+      { text: info?.duration != null ? formatDuration(info.duration, durationMinuteDigits) : durationPlaceholder },
+      ...(ENERGY_ENABLED ? energyAccessories(energyLevelOf(p)) : []),
+    ];
+  };
+
+  // Tracklist 与 Unsorted 共用同一种行：差别只在 accessories 和 Tracklist 分区的动作。
+  const renderMember = (p: Project) =>
+    matchesFilter(p) ? (
+      <List.Item
+        key={p.id}
+        icon="icon.png"
+        title={p.title}
+        accessories={showDetail ? [] : trackAccessories(p)}
+        detail={showDetail ? renderDetail(p) : undefined}
+        actions={renderItemActions(p)}
+      />
+    ) : null;
 
   return (
     <List
@@ -1026,72 +1099,64 @@ function CollectionPanel({
       }
     >
       {tracked.length === 0 && unsorted.length === 0 ? (
-        <List.EmptyView title={t.noCategories} />
+        <List.EmptyView
+          title={t.noCategories}
+          actions={
+            <ActionPanel>
+              {renderAddProjects()}
+              {renderBackToProjects()}
+            </ActionPanel>
+          }
+        />
       ) : (
         <>
           {tracked.length > 0 && (
-            <List.Section title={tracklistTitle}>
-              {tracked.map((p, i) => {
-                if (!matchesFilter(p)) return null;
-                const num = map[p.id];
-                const dup = (counts.get(num) ?? 0) > 1;
-                const info = infos[p.id];
-                let level: number | null = null;
-                if (info) {
-                  const score = energyScore(info, crestRange, brightnessRange, activityRange);
-                  if (score !== null) level = energyLevelFromScore(score);
-                }
-                const accessories: List.Item.Accessory[] = [
-                  ...rolePill(p),
-                  ...(dup
-                    ? [
-                        {
-                          icon: { source: Icon.Warning, tintColor: Color.Yellow },
-                          tooltip: t.duplicateTrack,
-                        } as List.Item.Accessory,
-                      ]
-                    : []),
-                  { text: `Track ${String(num).padStart(2, "0")}` },
-                  {
-                    text:
-                      info?.duration != null
-                        ? formatDuration(info.duration, durationMinuteDigits)
-                        : durationPlaceholder,
-                  },
-                  ...(ENERGY_ENABLED ? energyAccessories(level) : []),
-                ];
-                return (
-                  <List.Item
-                    key={p.id}
-                    icon="icon.png"
-                    title={p.title}
-                    accessories={showDetail ? [] : accessories}
-                    detail={showDetail ? renderDetail(p) : undefined}
-                    actions={renderItemActions(p, renderTrackedTracklist(p, i), num)}
-                  />
-                );
-              })}
-            </List.Section>
+            <List.Section title={tracklistTitle}>{tracked.map((p) => renderMember(p))}</List.Section>
           )}
           {unsorted.length > 0 && (
-            <List.Section title={t.unsorted}>
-              {unsorted.map((p) => {
-                if (!matchesFilter(p)) return null;
-                return (
-                  <List.Item
-                    key={p.id}
-                    icon="icon.png"
-                    title={p.title}
-                    detail={showDetail ? renderDetail(p) : undefined}
-                    actions={renderItemActions(p, renderUnsortedTracklist(p), nextNumber(map))}
-                  />
-                );
-              })}
-            </List.Section>
+            <List.Section title={t.unsorted}>{unsorted.map((p) => renderMember(p))}</List.Section>
           )}
         </>
       )}
     </List>
+  );
+}
+
+function AddProjectsForm({
+  candidates,
+  onSubmit,
+}: {
+  candidates: Project[];
+  onSubmit: (ids: string[]) => Promise<void>;
+}) {
+  const { pop } = useNavigation();
+  const [ids, setIds] = useState<string[]>([]);
+  return (
+    <Form
+      navigationTitle={t.addProjects}
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm
+            title={t.add}
+            icon={Icon.Plus}
+            onSubmit={async () => {
+              await onSubmit(ids);
+              pop();
+            }}
+          />
+        </ActionPanel>
+      }
+    >
+      {candidates.length === 0 ? (
+        <Form.Description text={t.allProjectsInCollection} />
+      ) : (
+        <Form.TagPicker id="projects" title={t.projects} value={ids} onChange={setIds}>
+          {candidates.map((p) => (
+            <Form.TagPicker.Item key={p.id} value={p.id} title={p.title} icon="icon.png" />
+          ))}
+        </Form.TagPicker>
+      )}
+    </Form>
   );
 }
 

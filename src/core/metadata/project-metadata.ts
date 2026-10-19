@@ -201,3 +201,14 @@ export async function movePinnedProject(projectId: string, direction: "up" | "do
 
   await saveStore(store);
 }
+
+// 批量把项目加入某个合集（一次读—改—写回，避免逐个保存时并发互相覆盖）。没有元数据的项目用默认值补齐。
+export async function addProjectsToCollection(projectIds: string[], collectionId: string): Promise<void> {
+  const store = await getStore();
+  for (const id of projectIds) {
+    const meta = { ...EMPTY_PROJECT_METADATA, ...(store[id] ?? {}) };
+    if (meta.collectionIds.includes(collectionId)) continue;
+    store[id] = { ...meta, collectionIds: [...meta.collectionIds, collectionId] };
+  }
+  await saveStore(store);
+}

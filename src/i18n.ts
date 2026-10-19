@@ -180,6 +180,11 @@ type TranslationKeys = {
   sectionDangerZone: string;
   removeFromCollection: string;
   removeFromCollectionHint: string;
+  addProjects: string;
+  add: string;
+  projects: string;
+  projectsAdded: string;
+  allProjectsInCollection: string;
   noChanges: string;
   removeCollectionsConfirmTitle: string;
   removeCollectionsConfirmHint: string;
@@ -386,6 +391,11 @@ const translations: Record<Language, TranslationKeys> = {
     removeFromCollectionHint:
       "This clears the track's order and role in this collection. The project itself won't be deleted.",
     noChanges: "No Changes",
+    addProjects: "Add Projects…",
+    add: "Add",
+    projects: "Projects",
+    projectsAdded: "Projects Added",
+    allProjectsInCollection: "All projects are already in this collection.",
     removeCollectionsConfirmTitle: "Remove from collection?",
     removeCollectionsConfirmHint:
       "This project will be removed from {names}, clearing its order and role there. The project itself won't be deleted.",
