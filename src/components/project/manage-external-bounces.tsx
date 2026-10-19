@@ -3,26 +3,37 @@ import { useState } from "react";
 import { setExternalBounces } from "../../project-metadata";
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
-import type { Project } from "../../projects/types";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
 
-export function ManageExternalBounces({ project, onSaved }: { project: Project; onSaved: () => void }) {
+export function ManageExternalBounces({
+  projectId,
+  projectTitle,
+  externalFolders,
+  externalFiles,
+  onSaved,
+}: {
+  projectId: string;
+  projectTitle: string;
+  externalFolders: string[];
+  externalFiles: string[];
+  onSaved: (externalFolders: string[], externalFiles: string[]) => void;
+}) {
   const { pop } = useNavigation();
-  const [folders, setFolders] = useState<string[]>(project.externalBounceFolders);
-  const [files, setFiles] = useState<string[]>(project.externalBounceFiles);
+  const [folders, setFolders] = useState<string[]>(externalFolders);
+  const [files, setFiles] = useState<string[]>(externalFiles);
 
   async function handleSubmit() {
-    await setExternalBounces(project.id, folders, files);
+    await setExternalBounces(projectId, folders, files);
     await showToast({ style: Toast.Style.Success, title: t.externalBounceSaved });
-    onSaved();
+    onSaved(folders, files);
     pop();
   }
 
   return (
     <Form
-      navigationTitle={`${t.manageExternalBounce} — ${project.title}`}
+      navigationTitle={`${t.manageExternalBounce} — ${projectTitle}`}
       actions={
         <ActionPanel>
           <Action.SubmitForm title={t.save} icon={Icon.Check} onSubmit={handleSubmit} />

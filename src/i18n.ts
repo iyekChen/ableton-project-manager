@@ -201,7 +201,6 @@ type TranslationKeys = {
   renameBounce: string;
   bounceRenamed: string;
   bounceNameExists: string;
-  sectionExternalBounce: string;
   removeExternalSource: string;
   externalSourceRemoved: string;
   removeExternalSourceConfirmTitle: string;
@@ -418,7 +417,6 @@ const translations: Record<Language, TranslationKeys> = {
     renameBounce: "Rename Bounce",
     bounceRenamed: "Bounce Renamed",
     bounceNameExists: "A file with that name already exists",
-    sectionExternalBounce: "External Bounce",
     removeExternalSource: "Remove External Source",
     externalSourceRemoved: "External Source Removed",
     removeExternalSourceConfirmTitle: "Remove external source?",
@@ -631,7 +629,6 @@ const translations: Record<Language, TranslationKeys> = {
     renameBounce: "重命名 Bounce",
     bounceRenamed: "已重命名 Bounce",
     bounceNameExists: "已存在同名文件",
-    sectionExternalBounce: "外部 Bounce",
     removeExternalSource: "移除外部来源",
     externalSourceRemoved: "已移除外部来源",
     removeExternalSourceConfirmTitle: "移除外部来源？",

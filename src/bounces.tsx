@@ -26,6 +26,7 @@ import { groupItems } from "./grouping";
 import { collectBounces, resolveBouncesFolder } from "./projects/bounces";
 import type { BounceWithSource } from "./projects/bounces";
 import { setExternalBounces } from "./project-metadata";
+import { ManageExternalBounces } from "./components/project/manage-external-bounces";
 
 const t = getTranslations(getSettings().language);
 
@@ -210,7 +211,7 @@ export function Bounces(props: {
       icon: Icon.MinusCircle,
       title: t.removeExternalSourceConfirmTitle,
       message: `${t.removeExternalSourceConfirmHint}\n${sourcePath}`,
-      primaryAction: { title: t.removeExternalSource, style: Alert.ActionStyle.Default },
+      primaryAction: { title: t.removeExternalSource, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
     const nextFolders = folders.filter((f) => f !== sourcePath);
@@ -221,6 +222,26 @@ export function Bounces(props: {
     props.onChanged?.();
     await showToast({ style: Toast.Style.Success, title: t.externalSourceRemoved });
   };
+
+  const renderManageAction = () => (
+    <Action.Push
+      title={t.manageExternalBounce}
+      icon={Icon.Link}
+      target={
+        <ManageExternalBounces
+          projectId={props.projectId}
+          projectTitle={props.projectName}
+          externalFolders={folders}
+          externalFiles={files}
+          onSaved={(nextFolders, nextFiles) => {
+            setFolders(nextFolders);
+            setFiles(nextFiles);
+            props.onChanged?.();
+          }}
+        />
+      }
+    />
+  );
 
   const bySort = (items: BounceWithSource[]) =>
     sortItems(items, sortBy, (b) => ({ created: b.createdAt, modified: b.modifiedAt, name: b.name, size: b.size }));
@@ -263,7 +284,7 @@ export function Bounces(props: {
                 quickLook={b.available ? { path: b.path, name: b.name } : undefined}
                 actions={
                   <ActionPanel>
-                    {b.available && (
+                    {b.available ? (
                       <ActionPanel.Section>
                         <Action.ToggleQuickLook />
                         <Action.Open
@@ -272,6 +293,7 @@ export function Bounces(props: {
                           target={b.path}
                           shortcut={Keyboard.Shortcut.Common.Open}
                         />
+                        {renderManageAction()}
                         <Action.ShowInFinder
                           title={t.showInFinder}
                           path={b.path}
@@ -284,8 +306,18 @@ export function Bounces(props: {
                           target={<RenameBounceForm current={b.name} onSubmit={(name) => void handleRename(b, name)} />}
                         />
                       </ActionPanel.Section>
+                    ) : (
+                      <ActionPanel.Section>
+                        {renderManageAction()}
+                        <Action.CopyToClipboard
+                          content={b.path}
+                          title={t.copyBouncePath}
+                          icon={Icon.CopyClipboard}
+                          shortcut={Keyboard.Shortcut.Common.CopyPath}
+                        />
+                      </ActionPanel.Section>
                     )}
-                    {b.available ? (
+                    {b.available && (
                       <ActionPanel.Section title={t.sectionCopy}>
                         <Action
                           title={t.copyBounce}
@@ -306,15 +338,6 @@ export function Bounces(props: {
                           shortcut={Keyboard.Shortcut.Common.CopyPath}
                         />
                       </ActionPanel.Section>
-                    ) : (
-                      <ActionPanel.Section title={t.sectionCopy}>
-                        <Action.CopyToClipboard
-                          content={b.path}
-                          title={t.copyBouncePath}
-                          icon={Icon.CopyClipboard}
-                          shortcut={Keyboard.Shortcut.Common.CopyPath}
-                        />
-                      </ActionPanel.Section>
                     )}
                     <ActionPanel.Section title={t.sectionArrange}>
                       <BounceGroupSubmenu value={groupBy} onChange={setGroupBy} />
@@ -328,16 +351,7 @@ export function Bounces(props: {
                         onAction={pop}
                       />
                     </ActionPanel.Section>
-                    {b.source === "external" && b.externalSource !== undefined && (
-                      <ActionPanel.Section title={t.sectionExternalBounce}>
-                        <Action
-                          title={t.removeExternalSource}
-                          icon={Icon.MinusCircle}
-                          onAction={() => removeSource(b.externalSource as string)}
-                        />
-                      </ActionPanel.Section>
-                    )}
-                    {b.available && (
+                    {b.available ? (
                       <ActionPanel.Section title={t.sectionDangerZone}>
                         <Action
                           title={t.moveToTrash}
@@ -347,6 +361,19 @@ export function Bounces(props: {
                           onAction={() => handleTrash(b)}
                         />
                       </ActionPanel.Section>
+                    ) : (
+                      b.source === "external" &&
+                      b.externalSource !== undefined && (
+                        <ActionPanel.Section title={t.sectionDangerZone}>
+                          <Action
+                            title={t.removeExternalSource}
+                            icon={Icon.MinusCircle}
+                            style={Action.Style.Destructive}
+                            shortcut={Keyboard.Shortcut.Common.Remove}
+                            onAction={() => removeSource(b.externalSource as string)}
+                          />
+                        </ActionPanel.Section>
+                      )
                     )}
                   </ActionPanel>
                 }

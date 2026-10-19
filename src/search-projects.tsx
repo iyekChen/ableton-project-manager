@@ -673,7 +673,15 @@ export default function Command() {
               <Action.Push
                 title={t.manageExternalBounce}
                 icon={Icon.Link}
-                target={<ManageExternalBounces project={item} onSaved={reloadProjects} />}
+                target={
+                  <ManageExternalBounces
+                    projectId={item.id}
+                    projectTitle={item.title}
+                    externalFolders={item.externalBounceFolders}
+                    externalFiles={item.externalBounceFiles}
+                    onSaved={reloadProjects}
+                  />
+                }
               />
             </ActionPanel.Section>
             <ActionPanel.Section title={t.sectionCopy}>
