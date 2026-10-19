@@ -189,13 +189,23 @@ export function findLatestBounceWithSources(input: BounceSourceInput): string | 
   return latestPath;
 }
 
-/** 某个项目的最新 bounce（默认文件夹 + 外部来源）。播放、复制、排队、分析都走这里，避免各处口径不一。 */
-export function findLatestProjectBounce(
-  project: Pick<Project, "folderPath" | "externalBounceFolders" | "externalBounceFiles">,
-): string | null {
-  return findLatestBounceWithSources({
+type ProjectBounceSources = Pick<Project, "folderPath" | "externalBounceFolders" | "externalBounceFiles">;
+
+// 项目 → bounce 来源（默认文件夹 + 外部来源）。
+function projectSources(project: ProjectBounceSources) {
+  return {
     defaultFolder: resolveBouncesFolder(project.folderPath),
     externalFolders: project.externalBounceFolders,
     externalFiles: project.externalBounceFiles,
-  });
+  };
+}
+
+/** 某个项目的最新 bounce。播放、复制、排队、分析都走这里，避免各处口径不一。 */
+export function findLatestProjectBounce(project: ProjectBounceSources): string | null {
+  return findLatestBounceWithSources(projectSources(project));
+}
+
+/** 某个项目的 bounce 数（去重、排除不可用）。 */
+export function countProjectBounces(project: ProjectBounceSources): number {
+  return countBouncesWithSources(projectSources(project));
 }

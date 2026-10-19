@@ -52,7 +52,7 @@ import { Sets } from "@/core/ui/components/project/sets";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
 import { loadProjects } from "@/core/projects/load-projects";
-import { countBouncesWithSources, findLatestBounceWithSources, resolveBouncesFolder } from "@/core/projects/bounces";
+import { countProjectBounces, findLatestProjectBounce } from "@/core/projects/bounces";
 import { daw } from "@/daws";
 
 const settings = getSettings();
@@ -171,11 +171,7 @@ export default function Command() {
       // 有外部来源才走聚合器（默认文件夹 + 外部来源，去重、排除不可用）。
       const hasExternal = externalBounceFolders.length > 0 || externalBounceFiles.length > 0;
       const bouncesCount = hasExternal
-        ? countBouncesWithSources({
-            defaultFolder: resolveBouncesFolder(project.folderPath),
-            externalFolders: externalBounceFolders,
-            externalFiles: externalBounceFiles,
-          })
+        ? countProjectBounces({ folderPath: project.folderPath, externalBounceFolders, externalBounceFiles })
         : project.bouncesCount;
       return {
         ...project,
@@ -193,7 +189,7 @@ export default function Command() {
     setProjects(updatedProjects);
   }, []);
 
-  const reloadProjects = useCallback(async () => {
+  const runReload = useCallback(async (): Promise<string[]> => {
     try {
       baseProjectsRef.current = loadProjects(PROJECTS_ROOT);
       // 预先算好哪些项目会共用同一个笔记/歌词文件，读写时据此拦截。
@@ -248,6 +244,31 @@ export default function Command() {
     }
     return [] as string[];
   }, [applyMetadata]);
+
+  // 同一时刻只跑一次：执行中再被触发（目录监听、返回刷新、保存回调）只记一笔，结束后补跑一次。
+  // 避免两次 Finder 同步交错——后一次可能拿已被前一次清掉的空数据去覆盖删除记录。
+  const reloadInFlightRef = useRef<Promise<string[]> | null>(null);
+  const reloadPendingRef = useRef(false);
+
+  const reloadProjects = useCallback((): Promise<string[]> => {
+    if (reloadInFlightRef.current) {
+      reloadPendingRef.current = true;
+      return reloadInFlightRef.current;
+    }
+    const run = async (): Promise<string[]> => {
+      let orphans = await runReload();
+      while (reloadPendingRef.current) {
+        reloadPendingRef.current = false;
+        orphans = await runReload();
+      }
+      return orphans;
+    };
+    const promise = run().finally(() => {
+      reloadInFlightRef.current = null;
+    });
+    reloadInFlightRef.current = promise;
+    return promise;
+  }, [runReload]);
 
   useEffect(() => {
     async function load() {
@@ -322,11 +343,7 @@ export default function Command() {
 
   const playProjectBounce = useCallback(
     (project: Project) => {
-      const latestBouncePath = findLatestBounceWithSources({
-        defaultFolder: resolveBouncesFolder(project.folderPath),
-        externalFolders: project.externalBounceFolders,
-        externalFiles: project.externalBounceFiles,
-      });
+      const latestBouncePath = findLatestProjectBounce(project);
       if (!latestBouncePath) {
         void showToast({ style: Toast.Style.Failure, title: t.noBounces });
         return;
@@ -340,11 +357,7 @@ export default function Command() {
     [play],
   );
   const copyLatestBounce = useCallback(async (project: Project) => {
-    const latestBouncePath = findLatestBounceWithSources({
-      defaultFolder: resolveBouncesFolder(project.folderPath),
-      externalFolders: project.externalBounceFolders,
-      externalFiles: project.externalBounceFiles,
-    });
+    const latestBouncePath = findLatestProjectBounce(project);
     if (!latestBouncePath) {
       await showToast({ style: Toast.Style.Failure, title: t.noBounces });
       return;
