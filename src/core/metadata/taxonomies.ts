@@ -4,8 +4,8 @@ import { TRACK_ROLES } from "./track-role";
 
 // Stage 默认 7 档流水线(有序 + 配色)。
 export const STAGE_DEFAULTS: TaxonomyOption[] = [
-  { id: "draft", name: "Draft", color: Color.SecondaryText, order: 1 },
-  { id: "demo", name: "Demo", color: Color.PrimaryText, order: 2 },
+  { id: "demo", name: "Demo", color: Color.PrimaryText, order: 1 },
+  { id: "recording", name: "Recording", color: Color.Red, order: 2 },
   { id: "production", name: "Production", color: Color.Blue, order: 3 },
   { id: "mix", name: "Mix", color: Color.Yellow, order: 4 },
   { id: "master", name: "Master", color: Color.Orange, order: 5 },
