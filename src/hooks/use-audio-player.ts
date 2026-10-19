@@ -8,8 +8,8 @@ import {
   commandSeek,
   commandRestart,
   readPlayerStatus,
-} from "../audio-player";
-import type { AudioPlayerController, PlaybackStatus } from "../audio-player";
+} from "@/core/audio/audio-player";
+import type { AudioPlayerController, PlaybackStatus } from "@/core/audio/audio-player";
 
 interface UseAudioPlayerOptions {
   playerPath: string;

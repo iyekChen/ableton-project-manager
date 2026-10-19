@@ -36,7 +36,7 @@ import {
 import { RoleMap, assignRole, clearRole, getRoleMap, removeRoleMap, setRoleMap } from "./collection-roles";
 import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
 import { useAudioPlayer } from "./hooks/use-audio-player";
-import { ensureAudioPlayerBinary } from "./audio-player-path";
+import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
 import { displayDoc, readDocFile, stripFrontmatter } from "./docs";
 import { docPlaceholder, openDoc } from "./doc-actions";

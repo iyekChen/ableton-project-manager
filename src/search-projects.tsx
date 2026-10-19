@@ -20,7 +20,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import fs from "node:fs";
 import { useAudioPlayer } from "./hooks/use-audio-player";
-import { ensureAudioPlayerBinary } from "./audio-player-path";
+import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { getSettings } from "./settings";
 import { deleteProjectMetadata, getAllProjectMetadata, movePinnedProject, setProjectPinned } from "./project-metadata";
 import { removeProjectFromAllOrders } from "./collection-order";
