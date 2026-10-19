@@ -2,7 +2,7 @@ import { ActionPanel, Action, Form, showToast, Toast, useNavigation } from "@ray
 import { useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { docNameTakenBy } from "../../docs";
+import { docNameTakenBy } from "@/core/docs/docs";
 import { getSettings } from "../../settings";
 import { getTranslations } from "../../i18n";
 import type { Project } from "../../projects/types";

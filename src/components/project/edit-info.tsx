@@ -24,7 +24,7 @@ import {
   docRenameConflicts,
   renameDocFiles,
   type DocRenameResult,
-} from "../../docs";
+} from "@/core/docs/docs";
 import { getTrackMap, removeNumber, renameProjectInAllOrders, setTrackMap } from "../../collection-order";
 import { clearRole, getRoleMap, renameProjectInAllRoles, setRoleMap } from "../../collection-roles";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "../../taxonomies";

@@ -8,8 +8,8 @@ import {
   missingDocFolder,
   type DocKind,
 } from "./docs";
-import { getTranslations } from "./i18n";
-import { getSettings } from "./settings";
+import { getTranslations } from "@/i18n";
+import { getSettings } from "@/settings";
 
 const t = getTranslations(getSettings().language);
 

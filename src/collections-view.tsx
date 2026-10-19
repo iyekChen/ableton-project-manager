@@ -38,8 +38,8 @@ import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrack
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { findLatestBounce, resolveBouncesFolder } from "./projects/bounces";
-import { displayDoc, readDocFile, stripFrontmatter } from "./docs";
-import { docPlaceholder, openDoc } from "./doc-actions";
+import { displayDoc, readDocFile, stripFrontmatter } from "@/core/docs/docs";
+import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
 import {
   getPinnedCollections,
   movePinnedCollection,

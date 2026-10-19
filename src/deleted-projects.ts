@@ -1,6 +1,6 @@
 import { LocalStorage } from "@raycast/api";
 import { isCorruptJson, StorageUnreadableError } from "./storage";
-import { archiveDocFiles, restoreArchivedDoc, type ArchivedDoc } from "./docs";
+import { archiveDocFiles, restoreArchivedDoc, type ArchivedDoc } from "@/core/docs/docs";
 import { getAllProjectMetadata, saveProjectMetadata, type ProjectMetadata } from "./project-metadata";
 import { assignNumber, getProjectOrders, getTrackMap, nextNumber, setTrackMap } from "./collection-order";
 import { assignRole, getProjectRoles, getRoleMap, setRoleMap } from "./collection-roles";

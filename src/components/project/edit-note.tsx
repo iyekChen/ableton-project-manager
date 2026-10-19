@@ -1,7 +1,7 @@
 import { ActionPanel, Action, Form, showToast, Toast, useNavigation } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { readDocFile, stripFrontmatter, writeDocBody } from "../../docs";
-import { showDocError } from "../../doc-actions";
+import { readDocFile, stripFrontmatter, writeDocBody } from "@/core/docs/docs";
+import { showDocError } from "@/core/docs/doc-actions";
 import { getSettings } from "../../settings";
 import { getTranslations } from "../../i18n";
 import type { Project } from "../../projects/types";

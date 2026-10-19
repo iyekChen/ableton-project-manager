@@ -11,7 +11,7 @@ import {
 import { deleteProjectMetadata, renameProjectMetadata } from "./project-metadata";
 import { removeProjectFromAllOrders, renameProjectInAllOrders } from "./collection-order";
 import { removeProjectFromAllRoles, renameProjectInAllRoles } from "./collection-roles";
-import { renameDocFiles } from "./docs";
+import { renameDocFiles } from "@/core/docs/docs";
 import { archiveDeletedProject, hasDeletedRecord, pruneDeletedRecords } from "./deleted-projects";
 
 const SNAPSHOT_KEY = "project-snapshot";
