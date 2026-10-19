@@ -35,3 +35,28 @@ export const LocalStorage = {
     store.clear();
   },
 };
+
+// Cache 用内存 Map 模拟（同步读写，与真实 API 一致）。
+export class Cache {
+  private data = new Map<string, string>();
+
+  get(key: string): string | undefined {
+    return this.data.get(key);
+  }
+
+  set(key: string, value: string): void {
+    this.data.set(key, value);
+  }
+
+  has(key: string): boolean {
+    return this.data.has(key);
+  }
+
+  remove(key: string): boolean {
+    return this.data.delete(key);
+  }
+
+  clear(): void {
+    this.data.clear();
+  }
+}
