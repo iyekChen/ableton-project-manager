@@ -311,7 +311,8 @@ export function docFilePath(project: { title: string; folderPath: string }, kind
 // 替换模板占位符。
 function renderTemplate(template: string, project: { title: string }): string {
   const today = new Date().toISOString().slice(0, 10);
-  return template.replaceAll("{{title}}", project.title).replaceAll("{{date}}", today);
+  // 用函数形式替换：字符串形式会把标题里的 $&、$$ 等当成替换模式（如 “Money $$” 会变成 “Money $”）。
+  return template.replaceAll("{{title}}", () => project.title).replaceAll("{{date}}", () => today);
 }
 
 // 新建文件的初始内容：有模板文件就套模板，否则空。

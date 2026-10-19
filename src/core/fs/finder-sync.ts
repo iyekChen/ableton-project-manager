@@ -33,11 +33,13 @@ export type FinderSyncResult = {
   ambiguous: number;
   guardTripped: boolean;
   trashUnavailable: boolean;
+  /** Finder 改名后，笔记 / 歌词没能跟着改名的项目（新名字）。 */
+  docRenameIssues: string[];
 };
 
 /** 对比上次看到的项目清单，把在 Finder 里做的改名/删除补做一遍。
  *  改名：同一文件夹（创建时间 + inode）换了名字 → 迁移元数据、轨号、角色、文档名。
- *  删除：有完全磁盘访问权限时以废纸篓为准；没有时按"消失"推测（带外接盘保护）。
+ *  删除：只有能读到废纸篓、且确认项目就在废纸篓里时才处理；没有完全磁盘访问权限时不动数据，交给 Clean up Leftovers。
  *  歧义（多个候选）不自动处理。skipIds：正在由扩展自己执行 Move to Trash 的项目，已归档过。 */
 export async function syncFinderChanges(
   projects: Project[],
@@ -52,6 +54,7 @@ export async function syncFinderChanges(
     ambiguous: 0,
     guardTripped: false,
     trashUnavailable: false,
+    docRenameIssues: [],
   };
 
   if (previous) {
@@ -63,7 +66,8 @@ export async function syncFinderChanges(
       await renameProjectMetadata(from.id, to.id);
       await renameProjectInAllOrders(from.id, to.id);
       await renameProjectInAllRoles(from.id, to.id);
-      renameDocFiles(from.id, to.id);
+      const docs = renameDocFiles(from.id, to.id);
+      if (docs.conflicts.length > 0 || docs.failures.length > 0) result.docRenameIssues.push(to.id);
       result.renamed++;
     }
 

@@ -160,8 +160,18 @@ export function Bounces(props: {
       primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
-    await trash(bounce.path);
-    // 若删掉的正是被登记的外部文件来源，顺手移除记录（用户经 ASM 主动删除，确知已不存在）。
+    try {
+      await trash(bounce.path);
+    } catch (error) {
+      // 文件被占用、权限不足、外接盘已拔出等：如实提示，不更新登记记录。
+      await showToast({
+        style: Toast.Style.Failure,
+        title: t.trashFailed,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
+    // 若删掉的正是被登记的外部文件来源，顺手移除记录（用户经扩展主动删除，确知已不存在）。
     if (files.includes(bounce.path)) {
       const nextFiles = files.filter((f) => f !== bounce.path);
       setFiles(nextFiles);

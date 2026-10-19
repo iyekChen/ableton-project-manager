@@ -199,7 +199,7 @@ export default function Command() {
       // 预先算好哪些项目会共用同一个笔记/歌词文件，读写时据此拦截。
       setKnownProjectTitles(baseProjectsRef.current.map((p) => p.title));
       // 先补做在 Finder 里做的改名/删除，再处理放回、套用元数据。
-      const { guardTripped, ambiguous, trashUnavailable } = await syncFinderChanges(
+      const { guardTripped, ambiguous, trashUnavailable, docRenameIssues } = await syncFinderChanges(
         baseProjectsRef.current,
         PROJECTS_ROOT,
         trashingIds,
@@ -220,6 +220,9 @@ export default function Command() {
             },
           },
         });
+      } else if (docRenameIssues.length > 0) {
+        // 与扩展内改名一致：笔记 / 歌词没跟着迁移时如实告知。
+        await showToast({ style: Toast.Style.Failure, title: t.docRenameSkipped, message: docRenameIssues.join(", ") });
       }
       // 先还原从废纸篓放回的项目（标签/轨号/角色/文档），再套用元数据。
       const { restored, docConflicts } = await restorePutBackProjects(baseProjectsRef.current);
