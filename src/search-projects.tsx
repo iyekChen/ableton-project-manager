@@ -50,9 +50,9 @@ import { EditNote } from "@/core/ui/components/project/edit-note";
 import { DuplicateProject } from "@/core/ui/components/project/duplicate-project";
 import { Sets } from "@/core/ui/components/project/sets";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
-import type { Project } from "./projects/types";
-import { loadProjects } from "./projects/load-projects";
-import { countBouncesWithSources, findLatestBounceWithSources, resolveBouncesFolder } from "./projects/bounces";
+import type { Project } from "@/core/projects/types";
+import { loadProjects } from "@/core/projects/load-projects";
+import { countBouncesWithSources, findLatestBounceWithSources, resolveBouncesFolder } from "@/core/projects/bounces";
 import { daw } from "@/daws";
 
 const settings = getSettings();

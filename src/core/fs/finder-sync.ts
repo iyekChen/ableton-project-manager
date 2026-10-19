@@ -1,5 +1,5 @@
 import { LocalStorage } from "@raycast/api";
-import type { Project } from "@/projects/types";
+import type { Project } from "@/core/projects/types";
 import {
   diffSnapshots,
   isConfirmedInTrash,

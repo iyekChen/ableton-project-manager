@@ -25,14 +25,14 @@ import {
   fileSignature,
   getCachedAlsMetadataEntry,
   loadPersistentAlsMetadataCache,
-} from "@/projects/als-cache";
-import type { CachedAlsMetadata } from "@/projects/als-cache";
+} from "@/core/projects/als-cache";
+import type { CachedAlsMetadata } from "@/core/projects/als-cache";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
 import type { SortOption } from "@/core/ui/sorting";
 import { GroupBySubmenu, groupItems, useGroupOption } from "@/core/ui/grouping";
 import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
-import type { Project } from "@/projects/types";
+import type { Project } from "@/core/projects/types";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);

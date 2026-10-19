@@ -5,7 +5,7 @@ import path from "node:path";
 import { docNameTakenBy } from "@/core/docs/docs";
 import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
-import type { Project } from "@/projects/types";
+import type { Project } from "@/core/projects/types";
 
 const t = getTranslations(getSettings().language);
 

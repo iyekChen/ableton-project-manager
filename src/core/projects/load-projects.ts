@@ -3,7 +3,7 @@ import path from "node:path";
 import { Cache } from "@raycast/api";
 import type { Project } from "./types";
 import { countBounces, resolveBouncesFolder } from "./bounces";
-import { daw } from "../daws";
+import { daw } from "@/daws";
 
 const bounceCountCache = new Cache({ namespace: "bounce-count-cache" });
 
