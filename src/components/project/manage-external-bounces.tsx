@@ -1,6 +1,6 @@
 import { Action, ActionPanel, Form, Icon, showToast, Toast, useNavigation } from "@raycast/api";
 import { useState } from "react";
-import { setExternalBounces } from "../../project-metadata";
+import { setExternalBounces } from "@/core/metadata/project-metadata";
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
 

@@ -13,10 +13,10 @@ import {
   useNavigation,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { Taxonomy, TaxonomyOption } from "./taxonomy";
-import { stageTaxonomy, genreTaxonomy, roleTaxonomy } from "./taxonomies";
-import { deleteRoleEverywhere, renameRoleEverywhere } from "./collection-roles";
-import { removeGenreEverywhere, removeStageEverywhere } from "./project-metadata";
+import { Taxonomy, TaxonomyOption } from "@/core/metadata/taxonomy";
+import { stageTaxonomy, genreTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
+import { deleteRoleEverywhere, renameRoleEverywhere } from "@/core/metadata/collection-roles";
+import { removeGenreEverywhere, removeStageEverywhere } from "@/core/metadata/project-metadata";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
 

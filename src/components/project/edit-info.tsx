@@ -10,11 +10,11 @@ import {
   Toast,
   useNavigation,
 } from "@raycast/api";
-import type { TaxonomyOption } from "../../taxonomy";
+import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "../../project-metadata";
+import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "@/core/metadata/project-metadata";
 import { getTranslations } from "../../i18n";
 import { getSettings } from "../../settings";
 import {
@@ -25,9 +25,9 @@ import {
   renameDocFiles,
   type DocRenameResult,
 } from "@/core/docs/docs";
-import { getTrackMap, removeNumber, renameProjectInAllOrders, setTrackMap } from "../../collection-order";
-import { clearRole, getRoleMap, renameProjectInAllRoles, setRoleMap } from "../../collection-roles";
-import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "../../taxonomies";
+import { getTrackMap, removeNumber, renameProjectInAllOrders, setTrackMap } from "@/core/metadata/collection-order";
+import { clearRole, getRoleMap, renameProjectInAllRoles, setRoleMap } from "@/core/metadata/collection-roles";
+import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
 import type { Project } from "../../projects/types";
 
 const settings = getSettings();

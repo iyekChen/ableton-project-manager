@@ -22,7 +22,7 @@ import path from "node:path";
 import { getTranslations } from "./i18n";
 import { getSettings } from "./settings";
 import type { Project } from "./projects/types";
-import type { TaxonomyOption } from "./taxonomy";
+import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import {
   TrackMap,
   assignNumber,
@@ -32,8 +32,15 @@ import {
   removeTrackMap,
   setTrackMap,
   swapNumbers,
-} from "./collection-order";
-import { RoleMap, assignRole, clearRole, getRoleMap, removeRoleMap, setRoleMap } from "./collection-roles";
+} from "@/core/metadata/collection-order";
+import {
+  RoleMap,
+  assignRole,
+  clearRole,
+  getRoleMap,
+  removeRoleMap,
+  setRoleMap,
+} from "@/core/metadata/collection-roles";
 import { ENERGY_ENABLED, TrackInfo, energyLevelFromScore, energyScore, loadTrackInfos } from "./projects/track-info";
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
@@ -45,9 +52,9 @@ import {
   movePinnedCollection,
   removePinnedCollection,
   togglePinnedCollection,
-} from "./collection-pins";
-import { collectionTaxonomy } from "./taxonomies";
-import { getAllProjectMetadata, saveProjectMetadata } from "./project-metadata";
+} from "@/core/metadata/collection-pins";
+import { collectionTaxonomy } from "@/core/metadata/taxonomies";
+import { getAllProjectMetadata, saveProjectMetadata } from "@/core/metadata/project-metadata";
 import { EditInfo, type ProjectRename } from "./components/project/edit-info";
 import { EditNote } from "./components/project/edit-note";
 

@@ -25,7 +25,7 @@ import type { SortOption } from "./sorting";
 import { groupItems } from "./grouping";
 import { collectBounces, resolveBouncesFolder } from "./projects/bounces";
 import type { BounceWithSource } from "./projects/bounces";
-import { setExternalBounces } from "./project-metadata";
+import { setExternalBounces } from "@/core/metadata/project-metadata";
 import { ManageExternalBounces } from "./components/project/manage-external-bounces";
 
 const t = getTranslations(getSettings().language);

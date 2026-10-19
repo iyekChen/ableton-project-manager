@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
 import { removedProjectIds } from "./removed-projects";
-import { deleteProjectMetadata, getAllProjectMetadata } from "./project-metadata";
-import { removeProjectFromAllOrders } from "./collection-order";
-import { removeProjectFromAllRoles } from "./collection-roles";
+import { deleteProjectMetadata, getAllProjectMetadata } from "@/core/metadata/project-metadata";
+import { removeProjectFromAllOrders } from "@/core/metadata/collection-order";
+import { removeProjectFromAllRoles } from "@/core/metadata/collection-roles";
 import { archiveDeletedProject } from "./deleted-projects";
 
 const settings = getSettings();

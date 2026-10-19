@@ -8,9 +8,9 @@ import {
   trashDirsFor,
   type SnapshotEntry,
 } from "./project-snapshot";
-import { deleteProjectMetadata, renameProjectMetadata } from "./project-metadata";
-import { removeProjectFromAllOrders, renameProjectInAllOrders } from "./collection-order";
-import { removeProjectFromAllRoles, renameProjectInAllRoles } from "./collection-roles";
+import { deleteProjectMetadata, renameProjectMetadata } from "@/core/metadata/project-metadata";
+import { removeProjectFromAllOrders, renameProjectInAllOrders } from "@/core/metadata/collection-order";
+import { removeProjectFromAllRoles, renameProjectInAllRoles } from "@/core/metadata/collection-roles";
 import { renameDocFiles } from "@/core/docs/docs";
 import { archiveDeletedProject, hasDeletedRecord, pruneDeletedRecords } from "./deleted-projects";
 

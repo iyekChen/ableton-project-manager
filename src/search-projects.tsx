@@ -22,16 +22,21 @@ import fs from "node:fs";
 import { useAudioPlayer } from "./hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { getSettings } from "./settings";
-import { deleteProjectMetadata, getAllProjectMetadata, movePinnedProject, setProjectPinned } from "./project-metadata";
-import { removeProjectFromAllOrders } from "./collection-order";
-import { removeProjectFromAllRoles } from "./collection-roles";
+import {
+  deleteProjectMetadata,
+  getAllProjectMetadata,
+  movePinnedProject,
+  setProjectPinned,
+} from "@/core/metadata/project-metadata";
+import { removeProjectFromAllOrders } from "@/core/metadata/collection-order";
+import { removeProjectFromAllRoles } from "@/core/metadata/collection-roles";
 import { getTranslations } from "./i18n";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "./sorting";
 import type { SortOption } from "./sorting";
 import { GroupBySubmenu, groupItems, useGroupOption } from "./grouping";
 import { Bounces } from "./bounces";
-import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "./taxonomies";
-import type { TaxonomyOption } from "./taxonomy";
+import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "@/core/metadata/taxonomies";
+import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import { displayDoc, readDocFile, setKnownProjectTitles, stripFrontmatter } from "@/core/docs/docs";
 import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
 import { archiveDeletedProject, restorePutBackProjects } from "./deleted-projects";
