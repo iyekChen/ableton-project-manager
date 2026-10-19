@@ -70,7 +70,7 @@ Set these in Raycast → Extensions → **Ableton Project Manager**:
 ## How it works
 
 - **`.als` parsing** — sets are gzipped XML; BPM / key / time-signature are read with `fast-xml-parser` and `saxes`.
-- **Audio playback** — a small bundled Swift AVFoundation binary plays bounces; it runs as a single detached process so playback persists across views and after the window closes, controlled cross-process via small command / status files.
+- **Audio playback** — a small bundled Swift AVFoundation binary plays bounces; it runs as a single detached process so playback persists across views and after the window closes, controlled cross-process via small command / status files. The binary (`assets/audio-player`) is built from [`swift/AudioPlayer.swift`](swift/AudioPlayer.swift) by [`scripts/build-audio-player.sh`](scripts/build-audio-player.sh) (`npm run build:player`) as a universal arm64 + x86_64 executable.
 - **Storage** — taxonomies, pins, and per-project metadata are kept in Raycast LocalStorage, view preferences in Raycast Cache; notes and lyrics are Markdown files (optionally in your own folder).
 
 ## Keyboard shortcuts
@@ -89,6 +89,8 @@ Most actions are discoverable via the Action Panel (`⌘K`). A few highlights:
 | Edit Info                     | `⌘E`                                           |
 | Edit Note                     | `⌘⌥N`                                          |
 | Queue collection in player    | `⌘⇧↵`                                          |
+| Add projects to a collection  | `⌘N` (in a collection)                         |
+| Move track to top / bottom    | `⌘⇧↑` / `⌘⇧↓` (in a collection)                |
 | New Live Set                  | `⌘N`                                           |
 | Open in Finder                | `⌘⌥O`                                          |
 

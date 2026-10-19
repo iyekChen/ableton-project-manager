@@ -3,7 +3,8 @@
 	"name": "ableton-project-manager",
 	"title": "Ableton Project Manager",
 	"description": "Manage, search, and organize your Ableton Live projects — a DAW project manager for music producers",
-	"icon": "icon.png",	"author": "iyek",
+	"icon": "icon.png",
+	"author": "iyek",
 	"platforms": [
 		"macOS"
 	],
@@ -66,7 +67,8 @@
 			"default": false
 		},
 		{
-			"name": "weightCrest",			"title": "Energy Weight: Density (Crest)",
+			"name": "weightCrest",
+			"title": "Energy Weight: Density (Crest)",
 			"description": "How much a track's density/compression counts toward its energy. Weights are relative — only the differences between the three matter.",
 			"type": "dropdown",
 			"required": false,
@@ -149,7 +151,7 @@
 			"title": "Search Projects",
 			"description": "Search and open Ableton Live projects",
 			"mode": "view",
-			"subtitle": "Ableton Project Manager",
+			"subtitle": "Ableton Live",
 			"keywords": [
 				"ableton",
 				"ableton live",
@@ -168,7 +170,7 @@
 			"title": "Manage Tags",
 			"description": "Create and manage Stages, Genres, and Track Roles",
 			"mode": "view",
-			"subtitle": "Ableton Project Manager",
+			"subtitle": "Ableton Live",
 			"keywords": [
 				"ableton",
 				"ableton live",
