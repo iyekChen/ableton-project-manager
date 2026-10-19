@@ -26,7 +26,7 @@ import { groupItems } from "@/core/ui/grouping";
 import { collectBounces, resolveBouncesFolder } from "./projects/bounces";
 import type { BounceWithSource } from "./projects/bounces";
 import { setExternalBounces } from "@/core/metadata/project-metadata";
-import { ManageExternalBounces } from "./components/project/manage-external-bounces";
+import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 
 const t = getTranslations(getSettings().language);
 

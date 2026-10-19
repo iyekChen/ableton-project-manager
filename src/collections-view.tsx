@@ -55,8 +55,8 @@ import {
 } from "@/core/metadata/collection-pins";
 import { collectionTaxonomy } from "@/core/metadata/taxonomies";
 import { getAllProjectMetadata, saveProjectMetadata } from "@/core/metadata/project-metadata";
-import { EditInfo, type ProjectRename } from "./components/project/edit-info";
-import { EditNote } from "./components/project/edit-note";
+import { EditInfo, type ProjectRename } from "@/core/ui/components/project/edit-info";
+import { EditNote } from "@/core/ui/components/project/edit-note";
 
 const t = getTranslations(getSettings().language);
 

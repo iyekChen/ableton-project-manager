@@ -15,8 +15,8 @@ import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "@/core/metadata/project-metadata";
-import { getTranslations } from "../../i18n";
-import { getSettings } from "../../settings";
+import { getTranslations } from "@/i18n";
+import { getSettings } from "@/settings";
 import {
   alteredDocChars,
   docFileBaseName,
@@ -28,7 +28,7 @@ import {
 import { getTrackMap, removeNumber, renameProjectInAllOrders, setTrackMap } from "@/core/metadata/collection-order";
 import { clearRole, getRoleMap, renameProjectInAllRoles, setRoleMap } from "@/core/metadata/collection-roles";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
-import type { Project } from "../../projects/types";
+import type { Project } from "@/projects/types";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);

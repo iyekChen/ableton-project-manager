@@ -2,9 +2,9 @@ import { ActionPanel, Action, Form, showToast, Toast, useNavigation } from "@ray
 import { useEffect, useState } from "react";
 import { readDocFile, stripFrontmatter, writeDocBody } from "@/core/docs/docs";
 import { showDocError } from "@/core/docs/doc-actions";
-import { getSettings } from "../../settings";
-import { getTranslations } from "../../i18n";
-import type { Project } from "../../projects/types";
+import { getSettings } from "@/settings";
+import { getTranslations } from "@/i18n";
+import type { Project } from "@/projects/types";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);

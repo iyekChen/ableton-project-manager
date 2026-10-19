@@ -18,21 +18,21 @@ import {
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { daw } from "../../daws";
+import { daw } from "@/daws";
 import {
   cacheAlsMetadata,
   EMPTY_METADATA,
   fileSignature,
   getCachedAlsMetadataEntry,
   loadPersistentAlsMetadataCache,
-} from "../../projects/als-cache";
-import type { CachedAlsMetadata } from "../../projects/als-cache";
+} from "@/projects/als-cache";
+import type { CachedAlsMetadata } from "@/projects/als-cache";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
 import type { SortOption } from "@/core/ui/sorting";
 import { GroupBySubmenu, groupItems, useGroupOption } from "@/core/ui/grouping";
-import { getSettings } from "../../settings";
-import { getTranslations } from "../../i18n";
-import type { Project } from "../../projects/types";
+import { getSettings } from "@/settings";
+import { getTranslations } from "@/i18n";
+import type { Project } from "@/projects/types";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);

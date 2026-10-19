@@ -3,9 +3,9 @@ import { useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import { docNameTakenBy } from "@/core/docs/docs";
-import { getSettings } from "../../settings";
-import { getTranslations } from "../../i18n";
-import type { Project } from "../../projects/types";
+import { getSettings } from "@/settings";
+import { getTranslations } from "@/i18n";
+import type { Project } from "@/projects/types";
 
 const t = getTranslations(getSettings().language);
 
