@@ -2,7 +2,7 @@ import { getPreferenceValues } from "@raycast/api";
 import fs from "node:fs";
 import path from "node:path";
 import type { Project } from "./types";
-import { findLatestBounce, resolveBouncesFolder } from "./bounces";
+import { findLatestProjectBounce } from "./bounces";
 import { analyzeAudio } from "./audio-analysis";
 import {
   audioFileSignature,
@@ -77,7 +77,7 @@ async function loadAudioPart(project: Project): Promise<{
   brightness: number | null;
   activity: number | null;
 }> {
-  const bouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
+  const bouncePath = findLatestProjectBounce(project);
   if (!bouncePath) return { duration: null, rms: null, crest: null, brightness: null, activity: null };
 
   await loadPersistentAudioAnalysisCache();

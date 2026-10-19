@@ -1,6 +1,7 @@
 import { getPreferenceValues } from "@raycast/api";
 import fs from "node:fs";
 import path from "node:path";
+import type { Project } from "./types";
 
 export const AUDIO_EXTENSIONS = new Set([".wav", ".aif", ".aiff", ".mp3", ".m4a", ".flac"]);
 
@@ -186,4 +187,15 @@ export function findLatestBounceWithSources(input: BounceSourceInput): string | 
     }
   }
   return latestPath;
+}
+
+/** 某个项目的最新 bounce（默认文件夹 + 外部来源）。播放、复制、排队、分析都走这里，避免各处口径不一。 */
+export function findLatestProjectBounce(
+  project: Pick<Project, "folderPath" | "externalBounceFolders" | "externalBounceFiles">,
+): string | null {
+  return findLatestBounceWithSources({
+    defaultFolder: resolveBouncesFolder(project.folderPath),
+    externalFolders: project.externalBounceFolders,
+    externalFiles: project.externalBounceFiles,
+  });
 }

@@ -50,7 +50,7 @@ import {
 } from "@/core/projects/track-info";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
-import { findLatestBounce, resolveBouncesFolder } from "@/core/projects/bounces";
+import { findLatestProjectBounce } from "@/core/projects/bounces";
 import { displayDoc, readDocFile, stripFrontmatter } from "@/core/docs/docs";
 import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
 import {
@@ -398,7 +398,7 @@ function CollectionPanel({
     playerPath: PLAYER_PATH,
   });
   function playProjectBounce(project: Project) {
-    const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
+    const latestBouncePath = findLatestProjectBounce(project);
     if (!latestBouncePath) {
       void showToast({ style: Toast.Style.Failure, title: t.noBounces });
       return;
@@ -643,7 +643,7 @@ function CollectionPanel({
   async function queueCollection() {
     const entries: { title: string; path: string; duration: number }[] = [];
     for (const p of [...tracked, ...unsorted]) {
-      const bounce = findLatestBounce(resolveBouncesFolder(p.folderPath));
+      const bounce = findLatestProjectBounce(p);
       if (bounce) {
         entries.push({ title: p.title, path: bounce, duration: infos[p.id]?.duration ?? -1 });
       }
