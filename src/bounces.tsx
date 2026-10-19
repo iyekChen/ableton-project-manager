@@ -63,6 +63,12 @@ function formatSize(bytes: number): string {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
+// 拆出文件名主体与后缀：后缀在列表里用 subtitle 以次级灰显示。
+function splitExt(name: string): { stem: string; ext: string } {
+  const ext = path.extname(name);
+  return { stem: ext ? name.slice(0, -ext.length) : name, ext };
+}
+
 function BounceGroupSubmenu(props: { value: BounceGroup; onChange: (next: BounceGroup) => void }) {
   const options: [BounceGroup, string][] = [
     ["source", t.groupBySource],
@@ -178,7 +184,8 @@ export function Bounces(props: {
       return;
     }
     const ext = path.extname(bounce.path);
-    const finalName = path.extname(base) ? base : `${base}${ext}`;
+    // 输入框只含文件名主体（不带后缀），统一补回原后缀——即使名字里带点也不会误判成扩展名。
+    const finalName = `${base}${ext}`;
     const newPath = path.join(path.dirname(bounce.path), finalName);
     if (newPath === bounce.path) return;
     if (fs.existsSync(newPath)) {
@@ -276,7 +283,8 @@ export function Bounces(props: {
             {group.items.map((b) => (
               <List.Item
                 key={b.path}
-                title={b.name}
+                title={splitExt(b.name).stem}
+                subtitle={splitExt(b.name).ext}
                 icon="bounce.png"
                 accessories={
                   b.available ? [{ text: formatSize(b.size) }] : [{ tag: { value: t.unavailable, color: Color.Red } }]
@@ -303,7 +311,12 @@ export function Bounces(props: {
                           title={t.renameBounce}
                           icon={Icon.Pencil}
                           shortcut={Keyboard.Shortcut.Common.Edit}
-                          target={<RenameBounceForm current={b.name} onSubmit={(name) => void handleRename(b, name)} />}
+                          target={
+                            <RenameBounceForm
+                              current={splitExt(b.name).stem}
+                              onSubmit={(name) => void handleRename(b, name)}
+                            />
+                          }
                         />
                       </ActionPanel.Section>
                     ) : (
