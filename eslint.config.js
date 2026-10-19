@@ -3,6 +3,9 @@ const { defineConfig } = require("eslint/config");
 const raycastConfig = require("@raycast/eslint-config");
 
 module.exports = defineConfig([
+  // raycast-env.d.ts 是 ray 自动生成的产物（已 gitignore），其头部的 eslint-disable 注释随 ray 版本变化，
+  // 可能引用已被 typescript-eslint 移除的规则（如 ban-types）而报错。生成产物无需 lint，直接忽略。
+  { ignores: ["raycast-env.d.ts"] },
   ...raycastConfig,
   {
     rules: {
