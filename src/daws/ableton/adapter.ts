@@ -1,4 +1,4 @@
-import { getAlsMetadata } from "../../als-metadata";
+import { getAlsMetadata } from "./als-metadata";
 import type { DawAdapter, ProjectFileMetadata } from "../types";
 
 /** Ableton Live 适配器：工程文件为 .als（Set），元数据来自压缩的 ALS XML。 */

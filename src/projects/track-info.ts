@@ -10,7 +10,7 @@ import {
   getCachedAudioAnalysisEntry,
   loadPersistentAudioAnalysisCache,
 } from "./audio-cache";
-import { getAlsMetadata } from "../als-metadata";
+import { daw } from "@/daws";
 import {
   cacheAlsMetadata,
   fileSignature,
@@ -43,7 +43,7 @@ function latestAlsFile(folderPath: string): string | null {
   let latestMtime = Number.NEGATIVE_INFINITY;
 
   for (const entry of entries) {
-    if (!entry.endsWith(".als")) continue;
+    if (!entry.endsWith(daw.projectFileExtension)) continue;
     const full = path.join(folderPath, entry);
     try {
       const stats = fs.statSync(full);
@@ -144,12 +144,7 @@ async function loadAlsPart(
   }
 
   try {
-    const metadata = await getAlsMetadata(alsPath);
-    const normalized: CachedAlsMetadata = {
-      bpm: metadata.bpm,
-      timeSignature: metadata.timeSignature,
-      key: metadata.inKey === false ? null : metadata.key,
-    };
+    const normalized: CachedAlsMetadata = await daw.parseProjectFile(alsPath);
     try {
       if (fileSignature(fs.statSync(alsPath)) === signature) {
         cacheAlsMetadata(alsPath, signature, normalized);
