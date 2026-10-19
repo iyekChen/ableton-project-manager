@@ -22,7 +22,7 @@ import path from "node:path";
 import { getTranslations } from "@/i18n";
 import { getSettings } from "@/settings";
 import type { Project } from "@/core/projects/types";
-import type { TaxonomyOption } from "@/core/metadata/taxonomy";
+import { slugify, type TaxonomyOption } from "@/core/metadata/taxonomy";
 import {
   TrackMap,
   assignNumber,
@@ -103,15 +103,6 @@ function energyAccessories(level: number | null): List.Item.Accessory[] {
     const filled = level !== null && i < level;
     return filled ? { text: { value: "●", color } } : { text: { value: "○", color: Color.SecondaryText } };
   });
-}
-
-function slugify(name: string): string {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-  return slug || name.trim().toLowerCase();
 }
 
 // 合集名比较：忽略首尾空格与大小写。
@@ -412,7 +403,7 @@ function CollectionPanel({
 
   // 主操作：未播→播；本行正在播→暂停/续播。放每个 item 的第二个 Action（拿 ⌘Enter）。
   async function copyLatestBounce(project: Project) {
-    const latestBouncePath = findLatestBounce(resolveBouncesFolder(project.folderPath));
+    const latestBouncePath = findLatestProjectBounce(project);
     if (!latestBouncePath) {
       void showToast({ style: Toast.Style.Failure, title: t.noBounces });
       return;

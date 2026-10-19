@@ -13,7 +13,7 @@ import {
   useNavigation,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { Taxonomy, TaxonomyOption } from "@/core/metadata/taxonomy";
+import { slugify, Taxonomy, TaxonomyOption } from "@/core/metadata/taxonomy";
 import { stageTaxonomy, genreTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
 import { deleteRoleEverywhere, renameRoleEverywhere } from "@/core/metadata/collection-roles";
 import { removeGenreEverywhere, removeStageEverywhere } from "@/core/metadata/project-metadata";
@@ -29,15 +29,6 @@ const TAXONOMIES: Record<CategoryKind, Taxonomy> = {
   genre: genreTaxonomy,
   role: roleTaxonomy,
 };
-
-function slugify(name: string): string {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-  return slug || name.trim().toLowerCase();
-}
 
 const COLOR_CHOICES: { label: string; value: Color }[] = [
   { label: "Blue", value: Color.Blue },
