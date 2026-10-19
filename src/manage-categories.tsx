@@ -126,7 +126,7 @@ export default function Command() {
     };
 
     if (options.some((o) => o.id === option.id)) {
-      await showToast({ style: Toast.Style.Failure, title: t.nameExists });
+      await showToast({ style: Toast.Style.Failure, title: t.tagNameExists });
       return;
     }
 

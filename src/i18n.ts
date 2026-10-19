@@ -75,6 +75,7 @@ type TranslationKeys = {
   docConflictWarning: string;
   renameAnyway: string;
   collectionNameExists: string;
+  tagNameExists: string;
   projectsRestored: string;
   restoreDocConflict: string;
   docFolderMissing: string;
@@ -281,6 +282,7 @@ const translations: Record<Language, TranslationKeys> = {
       "The notes folder already contains {files}. After renaming, this project will show that existing file; its own notes (if any) keep the old file name.",
     renameAnyway: "Rename Anyway",
     collectionNameExists: "A collection with that name already exists",
+    tagNameExists: "A tag with that name already exists",
     projectsRestored: "Restored put-back project",
     restoreDocConflict: "Restored — but a note file name was already taken",
     docFolderMissing: "Notes / lyrics folder not found",
@@ -371,7 +373,7 @@ const translations: Record<Language, TranslationKeys> = {
     cleanUpRemovedConfirmMessage:
       "Its notes are archived to the Deleted Projects folder and its tags / track numbers are cleared. The project folder itself is not touched.",
     trashNoAccess: "Projects left the folder — data kept safe",
-    trashNoAccessHint: "Grant Full Disk Access to clean up automatically, or run Clean Up Removed Projects.",
+    trashNoAccessHint: "Grant Full Disk Access to clean up automatically, or run Clean up Leftovers.",
     openFullDiskAccess: "Open Full Disk Access Settings",
     loadProjectsFailed: "Couldn't Load Projects",
     loadProjectsFailedHint: "Check that your Projects folder exists and that Raycast can access it.",
