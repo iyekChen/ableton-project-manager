@@ -1,5 +1,4 @@
-import { LocalStorage } from "@raycast/api";
-import { listKeySuffixes, readJson, updateJson } from "@/core/fs/storage";
+import { listKeySuffixes, readJson, removeJson, updateJson } from "@/core/fs/storage";
 
 const KEY_PREFIX = "collection-roles:";
 
@@ -41,7 +40,7 @@ export async function setRoleMap(collectionId: string, map: RoleMap): Promise<vo
 
 /** 删除某个 collection 的角色映射（合集被删时清理） */
 export async function removeRoleMap(collectionId: string): Promise<void> {
-  await LocalStorage.removeItem(KEY_PREFIX + collectionId);
+  await removeJson(KEY_PREFIX + collectionId);
 }
 
 /** 从所有 collection 的角色映射里移除某项目（项目被删时清理） */

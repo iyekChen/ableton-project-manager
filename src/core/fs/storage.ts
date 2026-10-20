@@ -62,6 +62,23 @@ export function updateJson<T>(
   return result;
 }
 
+/** 删除某个 key。和 updateJson 共用同一条队列：先发出的写入不会在删除之后把数据写回来。 */
+export function removeJson(key: string): Promise<void> {
+  const run = () => LocalStorage.removeItem(key);
+  const result = (writeQueues.get(key) ?? Promise.resolve()).then(run);
+  writeQueues.set(
+    key,
+    result.catch(() => undefined),
+  );
+  return result;
+}
+
+/** 预检：数据存在但损坏时抛 StorageUnreadableError。
+ *  用于在做不可撤销的事（比如移动文件）之前，先确认之后的写入不会被拒。 */
+export async function assertWritable(key: string): Promise<void> {
+  if (isCorruptJson(await LocalStorage.getItem<string>(key))) throw new StorageUnreadableError();
+}
+
 /** LocalStorage 里以 prefix 开头的所有 key，去掉前缀后返回（按合集分 key 存的映射用）。 */
 export async function listKeySuffixes(prefix: string): Promise<string[]> {
   const all = await LocalStorage.allItems();

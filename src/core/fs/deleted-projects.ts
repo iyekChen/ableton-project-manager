@@ -1,4 +1,4 @@
-import { readJson, updateJson } from "./storage";
+import { assertWritable, readJson, updateJson } from "./storage";
 import { archiveDocFiles, restoreArchivedDoc, type ArchivedDoc } from "@/core/docs/docs";
 import { getAllProjectMetadata, restoreProjectMetadata, type ProjectMetadata } from "@/core/metadata/project-metadata";
 import { getProjectOrders, restoreTrackNumber } from "@/core/metadata/collection-order";
@@ -69,6 +69,8 @@ export async function pruneDeletedRecords(
 
 /** 项目移到废纸篓后、清理数据前调用：存下标签/合集轨号/角色，并把自定义文件夹里的文档移进 Deleted Projects/。 */
 export async function archiveDeletedProject(project: FolderRef & { title: string }): Promise<void> {
+  // 文档移走了就回不去：先确认删除记录写得进去，存储损坏时直接报错、什么都不动。
+  await assertWritable(STORAGE_KEY);
   const store = await getAllProjectMetadata();
   const orders = await getProjectOrders(project.id);
   const roles = await getProjectRoles(project.id);
