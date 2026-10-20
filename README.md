@@ -58,15 +58,32 @@ npm run build      # production build
 
 Set these in Raycast → Extensions → **Ableton Project Manager**:
 
-| Preference                                         | Required | Description                                                                                                                   |
-| -------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Projects Folder**                                | ✅       | Folder containing your Ableton Live projects.                                                                                 |
-| **Bounces Folder**                                 | —        | Subfolder name where bounces live (e.g. `Bounces`). Empty = project root.                                                     |
-| **Notes Folder**                                   | —        | Store notes as `.md` here (e.g. an Obsidian vault). Empty = `Notes.md` inside each project folder.                            |
-| **Lyrics Folder**                                  | —        | Store lyrics as `.md` here. Empty = `Lyrics.md` inside each project folder.                                                   |
-| **Notes Template / Lyrics Template**               | —        | Optional `.md` file used when a notes / lyrics file is first created. Supports `{{title}}` and `{{date}}`.                    |
-| **Strict Line Breaks**                             | —        | Off (default): a single line break shows as a line break, like Obsidian. On: standard Markdown. Display only.                 |
-| **Energy Weight: Density / Brightness / Activity** | —        | Relative weights (Off / Low / Normal / High) for the Collections energy scale. Only the differences between the three matter. |
+| Preference             | Required | Description                                                                                                                                                            |
+| ---------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Projects Folder**    | ✅       | The folder containing your Ableton Live projects.                                                                                                                      |
+| **Bounces Subfolder**  | —        | The subfolder inside each project where bounces are saved (e.g. `Bounces`). Leave empty to look directly in each project folder.                                       |
+| **Notes Folder**       | —        | The folder where notes are saved as `.md` files (e.g. an Obsidian vault). Leave empty to save `Notes.md` in each project folder.                                       |
+| **Lyrics Folder**      | —        | The folder where lyrics are saved as `.md` files. Leave empty to save `Lyrics.md` in each project folder.                                                              |
+| **Notes Template**     | —        | Optional `.md` file to use as the starting point for new notes. Supports `{{title}}` and `{{date}}`.                                                                   |
+| **Lyrics Template**    | —        | Optional `.md` file to use as the starting point for new lyrics. Supports `{{title}}` and `{{date}}`.                                                                  |
+| **Strict Line Breaks** | —        | Off: preserve single line breaks. On: follow standard Markdown line breaks (two trailing spaces or a blank line). Affects the preview only; your files aren’t changed. |
+| **Energy: Density**    | —        | How much density (crest factor) affects the energy score. Only the ratio between the three weights matters.                                                            |
+| **Energy: Brightness** | —        | How much brightness (spectral centroid) affects the energy score.                                                                                                      |
+| **Energy: Movement**   | —        | How much movement (spectral flux) affects the energy score.                                                                                                            |
+
+### How energy is calculated
+
+The latest bounce of each track is analyzed once, and the result is cached until the file changes. Three features are measured:
+
+- **Density**: the crest factor (peak ÷ RMS). A lower crest factor means a denser, more compressed sound, which counts as more energy.
+- **Brightness**: the spectral centroid, i.e. where the "center of mass" of the spectrum sits. Brighter, more treble-heavy tracks score higher.
+- **Movement**: the spectral flux, i.e. how much the spectrum changes from one moment to the next. Busier tracks score higher.
+
+Within a collection, each feature is scaled from 0 to 1 across its tracks: the lowest value becomes 0 and the highest becomes 1 (inverted for density). The three are then averaged using your weights (Off = 0, Low = 0.5, Normal = 1, High = 2), and the result is shown as 1–5 dots.
+
+- Energy is **relative to the collection**: the same track can show a different number of dots in different collections.
+- If a feature can't be measured (e.g. a silent bounce), the remaining features are reweighted. Tracks without a bounce show no energy.
+- Set all three weights to **Off** to hide energy entirely.
 
 ## Commands
 
