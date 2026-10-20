@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { docFileMtime, readDocFileForEdit, stripFrontmatter, writeDocBody } from "@/core/docs/docs";
 import { showDocError } from "@/core/docs/doc-actions";
 import { getSettings } from "@/settings";
+import { showFailure } from "@/core/ui/toast";
 import { getTranslations } from "@/i18n";
 import type { Project } from "@/core/projects/types";
 
@@ -22,8 +23,8 @@ export function EditNote({ project, onSaved }: { project: Project; onSaved: () =
     try {
       setNote(stripFrontmatter(readDocFileForEdit(project, "notes")));
       setLoaded(true);
-    } catch {
-      void showToast({ style: Toast.Style.Failure, title: t.docUnreadable, message: t.docUnreadableHint });
+    } catch (error) {
+      void showFailure(t.docUnreadable, error, { message: t.docUnreadableHint });
       pop();
     }
   }, [project, pop]);

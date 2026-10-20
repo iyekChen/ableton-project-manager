@@ -6,6 +6,7 @@ import { docNameTakenBy } from "@/core/docs/docs";
 import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
 import type { Project } from "@/core/projects/types";
+import { copyErrorAction } from "@/core/ui/toast";
 
 const t = getTranslations(getSettings().language);
 
@@ -68,6 +69,7 @@ export function DuplicateProject({ project, onDuplicated }: { project: Project; 
       toast.style = Toast.Style.Failure;
       toast.title = code === "ERR_FS_CP_EEXIST" ? t.nameExists : t.duplicateFailed;
       toast.message = error instanceof Error ? error.message : String(error);
+      toast.primaryAction = copyErrorAction(toast.title, error);
     }
   }
 

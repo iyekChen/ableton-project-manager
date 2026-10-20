@@ -1,13 +1,17 @@
+import fs from "node:fs";
 import { Toast, open, openExtensionPreferences, showToast } from "@raycast/api";
 import {
   DocFolderMissingError,
   DocSharedError,
+  docFilePath,
   docSharedWith,
   ensureDocFile,
   forgetDocFolder,
   missingDocFolder,
+  unreadableTemplate,
   type DocKind,
 } from "./docs";
+import { showFailure } from "@/core/ui/toast";
 import { getTranslations } from "@/i18n";
 import { getSettings } from "@/settings";
 
@@ -32,17 +36,24 @@ export async function showDocError(error: unknown): Promise<void> {
     });
     return;
   }
-  await showToast({
-    style: Toast.Style.Failure,
-    title: t.docSaveFailed,
-    message: error instanceof Error ? error.message : String(error),
-  });
+  await showFailure(t.docSaveFailed, error);
 }
 
 /** 打开（必要时按模板新建）某项目的文档；出错时提示而不是抛出。 */
 export async function openDoc(project: { title: string; folderPath: string }, kind: DocKind): Promise<void> {
   try {
+    // 文件还不存在时会按模板新建：新建后发现模板读不到就如实提示，不悄悄给一个空白文件。
+    const isNew = !fs.existsSync(docFilePath(project, kind));
     await open(ensureDocFile(project, kind));
+    const template = isNew ? unreadableTemplate(kind) : null;
+    if (template) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: t.templateMissing,
+        message: template,
+        primaryAction: { title: t.openPreferences, onAction: () => void openExtensionPreferences() },
+      });
+    }
   } catch (error) {
     await showDocError(error);
   }

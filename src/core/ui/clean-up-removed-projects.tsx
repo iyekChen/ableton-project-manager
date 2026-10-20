@@ -26,7 +26,7 @@ export function CleanUpRemovedProjects() {
       // 根目录读不到（如外接盘未连接）：不确定，不把一切都当成已移除。
       setRemovedIds([]);
       setIsLoading(false);
-      await showToast({ style: Toast.Style.Failure, title: t.manyProjectsMissing });
+      await showToast({ style: Toast.Style.Failure, title: t.manyProjectsMissing, message: t.manyProjectsMissingHint });
       return;
     }
     setRemovedIds(removed);

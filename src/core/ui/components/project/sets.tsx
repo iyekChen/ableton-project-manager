@@ -33,6 +33,7 @@ import { GroupBySubmenu, groupItems, useGroupOption } from "@/core/ui/grouping";
 import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
 import type { Project } from "@/core/projects/types";
+import { showFailure } from "@/core/ui/toast";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -113,11 +114,7 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
     try {
       fs.renameSync(set.path, target);
     } catch (error) {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: t.renameFailed,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      await showFailure(t.renameFailed, error);
       return;
     }
 
@@ -253,11 +250,7 @@ export function Sets({ project }: { project: Project }) {
       setReloadToken((n) => n + 1);
       await showToast({ style: Toast.Style.Success, title: t.setDuplicated, message: path.basename(target) });
     } catch (error) {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: t.duplicateSet,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      await showFailure(t.duplicateFailed, error);
     }
   };
 
@@ -274,11 +267,7 @@ export function Sets({ project }: { project: Project }) {
       setReloadToken((n) => n + 1);
       await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: set.name });
     } catch (error) {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: t.trashFailed,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      await showFailure(t.trashFailed, error);
     }
   };
 

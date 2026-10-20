@@ -67,7 +67,7 @@ import {
   getAllProjectMetadata,
   saveProjectMetadata,
 } from "@/core/metadata/project-metadata";
-import { StorageUnreadableError } from "@/core/fs/storage";
+import { showFailure } from "@/core/ui/toast";
 import { EditInfo, type ProjectRename } from "@/core/ui/components/project/edit-info";
 import { EditNote } from "@/core/ui/components/project/edit-note";
 
@@ -398,7 +398,7 @@ function CollectionPanel({
     }
     play(project.id, latestBouncePath, {
       onError: (message) => {
-        void showToast({ style: Toast.Style.Failure, title: t.playbackFailed, message });
+        void showFailure(t.playbackFailed, message);
       },
     });
   }
@@ -614,11 +614,8 @@ function CollectionPanel({
     try {
       await addProjectsToCollection(ids, collection.id);
     } catch (error) {
-      if (error instanceof StorageUnreadableError) {
-        await showToast({ style: Toast.Style.Failure, title: t.storageUnreadable });
-        return;
-      }
-      throw error;
+      await showFailure(t.saveFailed, error);
+      return;
     }
     await reloadMetadata();
     // 曲目信息只在打开面板时按快照加载一次；新成员单独补一次，否则时长等一直空着。
@@ -659,11 +656,7 @@ function CollectionPanel({
     try {
       fs.writeFileSync(playlistPath, lines.join("\n") + "\n");
     } catch (error) {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: t.queueFailed,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      await showFailure(t.queueFailed, error);
       return;
     }
 
@@ -816,6 +809,12 @@ function CollectionPanel({
   // 总时长：所有已排序曲目（不分 Stage）。
   const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
   const tracklistTitle = totalSeconds > 0 ? `${t.tracklistDuration} ${formatDuration(totalSeconds)}` : t.tracklist;
+
+  // 还在分析的曲目（时长、能量）：顶部显示加载条，第一个分区的副标题显示进度，分析完自动消失。
+  // 不用 Toast：播放中的常驻 Toast 会被盖掉。
+  const analyzedCount = members.filter((p) => p.id in infos).length;
+  const analyzing = !loading && analyzedCount < members.length;
+  const analyzingSubtitle = analyzing ? `${t.analyzing} ${analyzedCount}/${members.length}` : undefined;
 
   // 分钟位宽：本合集任一曲目 ≥ 10 分钟则补两位，保证时长列对齐。
   const longestTrackSeconds = members.reduce((max, p) => Math.max(max, infos[p.id]?.duration ?? 0), 0);
@@ -1055,7 +1054,7 @@ function CollectionPanel({
     <List
       navigationTitle={collection.name}
       searchBarPlaceholder={t.searchTracks}
-      isLoading={loading}
+      isLoading={loading || analyzing}
       isShowingDetail={showDetail}
       searchBarAccessory={
         <List.Dropdown tooltip={t.filter} value={selectedFilter} onChange={setSelectedFilter}>
@@ -1100,10 +1099,14 @@ function CollectionPanel({
       ) : (
         <>
           {tracked.length > 0 && (
-            <List.Section title={tracklistTitle}>{tracked.map((p) => renderMember(p))}</List.Section>
+            <List.Section title={tracklistTitle} subtitle={analyzingSubtitle}>
+              {tracked.map((p) => renderMember(p))}
+            </List.Section>
           )}
           {unsorted.length > 0 && (
-            <List.Section title={t.unsorted}>{unsorted.map((p) => renderMember(p))}</List.Section>
+            <List.Section title={t.unsorted} subtitle={tracked.length === 0 ? analyzingSubtitle : undefined}>
+              {unsorted.map((p) => renderMember(p))}
+            </List.Section>
           )}
         </>
       )}

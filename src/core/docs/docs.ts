@@ -308,6 +308,18 @@ export function docFilePath(project: { title: string; folderPath: string }, kind
   return path.join(folder, fileName);
 }
 
+/** 设了模板文件却读不到时返回它的路径（新建的文档会是空白）；没设或能读到返回 null。 */
+export function unreadableTemplate(kind: DocKind): string | null {
+  const file = getTemplateFile(kind);
+  if (!file) return null;
+  try {
+    fs.accessSync(file, fs.constants.R_OK);
+    return null;
+  } catch {
+    return file;
+  }
+}
+
 // 替换模板占位符。
 function renderTemplate(template: string, project: { title: string }): string {
   const today = new Date().toISOString().slice(0, 10);

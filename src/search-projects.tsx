@@ -41,7 +41,7 @@ import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import { displayDoc, readDocFile, setKnownProjectTitles, stripFrontmatter } from "@/core/docs/docs";
 import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
 import { archiveDeletedProject, assertDeletionWritable, restorePutBackProjects } from "@/core/fs/deleted-projects";
-import { StorageUnreadableError } from "@/core/fs/storage";
+import { showFailure } from "@/core/ui/toast";
 import { syncFinderChanges } from "@/core/fs/finder-sync";
 import { removedProjectIds } from "@/core/fs/removed-projects";
 import { CollectionList } from "@/core/ui/collections-view";
@@ -215,7 +215,11 @@ export default function Command() {
           secondaryAction: { title: t.openProjectsFolder, onAction: () => void open(PROJECTS_ROOT) },
         });
       } else if (ambiguous > 0) {
-        await showToast({ style: Toast.Style.Failure, title: t.ambiguousFinderChanges });
+        await showToast({
+          style: Toast.Style.Failure,
+          title: t.ambiguousFinderChanges,
+          message: t.ambiguousFinderChangesHint,
+        });
       } else if (trashUnavailable) {
         await showToast({
           style: Toast.Style.Failure,
@@ -248,11 +252,7 @@ export default function Command() {
       console.error("[Ableton Project Manager] Failed to load projects:", error);
       setProjects([]);
       setOrphanIds([]);
-      await showToast({
-        style: Toast.Style.Failure,
-        title: error instanceof StorageUnreadableError ? t.storageUnreadable : t.loadProjectsFailed,
-        message: error instanceof StorageUnreadableError ? undefined : t.loadProjectsFailedHint,
-      });
+      await showFailure(t.loadProjectsFailed, error, { message: t.loadProjectsFailedHint });
     }
     return [] as string[];
   }, [applyMetadata]);
@@ -362,7 +362,7 @@ export default function Command() {
       }
       play(project.id, latestBouncePath, {
         onError: (message) => {
-          void showToast({ style: Toast.Style.Failure, title: t.playbackFailed, message });
+          void showFailure(t.playbackFailed, message);
         },
       });
     },
@@ -418,11 +418,7 @@ export default function Command() {
       await reloadProjects();
       await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: project.title });
     } catch (error) {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: error instanceof StorageUnreadableError ? t.storageUnreadable : t.trashFailed,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      await showFailure(t.trashFailed, error);
     } finally {
       trashingIds.delete(project.id);
     }
@@ -686,11 +682,7 @@ export default function Command() {
                   try {
                     await open(abletonApp.path);
                   } catch (error) {
-                    await showToast({
-                      style: Toast.Style.Failure,
-                      title: t.newLiveSetFailed,
-                      message: error instanceof Error ? error.message : String(error),
-                    });
+                    await showFailure(t.newLiveSetFailed, error);
                   }
                 }}
               />
@@ -838,6 +830,19 @@ export default function Command() {
         </List.Dropdown>
       }
     >
+      {!isLoading && projects.length === 0 && (
+        <List.EmptyView
+          icon="icon.png"
+          title={t.noProjectsFound}
+          description={t.noProjectsFoundHint.replace("{folder}", PROJECTS_ROOT)}
+          actions={
+            <ActionPanel>
+              <Action title={t.openPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
+              <Action.Open title={t.openProjectsFolder} icon={Icon.Finder} target={PROJECTS_ROOT} />
+            </ActionPanel>
+          }
+        />
+      )}
       {pinnedProjects.length > 0 && <List.Section title={t.pinned}>{pinnedProjects.map(renderProject)}</List.Section>}
       {groupItems(
         unpinnedProjects,

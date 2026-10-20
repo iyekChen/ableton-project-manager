@@ -20,7 +20,7 @@ import {
   renameProjectMetadata,
   saveProjectMetadata,
 } from "@/core/metadata/project-metadata";
-import { StorageUnreadableError } from "@/core/fs/storage";
+import { showFailure } from "@/core/ui/toast";
 import { getTranslations } from "@/i18n";
 import { getSettings } from "@/settings";
 import {
@@ -141,8 +141,7 @@ export function EditInfo({
       await assertOrdersWritable();
       await assertRolesWritable();
     } catch (error) {
-      if (!(error instanceof StorageUnreadableError)) throw error;
-      await showToast({ style: Toast.Style.Failure, title: t.storageUnreadable });
+      await showFailure(t.storageUnreadable, error);
       return;
     }
 
@@ -214,11 +213,7 @@ export function EditInfo({
       try {
         fs.renameSync(project.folderPath, newPath);
       } catch (error) {
-        await showToast({
-          style: Toast.Style.Failure,
-          title: t.renameFailed,
-          message: error instanceof Error ? error.message : String(error),
-        });
+        await showFailure(t.renameFailed, error);
         return;
       }
 
@@ -231,11 +226,8 @@ export function EditInfo({
         // 预检之后仍写入失败：文件夹已改名，不往回改。下次加载列表时，Finder 同步会按 inode 认出这次改名，
         // 把没迁完的数据和文档补齐（每一步都能重复执行）；同步成功前不会更新项目清单，所以每次加载都会重试。
         onSaved({ oldId: project.id, newId: trimmedName, folderPath: newPath });
-        await showToast({
-          style: Toast.Style.Failure,
-          title: t.renameDataPending,
-          message: error instanceof Error ? error.message : String(error),
-        });
+        await showFailure(t.renameFailed, error);
+        return;
         pop();
         return;
       }

@@ -27,6 +27,7 @@ import { collectBounces, resolveBouncesFolder } from "@/core/projects/bounces";
 import type { BounceWithSource } from "@/core/projects/bounces";
 import { setExternalBounces } from "@/core/metadata/project-metadata";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
+import { showFailure } from "@/core/ui/toast";
 
 const t = getTranslations(getSettings().language);
 
@@ -164,11 +165,7 @@ export function Bounces(props: {
       await trash(bounce.path);
     } catch (error) {
       // 文件被占用、权限不足、外接盘已拔出等：如实提示，不更新登记记录。
-      await showToast({
-        style: Toast.Style.Failure,
-        title: t.trashFailed,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      await showFailure(t.trashFailed, error);
       return;
     }
     // 若删掉的正是被登记的外部文件来源，顺手移除记录（用户经扩展主动删除，确知已不存在）。
@@ -205,11 +202,7 @@ export function Bounces(props: {
     try {
       fs.renameSync(bounce.path, newPath);
     } catch (error) {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: t.renameFailed,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      await showFailure(t.renameFailed, error);
       return;
     }
     // 外部「文件」来源：路径即登记路径，改名后同步更新记录，否则记录会指向旧名而失效。
