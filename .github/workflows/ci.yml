@@ -26,6 +26,16 @@ jobs:
       - name: Test
         run: npm test
 
+      # 必须在 build:player 之前：编译会重写哈希文件，放在后面就永远比对通过。
+      - name: Check audio player matches source
+        run: |
+          expected="$(cat swift/AudioPlayer.swift.sha256)"
+          actual="$(shasum -a 256 swift/AudioPlayer.swift | awk '{print $1}')"
+          if [ "$expected" != "$actual" ]; then
+            echo "::error file=swift/AudioPlayer.swift::AudioPlayer.swift changed but assets/audio-player was not rebuilt. Run npm run build:player and commit both files."
+            exit 1
+          fi
+
       - name: Build audio player
         run: npm run build:player
 

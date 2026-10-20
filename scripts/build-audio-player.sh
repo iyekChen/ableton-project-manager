@@ -25,3 +25,7 @@ chmod +x "$OUT"
 
 echo "✅ Built universal binary at $OUT"
 lipo -info "$OUT"
+
+# 记下这次编译所用源码的哈希。CI 会比对它：源码改了却没重新编译，就报错。
+shasum -a 256 "$SRC" | awk '{print $1}' > "$SRC.sha256"
+echo "✅ Wrote source hash to swift/AudioPlayer.swift.sha256"
