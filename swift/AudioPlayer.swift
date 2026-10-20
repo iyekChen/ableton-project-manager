@@ -30,20 +30,22 @@ func runAnalyze(_ path: String) -> Never {
         var sumOfSquares = 0.0
         var sampleCount = 0
         var peak = 0.0
-        var mono: [Float] = [] // 下混单声道，供频谱分析
-        // 按总帧数一次预留：在循环里每块小步 reserveCapacity 会破坏倍增扩容，长文件会退化成反复整体复制。
-        mono.reserveCapacity(Int(max(0, file.length)))
+        // 下混单声道边读边送进频谱分析，不保存整段音频：内存不随时长增长。
+        let spectral = SpectralAnalyzer(sampleRate: sampleRate)
         let chunkFrames: AVAudioFrameCount = 65536
+        // 读取出错时离末尾不超过这么多帧，就当作读完（压缩格式的长度是估算值，留些余量）。
+        let endTolerance = max(Int64(chunkFrames), file.length / 100)
 
         while true {
             guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunkFrames) else {
                 break
             }
-            // 某些压缩格式（如 mp3）读到结尾会抛 EOF 错误而不是返回 0 帧，
-            // 这里把读取错误当作“到结尾”处理，用已读到的样本收尾。
             do {
                 try file.read(into: buffer)
             } catch {
+                // 某些压缩格式（如 mp3）读到结尾会抛错而不是返回 0 帧：接近末尾就当作读完，用已读到的样本收尾。
+                // 离末尾还远是真实的读取 / 解码错误：报错退出，不返回只算了一部分的结果。
+                if file.length - file.framePosition > endTolerance { throw error }
                 break
             }
             let frames = Int(buffer.frameLength)
@@ -61,7 +63,7 @@ func runAnalyze(_ path: String) -> Never {
                         if magnitude > peak { peak = magnitude }
                         frameSum += sample
                     }
-                    mono.append(Float(frameSum / Double(max(1, channelCount))))
+                    spectral.append(Float(frameSum / Double(max(1, channelCount))))
                 }
             }
         }
@@ -69,7 +71,7 @@ func runAnalyze(_ path: String) -> Never {
         let rms = sampleCount > 0 ? (sumOfSquares / Double(sampleCount)).squareRoot() : 0
         let clampedRms = max(0, min(1, rms))
         let clampedPeak = max(0, min(1, peak))
-        let features = spectralFeatures(mono: mono, sampleRate: sampleRate)
+        let features = spectral.result()
         print("{\"duration\": \(duration), \"rms\": \(clampedRms), \"peak\": \(clampedPeak), \"centroid\": \(features.centroid), \"flux\": \(features.flux)}")
         fflush(stdout)
         exit(EXIT_SUCCESS)
@@ -79,45 +81,64 @@ func runAnalyze(_ path: String) -> Never {
     }
 }
 
-// 加窗 STFT，一趟算出两个频谱特征：
+// 加窗 STFT，边读边算：帧不重叠（hop = fftSize），所以只要攒满一帧就处理，不必保存整段音频。
 //  - centroid（亮度）：功率加权频谱质心 / Nyquist，归一到 0..1。
 //    实数 FFT 的 2 倍缩放在这个比值里会上下约掉，故无需额外缩放。
-//  - flux（活动量）：相邻帧“L1 归一化幅度谱”的半波正向差之和，逐帧平均；对响度不敏感，落在 0..1。
+//  - flux（活动量）：相邻帧"L1 归一化幅度谱"的半波正向差之和，逐帧平均；对响度不敏感，落在 0..1。
 // 样本不足一帧 / 全静音 / FFT 初始化失败 → centroid 返回 -1；不足两帧 → flux 返回 -1（n/a）。
-func spectralFeatures(mono: [Float], sampleRate: Double) -> (centroid: Double, flux: Double) {
-    let log2n: vDSP_Length = 11
-    let fftSize = 1 << Int(log2n) // 2048
-    let halfSize = fftSize / 2
-    guard mono.count >= fftSize, sampleRate > 0,
-          let setup = vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2)) else {
-        return (-1, -1)
-    }
-    defer { vDSP_destroy_fftsetup(setup) }
+// 末尾不足一帧的样本丢弃。
+final class SpectralAnalyzer {
+    private static let log2n: vDSP_Length = 11
+    private static let fftSize = 1 << 11 // 2048
+    private static let halfSize = fftSize / 2
 
-    var window = [Float](repeating: 0, count: fftSize)
-    vDSP_hann_window(&window, vDSP_Length(fftSize), Int32(vDSP_HANN_DENORM))
+    private let sampleRate: Double
+    private let setup: FFTSetup?
 
-    var windowed = [Float](repeating: 0, count: fftSize)
-    var realp = [Float](repeating: 0, count: halfSize)
-    var imagp = [Float](repeating: 0, count: halfSize)
-    var magsSquared = [Float](repeating: 0, count: halfSize)
-    var mags = [Float](repeating: 0, count: halfSize)
+    private var window = [Float](repeating: 0, count: SpectralAnalyzer.fftSize)
+    private var frame = [Float](repeating: 0, count: SpectralAnalyzer.fftSize)
+    private var filled = 0
 
-    var weightedFreqSum = 0.0
-    var powerSum = 0.0
+    private var windowed = [Float](repeating: 0, count: SpectralAnalyzer.fftSize)
+    private var realp = [Float](repeating: 0, count: SpectralAnalyzer.halfSize)
+    private var imagp = [Float](repeating: 0, count: SpectralAnalyzer.halfSize)
+    private var magsSquared = [Float](repeating: 0, count: SpectralAnalyzer.halfSize)
+    private var mags = [Float](repeating: 0, count: SpectralAnalyzer.halfSize)
+
+    private var weightedFreqSum = 0.0
+    private var powerSum = 0.0
 
     // flux：保存上一帧的 L1 归一化幅度谱（下标 1..<halfSize，bin0 不计）。
-    var prevNorm = [Double](repeating: 0, count: halfSize)
-    var hasPrev = false
-    var fluxSum = 0.0
-    var fluxFrames = 0
+    private var prevNorm = [Double](repeating: 0, count: SpectralAnalyzer.halfSize)
+    private var hasPrev = false
+    private var fluxSum = 0.0
+    private var fluxFrames = 0
 
-    let hop = fftSize // 不重叠
-    var start = 0
-    while start + fftSize <= mono.count {
-        mono.withUnsafeBufferPointer { mptr in
-            vDSP_vmul(mptr.baseAddress! + start, 1, window, 1, &windowed, 1, vDSP_Length(fftSize))
+    init(sampleRate: Double) {
+        self.sampleRate = sampleRate
+        setup = sampleRate > 0 ? vDSP_create_fftsetup(SpectralAnalyzer.log2n, FFTRadix(kFFTRadix2)) : nil
+        vDSP_hann_window(&window, vDSP_Length(SpectralAnalyzer.fftSize), Int32(vDSP_HANN_DENORM))
+    }
+
+    deinit {
+        if let setup { vDSP_destroy_fftsetup(setup) }
+    }
+
+    func append(_ sample: Float) {
+        frame[filled] = sample
+        filled += 1
+        if filled == SpectralAnalyzer.fftSize {
+            processFrame()
+            filled = 0
         }
+    }
+
+    private func processFrame() {
+        guard let setup else { return }
+        let fftSize = SpectralAnalyzer.fftSize
+        let halfSize = SpectralAnalyzer.halfSize
+
+        vDSP_vmul(frame, 1, window, 1, &windowed, 1, vDSP_Length(fftSize))
         // 实数 FFT：ctoz 打包成 split complex（realp[0]=DC, imagp[0]=Nyquist），再 zrip
         realp.withUnsafeMutableBufferPointer { rp in
             imagp.withUnsafeMutableBufferPointer { ip in
@@ -127,7 +148,7 @@ func spectralFeatures(mono: [Float], sampleRate: Double) -> (centroid: Double, f
                         vDSP_ctoz(cp, 2, &split, 1, vDSP_Length(halfSize))
                     }
                 }
-                vDSP_fft_zrip(setup, &split, 1, log2n, FFTDirection(FFT_FORWARD))
+                vDSP_fft_zrip(setup, &split, 1, SpectralAnalyzer.log2n, FFTDirection(FFT_FORWARD))
                 vDSP_zvmags(&split, 1, &magsSquared, 1, vDSP_Length(halfSize)) // 功率，用于 centroid
                 vDSP_zvabs(&split, 1, &mags, 1, vDSP_Length(halfSize)) // 幅度，用于 flux
             }
@@ -160,20 +181,22 @@ func spectralFeatures(mono: [Float], sampleRate: Double) -> (centroid: Double, f
             }
             hasPrev = true
         }
-
-        start += hop
     }
 
-    let centroid: Double
-    if powerSum > 0 {
-        let nyquist = sampleRate / 2
-        centroid = max(0, min(1, (weightedFreqSum / powerSum) / nyquist))
-    } else {
-        centroid = -1
-    }
+    func result() -> (centroid: Double, flux: Double) {
+        guard setup != nil else { return (-1, -1) }
 
-    let flux = fluxFrames > 0 ? max(0, min(1, fluxSum / Double(fluxFrames))) : -1
-    return (centroid, flux)
+        let centroid: Double
+        if powerSum > 0 {
+            let nyquist = sampleRate / 2
+            centroid = max(0, min(1, (weightedFreqSum / powerSum) / nyquist))
+        } else {
+            centroid = -1
+        }
+
+        let flux = fluxFrames > 0 ? max(0, min(1, fluxSum / Double(fluxFrames))) : -1
+        return (centroid, flux)
+    }
 }
 
 let arguments = CommandLine.arguments
