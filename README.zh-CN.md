@@ -20,9 +20,17 @@
 
 ## 截图
 
-<!-- 发布前把 Store 截图放进 `metadata/`。 -->
+![Search Projects](metadata/ableton-project-manager-1.png)
 
-_即将补充。_
+![View Sets](metadata/ableton-project-manager-2.png)
+
+![Browse Bounces](metadata/ableton-project-manager-3.png)
+
+![Browse Collections](metadata/ableton-project-manager-4.png)
+
+![Collections view](metadata/ableton-project-manager-5.png)
+
+![Manage Tags](metadata/ableton-project-manager-6.png)
 
 ## 环境要求
 

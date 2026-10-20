@@ -18,9 +18,17 @@ A Raycast extension to browse, organize, and preview your Ableton Live projects 
 
 ## Screenshots
 
-<!-- Add store screenshots to `metadata/` before publishing. -->
+![Search Projects](metadata/ableton-project-manager-1.png)
 
-_Coming soon._
+![View Sets](metadata/ableton-project-manager-2.png)
+
+![Browse Bounces](metadata/ableton-project-manager-3.png)
+
+![Browse Collections](metadata/ableton-project-manager-4.png)
+
+![Collections view](metadata/ableton-project-manager-5.png)
+
+![Manage Tags](metadata/ableton-project-manager-6.png)
 
 ## Requirements
 
