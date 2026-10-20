@@ -1054,7 +1054,7 @@ function CollectionPanel({
   return (
     <List
       navigationTitle={collection.name}
-      searchBarPlaceholder={t.searchTracks}
+      searchBarPlaceholder={t.searchTracksInCollection}
       isLoading={loading}
       isShowingDetail={showDetail}
       searchBarAccessory={

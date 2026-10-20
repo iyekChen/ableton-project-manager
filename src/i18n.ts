@@ -5,7 +5,7 @@ type TranslationKeys = {
   searchSets: string;
   searchBounces: string;
   searchCollections: string;
-  searchTracks: string;
+  searchTracksInCollection: string;
   searchStages: string;
   searchGenres: string;
   searchRoles: string;
@@ -224,7 +224,7 @@ const translations: Record<Language, TranslationKeys> = {
     searchSets: "Search Sets",
     searchBounces: "Search Bounces",
     searchCollections: "Search Collections",
-    searchTracks: "Search Tracks",
+    searchTracksInCollection: "Search Tracks in Collection",
     searchStages: "Search Stages",
     searchGenres: "Search Genres",
     searchRoles: "Search Roles",
