@@ -289,7 +289,7 @@ export function Sets({ project }: { project: Project }) {
   }));
 
   return (
-    <List isLoading={isLoading} isShowingDetail navigationTitle={project.title}>
+    <List isLoading={isLoading} isShowingDetail navigationTitle={project.title} searchBarPlaceholder={t.searchSets}>
       {groupItems(
         sortedSets,
         groupBy,
@@ -306,9 +306,9 @@ export function Sets({ project }: { project: Project }) {
                 <List.Item.Detail
                   metadata={
                     <List.Item.Detail.Metadata>
-                      <List.Item.Detail.Metadata.Label title="Key" text={set.key ?? "—"} />
-                      <List.Item.Detail.Metadata.Label title="BPM" text={set.bpm === null ? "—" : String(set.bpm)} />
-                      <List.Item.Detail.Metadata.Label title="Time Signature" text={set.timeSignature ?? "—"} />
+                      <List.Item.Detail.Metadata.Label title="Key" text={set.key ?? ""} />
+                      <List.Item.Detail.Metadata.Label title="BPM" text={set.bpm === null ? "" : String(set.bpm)} />
+                      <List.Item.Detail.Metadata.Label title="Time Signature" text={set.timeSignature ?? ""} />
                     </List.Item.Detail.Metadata>
                   }
                 />

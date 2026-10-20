@@ -284,7 +284,11 @@ export function Bounces(props: {
         );
 
   return (
-    <List isLoading={isLoading} navigationTitle={`${t.browseBounces} — ${props.projectName}`}>
+    <List
+      isLoading={isLoading}
+      navigationTitle={`${t.browseBounces} — ${props.projectName}`}
+      searchBarPlaceholder={t.searchBounces}
+    >
       {groups.length === 0 ? (
         <List.EmptyView icon={Icon.Waveform} title={t.noBounces} />
       ) : (

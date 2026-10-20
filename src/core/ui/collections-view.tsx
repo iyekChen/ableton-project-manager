@@ -330,7 +330,7 @@ export function CollectionList({
   };
 
   return (
-    <List navigationTitle={t.browseCollections}>
+    <List navigationTitle={t.browseCollections} searchBarPlaceholder={t.searchCollections}>
       {collections.length === 0 ? (
         <List.EmptyView title={t.noCategories} actions={<ActionPanel>{createAction}</ActionPanel>} />
       ) : (
@@ -1054,6 +1054,7 @@ function CollectionPanel({
   return (
     <List
       navigationTitle={collection.name}
+      searchBarPlaceholder={t.searchTracks}
       isLoading={loading}
       isShowingDetail={showDetail}
       searchBarAccessory={

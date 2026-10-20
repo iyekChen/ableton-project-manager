@@ -62,7 +62,7 @@ export function CleanUpRemovedProjects() {
   }
 
   return (
-    <List isLoading={isLoading} navigationTitle={t.cleanUpLeftovers}>
+    <List isLoading={isLoading} navigationTitle={t.cleanUpLeftovers} searchBarPlaceholder={t.searchLeftovers}>
       <List.EmptyView icon={Icon.CheckCircle} title={t.noRemovedProjects} />
       {removedIds.map((id) => (
         <List.Item

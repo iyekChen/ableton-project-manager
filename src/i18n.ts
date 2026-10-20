@@ -2,6 +2,14 @@ import { Language } from "./settings";
 
 type TranslationKeys = {
   searchProjects: string;
+  searchSets: string;
+  searchBounces: string;
+  searchCollections: string;
+  searchTracks: string;
+  searchStages: string;
+  searchGenres: string;
+  searchRoles: string;
+  searchLeftovers: string;
   viewSets: string;
   openInAbletonLive: string;
   editInfo: string;
@@ -213,6 +221,14 @@ type TranslationKeys = {
 const translations: Record<Language, TranslationKeys> = {
   en: {
     searchProjects: "Search Projects",
+    searchSets: "Search Sets",
+    searchBounces: "Search Bounces",
+    searchCollections: "Search Collections",
+    searchTracks: "Search Tracks",
+    searchStages: "Search Stages",
+    searchGenres: "Search Genres",
+    searchRoles: "Search Roles",
+    searchLeftovers: "Search Leftovers",
     viewSets: "View Sets",
     openInAbletonLive: "Open in Ableton Live",
     editInfo: "Edit Info",

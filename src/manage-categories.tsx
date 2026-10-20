@@ -24,6 +24,13 @@ const t = getTranslations(getSettings().language);
 
 type CategoryKind = "stage" | "genre" | "role";
 
+// 搜索栏占位文字跟着下拉框切换。
+const SEARCH_PLACEHOLDERS: Record<CategoryKind, string> = {
+  stage: t.searchStages,
+  genre: t.searchGenres,
+  role: t.searchRoles,
+};
+
 const TAXONOMIES: Record<CategoryKind, Taxonomy> = {
   stage: stageTaxonomy,
   genre: genreTaxonomy,
@@ -222,6 +229,7 @@ export default function Command() {
   return (
     <List
       isLoading={isLoading}
+      searchBarPlaceholder={SEARCH_PLACEHOLDERS[kind]}
       searchBarAccessory={
         <List.Dropdown tooltip={t.tag} value={kind} onChange={(value) => setKind(value as CategoryKind)}>
           <List.Dropdown.Item title={t.stage} value="stage" />
