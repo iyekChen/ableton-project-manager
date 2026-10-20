@@ -219,6 +219,21 @@ type TranslationKeys = {
   externalSourceRemoved: string;
   removeExternalSourceConfirmTitle: string;
   removeExternalSourceConfirmHint: string;
+  copyError: string;
+  saveFailed: string;
+  storageUnreadableHint: string;
+  ambiguousFinderChangesHint: string;
+  renameDataPendingHint: string;
+  assignToProjects: string;
+  assignFormHint: string;
+  assignStageMoveHint: string;
+  tagsAssigned: string;
+  deleteTagInUse: string;
+  deleteRoleInUse: string;
+  noProjectsFound: string;
+  noProjectsFoundHint: string;
+  templateMissing: string;
+  analyzing: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -312,7 +327,7 @@ const translations: Record<Language, TranslationKeys> = {
       "This note was edited outside Raycast (e.g. in Obsidian) after you opened it. Saving will replace those changes.",
     overwriteDoc: "Overwrite",
     projectsRestored: "Restored put-back project",
-    restoreDocConflict: "Restored — but a note file name was already taken",
+    restoreDocConflict: "Restored — a note name was taken",
     docFolderMissing: "Notes / lyrics folder not found",
     docFolderMissingHint: "Choose it again in Extension Preferences. Nothing will be written until then.",
     openPreferences: "Open Extension Preferences",
@@ -322,11 +337,11 @@ const translations: Record<Language, TranslationKeys> = {
     manyProjectsMissingHint:
       "Most projects disappeared at once. Is the drive connected? If you moved the folder, update it in preferences.",
     openProjectsFolder: "Open Projects Folder",
-    ambiguousFinderChanges: "Some changes made in Finder couldn't be matched safely and were skipped",
+    ambiguousFinderChanges: "Some Finder changes skipped",
     docShared: "Shares a note file with another project",
     docSharedHint:
       "This project's notes / lyrics file would be the same as {names}'s. Rename this project so each keeps its own file — nothing is read or written until then.",
-    docNameTaken: "Another project would use the same note file",
+    docNameTaken: "Note file name already used",
     renameConfirmTitle: "Rename project?",
     renameConfirmMessage:
       "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
@@ -410,8 +425,8 @@ const translations: Record<Language, TranslationKeys> = {
     loadProjectsFailedHint: "Check that your Projects folder exists and that Raycast can access it.",
     noNotesYet: "_No notes yet_",
     noLyricsYet: "_No lyrics yet_",
-    storageUnreadable: "Couldn't read your saved data — the change was skipped to avoid overwriting it",
-    renameDataPending: "Renamed — some tags will catch up next time the list loads",
+    storageUnreadable: "Saved data unreadable — nothing changed",
+    renameDataPending: "Renamed — tags not moved yet",
     docUnreadable: "Couldn't read this note",
     docUnreadableHint:
       "The file exists but couldn't be opened (e.g. not downloaded from iCloud yet). Nothing was changed.",
@@ -454,6 +469,22 @@ const translations: Record<Language, TranslationKeys> = {
     removeExternalSourceConfirmTitle: "Remove external source?",
     removeExternalSourceConfirmHint:
       "This only removes it from this project's bounces. The file on disk is not deleted.",
+    copyError: "Copy Error",
+    saveFailed: "Couldn't save",
+    storageUnreadableHint:
+      "The extension's saved data couldn't be read, so this change was skipped to avoid overwriting it.",
+    ambiguousFinderChangesHint: "They couldn't be matched to a project safely, so their tags weren't moved.",
+    renameDataPendingHint: "They'll be moved the next time the project list loads.",
+    assignToProjects: "Assign to Projects",
+    assignFormHint: "Checked projects get this tag. Unchecking a project removes it.",
+    assignStageMoveHint: "{count} of the checked projects are in another stage and will move to this one.",
+    tagsAssigned: "Tags Updated",
+    deleteTagInUse: "{count} project(s) use this. It will be removed from them.",
+    deleteRoleInUse: "{count} track(s) in your collections use this role. It will be cleared from them.",
+    noProjectsFound: "No Ableton projects found",
+    noProjectsFoundHint: "Nothing in {folder} contains a Live Set. Check the Projects Folder in preferences.",
+    templateMissing: "Template not found — started empty",
+    analyzing: "Analyzing",
   },
 };
 

@@ -15,14 +15,27 @@ import {
 import { useEffect, useState } from "react";
 import { slugify, Taxonomy, TaxonomyOption } from "@/core/metadata/taxonomy";
 import { stageTaxonomy, genreTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
-import { deleteRoleEverywhere, renameRoleEverywhere } from "@/core/metadata/collection-roles";
-import { removeGenreEverywhere, removeStageEverywhere } from "@/core/metadata/project-metadata";
+import { countRoleUsage, deleteRoleEverywhere, renameRoleEverywhere } from "@/core/metadata/collection-roles";
+import {
+  getAllProjectMetadata,
+  removeGenreEverywhere,
+  removeStageEverywhere,
+  setGenreMembers,
+  setStageMembers,
+  type ProjectMetadata,
+} from "@/core/metadata/project-metadata";
+import { loadProjects } from "@/core/projects/load-projects";
+import type { Project } from "@/core/projects/types";
+import { showFailure } from "@/core/ui/toast";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
 
-const t = getTranslations(getSettings().language);
+const settings = getSettings();
+const t = getTranslations(settings.language);
 
 type CategoryKind = "stage" | "genre" | "role";
+// 能直接打在项目上的分类。Role 只在合集里生效，不能脱离合集指定。
+type ProjectTagKind = Exclude<CategoryKind, "role">;
 
 // 搜索栏占位文字跟着下拉框切换。
 const SEARCH_PLACEHOLDERS: Record<CategoryKind, string> = {
@@ -48,6 +61,19 @@ const COLOR_CHOICES: { label: string; value: Color }[] = [
   { label: "Primary", value: Color.PrimaryText },
   { label: "Secondary", value: Color.SecondaryText },
 ];
+
+// 读不到项目文件夹（外接盘未接等）时当作没有项目。
+function loadProjectsSafely(): Project[] {
+  try {
+    return loadProjects(settings.projectsFolder).sort((a, b) => a.title.localeCompare(b.title));
+  } catch {
+    return [];
+  }
+}
+
+function hasTag(meta: ProjectMetadata | undefined, kind: ProjectTagKind, id: string): boolean {
+  return kind === "stage" ? meta?.stageId === id : (meta?.genreIds ?? []).includes(id);
+}
 
 function CategoryForm(props: {
   title: string;
@@ -94,6 +120,86 @@ function CategoryForm(props: {
           ))}
         </Form.Dropdown>
       )}
+    </Form>
+  );
+}
+
+// 从标签出发批量打标：已有这个标签的项目预先勾上；勾上就加，取消就去掉。
+function AssignProjectsForm({ kind, option }: { kind: ProjectTagKind; option: TaxonomyOption }) {
+  const { pop } = useNavigation();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [initial, setInitial] = useState<string[]>([]);
+  // Stage 是单选：记下每个项目现在的 Stage，勾选后会被改掉的要在表单里写明。
+  const [currentStages, setCurrentStages] = useState<Record<string, string | null>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const list = loadProjectsSafely();
+      const store = await getAllProjectMetadata();
+      const tagged = list.filter((p) => hasTag(store[p.id], kind, option.id)).map((p) => p.id);
+      setProjects(list);
+      setSelected(tagged);
+      setInitial(tagged);
+      setCurrentStages(Object.fromEntries(list.map((p) => [p.id, store[p.id]?.stageId ?? null])));
+      setIsLoading(false);
+    }
+    void load();
+  }, [kind, option.id]);
+
+  const movingStage =
+    kind === "stage"
+      ? selected.filter((id) => {
+          const stage = currentStages[id];
+          return stage != null && stage !== option.id;
+        }).length
+      : 0;
+
+  async function handleSubmit() {
+    const added = selected.filter((id) => !initial.includes(id)).length;
+    const removed = initial.filter((id) => !selected.includes(id)).length;
+    if (added === 0 && removed === 0) {
+      await showToast({ style: Toast.Style.Success, title: t.noChanges });
+      pop();
+      return;
+    }
+    const candidates = projects.map((p) => p.id);
+    try {
+      if (kind === "stage") await setStageMembers(option.id, selected, candidates);
+      else await setGenreMembers(option.id, selected, candidates);
+    } catch (error) {
+      await showFailure(t.saveFailed, error);
+      return;
+    }
+    await showToast({ style: Toast.Style.Success, title: t.tagsAssigned, message: `+${added} · −${removed}` });
+    pop();
+  }
+
+  const hint =
+    movingStage > 0
+      ? `${t.assignFormHint}\n\n${t.assignStageMoveHint.replace("{count}", String(movingStage))}`
+      : t.assignFormHint;
+
+  return (
+    <Form
+      isLoading={isLoading}
+      navigationTitle={`${t.assignToProjects} — ${option.name}`}
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm title={t.save} icon={Icon.Check} onSubmit={handleSubmit} />
+        </ActionPanel>
+      }
+    >
+      {!isLoading && projects.length === 0 && <Form.Description text={t.noProjectsFound} />}
+      {projects.length > 0 && (
+        <Form.TagPicker id="projects" title={t.projects} value={selected} onChange={setSelected}>
+          {projects.map((p) => (
+            <Form.TagPicker.Item key={p.id} value={p.id} title={p.title} icon="icon.png" />
+          ))}
+        </Form.TagPicker>
+      )}
+      {projects.length > 0 && <Form.Description text={hint} />}
     </Form>
   );
 }
@@ -148,10 +254,22 @@ export default function Command() {
     await showToast({ style: Toast.Style.Success, title: t.infoUpdated });
   }
 
+  // 删除前告诉用户有多少项目 / 曲目在用，免得以为只是删掉一个空选项。
+  async function usageMessage(option: TaxonomyOption): Promise<string | undefined> {
+    if (kind === "role") {
+      const count = await countRoleUsage(option.name);
+      return count > 0 ? t.deleteRoleInUse.replace("{count}", String(count)) : undefined;
+    }
+    const store = await getAllProjectMetadata();
+    const count = loadProjectsSafely().filter((p) => hasTag(store[p.id], kind, option.id)).length;
+    return count > 0 ? t.deleteTagInUse.replace("{count}", String(count)) : undefined;
+  }
+
   async function deleteOption(option: TaxonomyOption) {
     const confirmed = await confirmAlert({
       icon: { source: Icon.Trash, tintColor: Color.Red },
       title: `${t.delete} “${option.name}”?`,
+      message: await usageMessage(option),
       primaryAction: { title: t.delete, style: Alert.ActionStyle.Destructive },
     });
 
@@ -226,6 +344,15 @@ export default function Command() {
     />
   );
 
+  const assignAction = (option: TaxonomyOption) =>
+    kind === "role" ? null : (
+      <Action.Push
+        title={t.assignToProjects}
+        icon={Icon.Folder}
+        target={<AssignProjectsForm kind={kind} option={option} />}
+      />
+    );
+
   return (
     <List
       isLoading={isLoading}
@@ -271,12 +398,12 @@ export default function Command() {
                 }
               />
               {createAction}
+              {assignAction(option)}
               <ActionPanel.Section>
                 {index > 0 && (
                   <Action
                     title={t.moveToTop}
                     icon={Icon.ArrowUpCircle}
-
                     shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
                     onAction={() => reorder(index, 0)}
                   />
@@ -301,7 +428,6 @@ export default function Command() {
                   <Action
                     title={t.moveToBottom}
                     icon={Icon.ArrowDownCircle}
-
                     shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
                     onAction={() => reorder(index, options.length - 1)}
                   />

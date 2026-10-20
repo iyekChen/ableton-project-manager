@@ -206,3 +206,40 @@ export async function addProjectsToCollection(projectIds: string[], collectionId
     return changed ? store : null;
   });
 }
+
+/** 批量设定某个 Stage 的项目：projectIds 里的项目设为这个 Stage（原来是别的 Stage 的会被改过来）；
+ *  candidates 里没勾选、原来是这个 Stage 的清空。candidates 以外的数据（如已移除项目的残留）不动。 */
+export async function setStageMembers(stageId: string, projectIds: string[], candidates: string[]): Promise<void> {
+  const selected = new Set(projectIds);
+  await updateStore((store) => {
+    let changed = false;
+    for (const id of candidates) {
+      const meta = withDefaults(store[id]);
+      const next = selected.has(id) ? stageId : meta.stageId === stageId ? null : meta.stageId;
+      if (next === meta.stageId) continue;
+      store[id] = { ...meta, stageId: next };
+      changed = true;
+    }
+    return changed ? store : null;
+  });
+}
+
+/** 批量设定某个 Genre 的项目：勾选的加上，candidates 里没勾选的去掉，其余 Genre 不受影响。 */
+export async function setGenreMembers(genreId: string, projectIds: string[], candidates: string[]): Promise<void> {
+  const selected = new Set(projectIds);
+  await updateStore((store) => {
+    let changed = false;
+    for (const id of candidates) {
+      const meta = withDefaults(store[id]);
+      const has = meta.genreIds.includes(genreId);
+      const want = selected.has(id);
+      if (has === want) continue;
+      store[id] = {
+        ...meta,
+        genreIds: want ? [...meta.genreIds, genreId] : meta.genreIds.filter((g) => g !== genreId),
+      };
+      changed = true;
+    }
+    return changed ? store : null;
+  });
+}

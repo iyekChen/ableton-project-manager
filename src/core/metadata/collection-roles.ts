@@ -124,3 +124,13 @@ export async function deleteRoleEverywhere(name: string): Promise<void> {
     return changed ? map : null;
   });
 }
+
+/** 所有合集里用到某个角色的曲目数（删除 Role 前提示用）。 */
+export async function countRoleUsage(name: string): Promise<number> {
+  let count = 0;
+  for (const collectionId of await listKeySuffixes(KEY_PREFIX)) {
+    const map = await getRoleMap(collectionId);
+    count += Object.values(map).filter((role) => role === name).length;
+  }
+  return count;
+}
