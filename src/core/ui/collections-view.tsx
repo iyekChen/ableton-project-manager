@@ -49,6 +49,7 @@ import {
   loadTrackInfos,
 } from "@/core/projects/track-info";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
+import { refreshDocFile, useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { findLatestProjectBounce } from "@/core/projects/bounces";
 import { displayDoc, readDocFile, stripFrontmatter } from "@/core/docs/docs";
@@ -367,6 +368,9 @@ function CollectionPanel({
 }) {
   const { pop } = useNavigation();
   const [projectList, setProjectList] = useState<Project[]>(projects);
+
+  // 外部编辑器改了笔记 / 歌词：只重读那一份。面板拿到的是推入时的快照，父视图的更新传不进来，所以自己监听。
+  useDocWatcher(getSettings().projectsFolder, (file) => setProjectList((prev) => refreshDocFile(prev, file)));
 
   // 面板里的改动（改名、标签、成员增减、笔记）回传给 Browse Collections，再次打开合集时不会用到旧快照。
   useEffect(() => {

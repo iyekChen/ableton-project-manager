@@ -14,11 +14,13 @@ import {
   useNavigation,
   Alert,
   confirmAlert,
+  openExtensionPreferences,
   type Application,
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import fs from "node:fs";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
+import { refreshDocFile, useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { getSettings } from "./settings";
 import {
@@ -118,6 +120,9 @@ export default function Command() {
   // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
   const leftoverToastShownRef = useRef(false);
 
+  // 外部编辑器改了笔记 / 歌词：只重读那一份，详情面板马上跟着变。
+  useDocWatcher(PROJECTS_ROOT, (file) => setProjects((prev) => refreshDocFile(prev, file)));
+
   const { playbackStatus, playingId, positionSeconds, durationSeconds, play, pause, resume, stop, seek, restart } =
     useAudioPlayer({
       playerPath: PLAYER_PATH,
@@ -201,7 +206,14 @@ export default function Command() {
         trashingIds,
       );
       if (guardTripped) {
-        await showToast({ style: Toast.Style.Failure, title: t.manyProjectsMissing });
+        // 标题只说结论；原因和下一步放进 message，按 ⌘T 展开操作。
+        await showToast({
+          style: Toast.Style.Failure,
+          title: t.manyProjectsMissing,
+          message: t.manyProjectsMissingHint,
+          primaryAction: { title: t.openPreferences, onAction: () => void openExtensionPreferences() },
+          secondaryAction: { title: t.openProjectsFolder, onAction: () => void open(PROJECTS_ROOT) },
+        });
       } else if (ambiguous > 0) {
         await showToast({ style: Toast.Style.Failure, title: t.ambiguousFinderChanges });
       } else if (trashUnavailable) {
