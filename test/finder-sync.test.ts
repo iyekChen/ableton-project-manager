@@ -62,7 +62,7 @@ function makeProject(id: string, createdAt: number, inode: number): Project {
 const sync = (projects: Project[]) => syncFinderChanges(projects, "/projects", new Set());
 
 async function snapshotIds(): Promise<string[]> {
-  const raw = (await LocalStorage.getItem<string>("project-snapshot")) ?? "[]";
+  const raw = (await LocalStorage.getItem<string>("project-snapshot:/projects")) ?? "[]";
   return (JSON.parse(raw) as { id: string }[]).map((entry) => entry.id);
 }
 
@@ -179,5 +179,45 @@ describe("Finder 删除", () => {
     expect(unplugged).toMatchObject({ guardTripped: true, archived: 0 });
     expect(await snapshotIds()).toEqual(["A", "B"]);
     expect((await getAllProjectMetadata()).A.stageId).toBe("mix");
+  });
+});
+
+describe("换 Projects Folder", () => {
+  const four = () => [makeProject("A", 1, 1), makeProject("B", 2, 2), makeProject("C", 3, 3), makeProject("D", 4, 4)];
+
+  it("新文件夹当作首次使用，不触发保护；换回来仍和原来的清单比对", async () => {
+    await syncFinderChanges(four(), "/projects", new Set());
+
+    const demo = await syncFinderChanges([makeProject("Demo", 9, 9)], "/demo", new Set());
+    expect(demo.guardTripped).toBe(false);
+
+    await saveProjectMetadata("A", meta);
+    const [, b, c, d] = four();
+    const back = await syncFinderChanges([makeProject("A2", 1, 1), b, c, d], "/projects", new Set());
+    expect(back).toMatchObject({ guardTripped: false, renamed: 1 });
+    expect((await getAllProjectMetadata()).A2.stageId).toBe("mix");
+  });
+
+  it("旧版本的清单属于当前文件夹：接着用，并迁到新 key", async () => {
+    await LocalStorage.setItem("project-snapshot", JSON.stringify([{ id: "Old", birthtimeMs: 1000, inode: 1 }]));
+    await saveProjectMetadata("Old", meta);
+
+    const result = await sync([makeProject("New", 1000, 1)]);
+    expect(result.renamed).toBe(1);
+    expect(await snapshotIds()).toEqual(["New"]);
+    expect(await LocalStorage.getItem<string>("project-snapshot")).toBeUndefined();
+  });
+
+  it("旧版本的清单不属于当前文件夹：不报警，留给原来的文件夹认领", async () => {
+    const legacy = four().map((p) => ({ id: p.id, birthtimeMs: p.createdAt, inode: p.inode }));
+    await LocalStorage.setItem("project-snapshot", JSON.stringify(legacy));
+
+    const demo = await syncFinderChanges([makeProject("Demo", 9, 9)], "/demo", new Set());
+    expect(demo.guardTripped).toBe(false);
+    expect(await LocalStorage.getItem<string>("project-snapshot")).toBeDefined();
+
+    await syncFinderChanges(four(), "/projects", new Set());
+    expect(await LocalStorage.getItem<string>("project-snapshot")).toBeUndefined();
+    expect(await snapshotIds()).toEqual(["A", "B", "C", "D"]);
   });
 });

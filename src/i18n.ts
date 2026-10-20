@@ -87,6 +87,8 @@ type TranslationKeys = {
   docSaveFailed: string;
   useProjectFolders: string;
   manyProjectsMissing: string;
+  manyProjectsMissingHint: string;
+  openProjectsFolder: string;
   ambiguousFinderChanges: string;
   docShared: string;
   docSharedHint: string;
@@ -297,7 +299,10 @@ const translations: Record<Language, TranslationKeys> = {
     openPreferences: "Open Extension Preferences",
     docSaveFailed: "Couldn't save",
     useProjectFolders: "Store in Project Folders Instead",
-    manyProjectsMissing: "Many projects disappeared at once — nothing was changed. Is the drive connected?",
+    manyProjectsMissing: "Projects missing — nothing changed",
+    manyProjectsMissingHint:
+      "Most projects disappeared at once. Is the drive connected? If you moved the folder, update it in preferences.",
+    openProjectsFolder: "Open Projects Folder",
     ambiguousFinderChanges: "Some changes made in Finder couldn't be matched safely and were skipped",
     docShared: "Shares a note file with another project",
     docSharedHint:

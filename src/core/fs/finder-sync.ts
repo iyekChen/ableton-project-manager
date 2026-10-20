@@ -1,3 +1,4 @@
+import path from "node:path";
 import { LocalStorage } from "@raycast/api";
 import type { Project } from "@/core/projects/types";
 import {
@@ -14,10 +15,17 @@ import { removeProjectFromAllRoles, renameProjectInAllRoles } from "@/core/metad
 import { renameDocFiles } from "@/core/docs/docs";
 import { archiveDeletedProject, hasDeletedRecord, pruneDeletedRecords } from "./deleted-projects";
 
-const SNAPSHOT_KEY = "project-snapshot";
+// 每个 Projects Folder 各存一份清单：换到新文件夹时当作首次使用，换回来仍和它自己的清单比对。
+const SNAPSHOT_PREFIX = "project-snapshot:";
+// 旧版本只存一份清单，不记属于哪个文件夹。
+const LEGACY_SNAPSHOT_KEY = "project-snapshot";
 
-async function readSnapshot(): Promise<SnapshotEntry[] | null> {
-  const raw = await LocalStorage.getItem<string>(SNAPSHOT_KEY);
+function snapshotKey(projectsRoot: string): string {
+  return SNAPSHOT_PREFIX + path.resolve(projectsRoot);
+}
+
+async function readSnapshot(key: string): Promise<SnapshotEntry[] | null> {
+  const raw = await LocalStorage.getItem<string>(key);
   if (!raw) return null;
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -47,7 +55,15 @@ export async function syncFinderChanges(
   skipIds: Set<string>,
 ): Promise<FinderSyncResult> {
   const current: SnapshotEntry[] = projects.map((p) => ({ id: p.id, birthtimeMs: p.createdAt, inode: p.inode }));
-  const previous = await readSnapshot();
+  const key = snapshotKey(projectsRoot);
+  const own = await readSnapshot(key);
+  // 这个文件夹还没有自己的清单：试试旧版本留下的那份。
+  const legacy = own ? null : await readSnapshot(LEGACY_SNAPSHOT_KEY);
+  let diff = own ? diffSnapshots(own, current) : legacy ? diffSnapshots(legacy, current) : null;
+  // 旧清单对不上（多半是换了 Projects Folder）：当作首次使用，不报警；旧清单留给它原本的文件夹认领。
+  const legacyMismatch = legacy !== null && diff?.guardTripped === true;
+  if (legacyMismatch) diff = null;
+
   const result: FinderSyncResult = {
     renamed: 0,
     archived: 0,
@@ -57,8 +73,7 @@ export async function syncFinderChanges(
     docRenameIssues: [],
   };
 
-  if (previous) {
-    const diff = diffSnapshots(previous, current);
+  if (diff) {
     result.guardTripped = diff.guardTripped;
     result.ambiguous = diff.ambiguous.length;
 
@@ -101,6 +116,10 @@ export async function syncFinderChanges(
   }
 
   // 保护触发时不覆盖旧清单，等磁盘接回来后照常对比。
-  if (!result.guardTripped) await LocalStorage.setItem(SNAPSHOT_KEY, JSON.stringify(current));
+  if (!result.guardTripped) {
+    await LocalStorage.setItem(key, JSON.stringify(current));
+    // 旧清单已被这个文件夹认领，迁到新 key 后删掉。
+    if (legacy && !legacyMismatch) await LocalStorage.removeItem(LEGACY_SNAPSHOT_KEY);
+  }
   return result;
 }
