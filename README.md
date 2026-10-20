@@ -1,58 +1,104 @@
-# Ableton Project Manager
+<p align="center">
+  <img src="assets/icon.png" width="128" height="128" alt="Ableton Project Manager icon" />
+</p>
 
-A Raycast extension to browse, organize, and preview your Ableton Live projects — without leaving the keyboard. Search by name, tag projects by stage / genre / collection, keep per-project notes, preview the latest bounce with inline playback, and arrange tracks into collections (EPs / albums) with automatic energy analysis.
+<h1 align="center">Ableton Project Manager</h1>
 
-> macOS · Raycast · built for music producers who live in Ableton Live.
+<p align="center">
+  Browse, organize, and listen to your Ableton Live projects from Raycast — without leaving the keyboard.
+</p>
+
+<p align="center">
+  English | <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+---
+
+Search every project by name, tag it with a stage and genre, keep notes and lyrics next to it, play the latest bounce in one keystroke, and arrange tracks into EPs and albums with an automatic energy scale.
+
+## Install
+
+Coming soon to the Raycast Store. Until then, you can run it from source — see [For developers](#for-developers).
+
+Requires macOS, [Raycast](https://raycast.com), and [Ableton Live](https://www.ableton.com) (to open sets).
+
+## Quick start
+
+1. **Point it at your projects.** Open **Search Projects**. On first launch Raycast asks for your **Projects Folder**: the folder that holds your Ableton Live projects.
+2. **Tag what you already have.** Open **Manage Tags**, pick a stage such as Demo, and choose **Assign to Projects** to tag many projects at once. Do the same for genres.
+3. **Build a collection.** In Search Projects press `⌃↵` to browse collections, create one for your EP or album, and use **Add Projects** to fill it. Set the track order, and the energy scale appears once the bounces are analyzed.
 
 ## Features
 
-- **Search & browse projects** — fuzzy-search your Projects folder, sort by name / created / modified, pin favorites to the top, and switch between a compact Overview and a rich Detail view.
-- **Tag & organize** — assign each project a **Stage** (Demo → Recording → Production → … → Released), **Genre**, and **Collection**, then filter the list by Stage or Genre.
-- **Collections view** — group projects into EPs / albums, order the tracklist, assign per-track roles, edit a track's info and notes inline, and see an automatic **energy** scale derived from each bounce's audio.
-- **Queue a whole collection** — send every project's latest bounce, in track order, to your default player as an `.m3u` playlist for back-to-back listening.
-- **Inline bounce playback** — play the latest bounce of any project with a global, shared player (play / pause / resume, seek ±5s, restart). Playback keeps going as you switch views **and after you close the Raycast window** — it only stops on natural end, Stop, or quitting Raycast (⌘Q).
-- **Browse bounces** — list every bounce for a project, preview with Quick Look (scrubbable), reveal in Finder, or open in the default app.
-- **View sets** — list the `.als` sets in a project with parsed **BPM**, **key**, and **time signature**; open directly in Ableton Live.
-- **Notes & lyrics** — write Markdown notes and lyrics per project, stored as `Notes.md` / `Lyrics.md` inside each project folder, or as `.md` files in folders of your choice (e.g. an Obsidian vault).
-- **New Live Set** — launch Ableton Live for a fresh set.
+### Find
+
+- **Search projects** by name, sort by name, created, or modified, and pin favorites to the top.
+- **Filter** the list by stage or genre.
+- **Two views**: a compact Overview, or a Detail view with tags, sets, bounces, and your notes alongside.
+
+### Organize
+
+- Give each project a **Stage** (Demo → Recording → Production → … → Released), one or more **Genres**, and **Collections**.
+- **Assign to Projects** tags many projects at once from Manage Tags.
+- **Renames and deletions in Finder are picked up automatically**, so your tags follow the project.
+
+### Listen
+
+- **Play the latest bounce** of any project with `⌘↵`: pause, resume, seek ±5 s, restart. Playback continues when you switch views **and after you close the Raycast window**. It stops when the track ends, when you press Stop, or when you quit Raycast.
+- **Browse bounces** for a project: preview with Quick Look, reveal in Finder, or open in your default app.
+- **View sets**: see every `.als` in a project with its **BPM**, **key**, and **time signature**, and open it in Ableton Live.
+
+### Write
+
+- **Notes and lyrics** in Markdown for every project, saved as `Notes.md` / `Lyrics.md` in the project folder, or in a folder of your choice such as an Obsidian vault.
+- **Templates** with `{{title}}` and `{{date}}` for new notes and lyrics.
+- Edits made in another editor show up right away.
+
+### Collections
+
+- Group projects into **EPs and albums**, order the tracklist, and give each track a **role** (Intro, Single, Interlude, …).
+- An **energy scale** for each track, computed from its bounce, helps you shape the running order. See [How energy is calculated](#how-energy-is-calculated).
+- **Queue the whole collection** in your music player as an `.m3u` playlist, in track order.
 
 ## Screenshots
 
-![Search Projects](metadata/ableton-project-manager-1.png)
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-1.png"><img src="metadata/ableton-project-manager-1.png" alt="Search Projects" /></a>
+      <br /><sub>Search Projects</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-2.png"><img src="metadata/ableton-project-manager-2.png" alt="View Sets" /></a>
+      <br /><sub>View Sets</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-3.png"><img src="metadata/ableton-project-manager-3.png" alt="Browse Bounces" /></a>
+      <br /><sub>Browse Bounces</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-4.png"><img src="metadata/ableton-project-manager-4.png" alt="Browse Collections" /></a>
+      <br /><sub>Browse Collections</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-5.png"><img src="metadata/ableton-project-manager-5.png" alt="Collection" /></a>
+      <br /><sub>Collection</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-6.png"><img src="metadata/ableton-project-manager-6.png" alt="Manage Tags" /></a>
+      <br /><sub>Manage Tags</sub>
+    </td>
+  </tr>
+</table>
 
-![View Sets](metadata/ableton-project-manager-2.png)
+## Commands
 
-![Browse Bounces](metadata/ableton-project-manager-3.png)
-
-![Browse Collections](metadata/ableton-project-manager-4.png)
-
-![Collections view](metadata/ableton-project-manager-5.png)
-
-![Manage Tags](metadata/ableton-project-manager-6.png)
-
-## Requirements
-
-- macOS with [Raycast](https://raycast.com)
-- [Ableton Live](https://www.ableton.com) (for opening sets)
-- Node.js 22+ and npm (for development)
-
-## Setup (Development)
-
-```bash
-git clone https://github.com/iyekChen/ableton-project-manager.git
-cd ableton-project-manager
-npm install
-npm run build:player   # build the bundled Swift (AVFoundation) audio helper
-npm run dev            # run the extension in Raycast (development mode)
-```
-
-Other scripts:
-
-```bash
-npm run lint       # ESLint + Prettier
-npm run fix-lint   # auto-fix
-npm run build      # production build
-```
+| Command             | Description                                                     |
+| ------------------- | --------------------------------------------------------------- |
+| **Search Projects** | Search, open, tag, play, and manage your Ableton Live projects. |
+| **Manage Tags**     | Create, reorder, and assign Stages and Genres; manage Roles.    |
 
 ## Configuration
 
@@ -85,22 +131,9 @@ Within a collection, each feature is scaled from 0 to 1 across its tracks: the l
 - If a feature can't be measured (e.g. a silent bounce), the remaining features are reweighted. Tracks without a bounce show no energy.
 - Set all three weights to **Off** to hide energy entirely.
 
-## Commands
-
-| Command             | Description                                                     |
-| ------------------- | --------------------------------------------------------------- |
-| **Search Projects** | Search, open, tag, play, and manage your Ableton Live projects. |
-| **Manage Tags**     | Create and manage Stages, Genres, and Track Roles.              |
-
-## How it works
-
-- **`.als` parsing** — sets are gzipped XML; BPM / key / time-signature are read with `fast-xml-parser` and `saxes`.
-- **Audio playback** — a small bundled Swift AVFoundation binary plays bounces; it runs as a single detached process so playback persists across views and after the window closes, controlled cross-process via small command / status files. The binary (`assets/audio-player`) is built from [`swift/AudioPlayer.swift`](swift/AudioPlayer.swift) by [`scripts/build-audio-player.sh`](scripts/build-audio-player.sh) (`npm run build:player`) as a universal arm64 + x86_64 executable.
-- **Storage** — taxonomies, pins, and per-project metadata are kept in Raycast LocalStorage, view preferences in Raycast Cache; notes and lyrics are Markdown files (optionally in your own folder).
-
 ## Keyboard shortcuts
 
-Most actions are discoverable via the Action Panel (`⌘K`). A few highlights:
+Every action is in the Action Panel (`⌘K`). The ones you'll use most:
 
 | Action                        | Shortcut                                       |
 | ----------------------------- | ---------------------------------------------- |
@@ -119,14 +152,49 @@ Most actions are discoverable via the Action Panel (`⌘K`). A few highlights:
 | New Live Set                  | `⌘N`                                           |
 | Open in Finder                | `⌘⌥O`                                          |
 
+## Your data
+
+**What stays in your folders.** Your projects, sets, and bounces are only changed when you ask: rename, duplicate, or move to Trash. Notes and lyrics are plain Markdown files, either inside each project folder or in the folder you chose.
+
+**What lives in Raycast.** Tags, pins, collections, track order, and roles are stored in the extension's Raycast storage; view preferences and analysis results are cached. Raycast keeps this data per extension, so **uninstalling or reinstalling the extension deletes it**. Raycast's own Export Settings & Data doesn't appear to include it.
+
+**How it follows your projects.**
+
+- **Renaming or deleting a project in Finder** is picked up the next time you open Search Projects; projects are matched by folder creation date. With **Full Disk Access** granted to Raycast, a deletion is confirmed against the Trash. Without it, nothing is changed automatically, and you can run **Clean up Leftovers** to clear data for projects you removed.
+- If many projects disappear at once (e.g. an external drive is unplugged), nothing is changed. Switching to a different Projects Folder doesn't trigger this; each folder is tracked separately.
+- **Moving a project to the Trash** keeps its tags, track numbers, and roles for **30 days**, and moves its custom-folder notes and lyrics into a `Deleted Projects/` subfolder. Put the project back within that time and everything is restored. A new project that only shares the name doesn't inherit anything.
+- **Notes and lyrics in a custom folder** are linked to a project by file name (`<Project Name>.md`). Rename the project inside the extension and the file follows. Characters that are unsafe in file names or special in Obsidian (`/ \ : * ? " < > | # ^ [ ]`) are replaced with full-width look-alikes (e.g. `Beat #3` → `Beat ＃3.md`), so two projects never share a file.
+
 ## Known limitations
 
-- **Queue collection in player** writes a standard `.m3u` playlist and opens it with your default `.m3u` handler. Use a player that supports playlists (IINA, VLC, Swinsian, …). **QuickTime Player does not support `.m3u`** and will not play the collection as a queue.
-- **Notes / lyrics in a custom folder** are linked to a project **by file name** (`<Project Name>.md`). Rename projects inside the extension and the `.md` follows automatically; if you rename the `.md` yourself, the extension won't find it anymore.
-- Characters that are unsafe in filenames or special in Obsidian (`/ \ : * ? " < > | # ^ [ ]`) are replaced with **full-width look-alikes** (e.g. `Beat #3` → `Beat ＃3.md`), so two projects never share a file.
-- **Moving a project to the Trash** moves its custom-folder notes / lyrics into a `Deleted Projects/` subfolder and remembers its tags, track numbers and roles for **30 days**. Put the project back from the Trash within that time and everything is restored the next time you open Search Projects. A new project that merely has the same name is not affected.
-- **Renaming or deleting projects in Finder** is picked up automatically (projects are matched by folder creation date). With **Full Disk Access** granted to Raycast, a deletion is confirmed against the Trash; without it, nothing is changed automatically — run **Clean up Leftovers** to clear data for projects you removed. If many projects vanish at once (e.g. an external drive is unplugged), nothing is changed.
-- If the custom notes / lyrics folder is renamed or moved, the extension shows a warning and **won't write anything** until you choose the folder again in Extension Preferences.
+- **Queue collection** writes a standard `.m3u` playlist and opens it with your default `.m3u` app. Use a player that supports playlists, such as IINA, VLC, or Swinsian; **QuickTime Player doesn't**.
+- If you rename a note or lyrics `.md` yourself, the extension can no longer find it.
+- If the custom notes or lyrics folder is renamed or moved, the extension shows a warning and **won't write anything** until you choose the folder again in Extension Preferences.
+
+## For developers
+
+Requires Node.js 22+ and npm.
+
+```bash
+git clone https://github.com/iyekChen/ableton-project-manager.git
+cd ableton-project-manager
+npm install
+npm run build:player   # build the bundled Swift (AVFoundation) audio player
+npm run dev            # run the extension in Raycast (development mode)
+```
+
+```bash
+npm run lint       # ESLint + Prettier
+npm run fix-lint   # auto-fix
+npm test           # unit tests (Vitest)
+npm run build      # production build
+```
+
+### How it works
+
+- **`.als` parsing**: sets are gzipped XML; BPM, key, and time signature are read with `fast-xml-parser` and `saxes`.
+- **Audio playback and analysis**: a small Swift AVFoundation binary plays bounces and measures their energy features. It runs as a single detached process, so playback continues across views and after the window closes; the extension controls it through small command and status files. The binary (`assets/audio-player`) is built from [`swift/AudioPlayer.swift`](swift/AudioPlayer.swift) by [`scripts/build-audio-player.sh`](scripts/build-audio-player.sh) as a universal arm64 + x86_64 executable. CI checks that the committed binary matches the source.
+- **Storage**: tags, pins, and per-project metadata are in Raycast LocalStorage; view preferences are in Raycast Cache; notes and lyrics are Markdown files.
 
 ## License
 

@@ -1,60 +1,104 @@
-# Ableton Project Manager
+<p align="center">
+  <img src="assets/icon.png" width="128" height="128" alt="Ableton Project Manager 图标" />
+</p>
 
-[English](README.md) | 简体中文
+<h1 align="center">Ableton Project Manager</h1>
 
-一个 Raycast 扩展，让你不离开键盘就能浏览、整理和试听 Ableton Live 工程。可以按名字搜索，给工程打上 Stage / Genre / Collection 标签，为每个工程写笔记，直接播放最新的 bounce，还能把曲目编排成合集（EP / 专辑），并根据音频自动分析能量。
+<p align="center">
+  在 Raycast 里浏览、整理和试听你的 Ableton Live 工程，全程不用离开键盘。
+</p>
 
-> macOS · Raycast · 为整天泡在 Ableton Live 里的音乐制作人打造。
+<p align="center">
+  <a href="README.md">English</a> | 简体中文
+</p>
+
+---
+
+按名字搜索所有工程，给它们打上 Stage 和 Genre 标签，在工程旁边写笔记和歌词，一个快捷键播放最新的 bounce，还能把曲目编排成 EP 和专辑，并自动给出能量刻度。
+
+## 安装
+
+即将上架 Raycast Store。在此之前可以从源码运行，见[开发](#开发)。
+
+需要 macOS、[Raycast](https://raycast.com) 和 [Ableton Live](https://www.ableton.com)（用于打开 Set）。
+
+## 快速上手
+
+1. **指定工程文件夹。** 打开 **Search Projects**。第一次启动时，Raycast 会让你填 **Projects Folder**，也就是存放 Ableton Live 工程的文件夹。
+2. **给已有的工程打标签。** 打开 **Manage Tags**，选一个 Stage（比如 Demo），用 **Assign to Projects** 一次给多个工程打上。Genre 也一样。
+3. **建一张合集。** 在 Search Projects 里按 `⌃↵` 进入合集，为你的 EP 或专辑新建一张，用 **Add Projects** 把曲目加进去。排好曲目顺序，bounce 分析完后就会显示能量刻度。
 
 ## 功能
 
-- **搜索与浏览工程**：在 Projects 文件夹里模糊搜索，按名称、创建时间或修改时间排序，把常用工程置顶，并在精简的 Overview 和信息完整的 Detail 两种视图之间切换。
-- **标签与整理**：给每个工程设置 **Stage**（Demo → Recording → Production → … → Released）、**Genre** 和 **Collection**，再按 Stage 或 Genre 筛选列表。
-- **合集视图**：把工程编成 EP 或专辑，排定曲目顺序，为每首曲目指定角色，直接编辑曲目信息和笔记，并根据每个 bounce 的音频自动生成**能量**刻度。
-- **整张合集排队播放**：按曲目顺序把每个工程的最新 bounce 写成 `.m3u` 播放列表，交给默认播放器连续播放。
-- **直接播放 bounce**：用一个全局共享的播放器播放任意工程的最新 bounce，支持播放、暂停、继续、前后跳 5 秒、从头播放。切换视图时播放不中断，**关掉 Raycast 窗口后也会继续**，只有播完、按 Stop 或退出 Raycast（⌘Q）时才会停。
-- **浏览 bounce**：列出某个工程的所有 bounce，可以用快速查看试听（支持拖动进度），也可以在 Finder 中显示，或用默认 App 打开。
-- **查看 Set**：列出工程里的 `.als` 文件，并显示解析出的 **BPM**、**调性**和**拍号**，可以直接在 Ableton Live 中打开。
-- **笔记与歌词**：为每个工程写 Markdown 笔记和歌词，存成工程文件夹里的 `Notes.md` / `Lyrics.md`，也可以存进你指定的文件夹（比如 Obsidian 仓库）。
-- **New Live Set**：启动 Ableton Live，新建一个 Set。
+### 找
+
+- 按名字**搜索工程**，按名称、创建时间或修改时间排序，常用的可以置顶。
+- 按 Stage 或 Genre **筛选**列表。
+- **两种视图**：精简的 Overview，或者带标签、Set、bounce 和笔记的 Detail。
+
+### 整理
+
+- 给每个工程设置 **Stage**（Demo → Recording → Production → … → Released）、一个或多个 **Genre**，以及所属的**合集**。
+- 在 Manage Tags 里用 **Assign to Projects** 一次给多个工程打标签。
+- **在 Finder 里改名或删除工程会被自动识别**，标签会跟着工程走。
+
+### 听
+
+- 按 `⌘↵` **播放任意工程的最新 bounce**：暂停、继续、前后跳 5 秒、从头播放。切换视图时不中断，**关掉 Raycast 窗口后也会继续**，只有播完、按 Stop 或退出 Raycast 时才会停。
+- **浏览某个工程的所有 bounce**：用快速查看试听、在 Finder 中显示，或用默认 App 打开。
+- **查看 Set**：列出工程里的每个 `.als`，显示 **BPM**、**调性**和**拍号**，可以直接在 Ableton Live 中打开。
+
+### 写
+
+- 每个工程都可以写 Markdown **笔记和歌词**，存成工程文件夹里的 `Notes.md` / `Lyrics.md`，或者存进你选的文件夹（比如 Obsidian 仓库）。
+- 新建笔记和歌词时可以套用**模板**，支持 `{{title}}` 和 `{{date}}`。
+- 在其他编辑器里改的内容，这里会马上更新。
+
+### 合集
+
+- 把工程编成 **EP 和专辑**，排定曲目顺序，给每首曲目指定**角色**（Intro、Single、Interlude 等）。
+- 根据每首曲目的 bounce 自动给出**能量刻度**，方便安排曲序。见[能量是怎么算的](#能量是怎么算的)。
+- 按曲目顺序把**整张合集**写成 `.m3u` 播放列表，交给播放器连续播放。
 
 ## 截图
 
-![Search Projects](metadata/ableton-project-manager-1.png)
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-1.png"><img src="metadata/ableton-project-manager-1.png" alt="Search Projects" /></a>
+      <br /><sub>Search Projects</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-2.png"><img src="metadata/ableton-project-manager-2.png" alt="View Sets" /></a>
+      <br /><sub>View Sets</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-3.png"><img src="metadata/ableton-project-manager-3.png" alt="Browse Bounces" /></a>
+      <br /><sub>Browse Bounces</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-4.png"><img src="metadata/ableton-project-manager-4.png" alt="Browse Collections" /></a>
+      <br /><sub>Browse Collections</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-5.png"><img src="metadata/ableton-project-manager-5.png" alt="合集" /></a>
+      <br /><sub>合集</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="metadata/ableton-project-manager-6.png"><img src="metadata/ableton-project-manager-6.png" alt="Manage Tags" /></a>
+      <br /><sub>Manage Tags</sub>
+    </td>
+  </tr>
+</table>
 
-![View Sets](metadata/ableton-project-manager-2.png)
+## 命令
 
-![Browse Bounces](metadata/ableton-project-manager-3.png)
-
-![Browse Collections](metadata/ableton-project-manager-4.png)
-
-![Collections view](metadata/ableton-project-manager-5.png)
-
-![Manage Tags](metadata/ableton-project-manager-6.png)
-
-## 环境要求
-
-- 装有 [Raycast](https://raycast.com) 的 macOS
-- [Ableton Live](https://www.ableton.com)（用于打开 Set）
-- Node.js 22+ 和 npm（开发用）
-
-## 安装（开发）
-
-```bash
-git clone https://github.com/iyekChen/ableton-project-manager.git
-cd ableton-project-manager
-npm install
-npm run build:player   # 编译内置的 Swift（AVFoundation）音频播放器
-npm run dev            # 以开发模式在 Raycast 中运行扩展
-```
-
-其他脚本：
-
-```bash
-npm run lint       # ESLint + Prettier
-npm run fix-lint   # 自动修复
-npm run build      # 生产构建
-```
+| 命令                | 说明                                               |
+| ------------------- | -------------------------------------------------- |
+| **Search Projects** | 搜索、打开、打标签、播放和管理 Ableton Live 工程。 |
+| **Manage Tags**     | 创建、排序和批量分配 Stage 与 Genre，管理 Role。   |
 
 ## 设置
 
@@ -87,22 +131,9 @@ npm run build      # 生产构建
 - 某项特征测不出来时（比如 bounce 是静音），只用剩下的特征重新加权。没有 bounce 的曲目不显示能量。
 - 三项权重都设为 **Off**，就完全不显示能量。
 
-## 命令
-
-| 命令                | 说明                                               |
-| ------------------- | -------------------------------------------------- |
-| **Search Projects** | 搜索、打开、打标签、播放和管理 Ableton Live 工程。 |
-| **Manage Tags**     | 创建和管理 Stage、Genre 和 Track Role。            |
-
-## 工作原理
-
-- **`.als` 解析**：Set 文件是 gzip 压缩的 XML，用 `fast-xml-parser` 和 `saxes` 读取其中的 BPM、调性和拍号。
-- **音频播放**：由一个内置的 Swift AVFoundation 小程序负责播放 bounce。它作为一个独立的后台进程运行，所以切换视图、关掉窗口后播放都不会中断；扩展通过几个小的命令文件和状态文件跨进程控制它。这个二进制（`assets/audio-player`）由 [`scripts/build-audio-player.sh`](scripts/build-audio-player.sh)（`npm run build:player`）从 [`swift/AudioPlayer.swift`](swift/AudioPlayer.swift) 编译而来，是同时支持 arm64 和 x86_64 的通用二进制。
-- **存储**：分类、置顶和每个工程的元数据存在 Raycast LocalStorage 里，视图偏好存在 Raycast Cache 里；笔记和歌词是 Markdown 文件（可以放在你自己的文件夹里）。
-
 ## 快捷键
 
-大多数操作都能在 Action Panel（`⌘K`）里找到。常用的几个：
+所有操作都能在 Action Panel（`⌘K`）里找到。最常用的几个：
 
 | 操作                   | 快捷键                                |
 | ---------------------- | ------------------------------------- |
@@ -121,14 +152,49 @@ npm run build      # 生产构建
 | New Live Set           | `⌘N`                                  |
 | Open in Finder         | `⌘⌥O`                                 |
 
+## 你的数据
+
+**留在你文件夹里的。** 工程、Set 和 bounce 只有在你主动操作时才会被改动：改名、复制或移到废纸篓。笔记和歌词是普通的 Markdown 文件，存在每个工程文件夹里，或者你选的文件夹里。
+
+**存在 Raycast 里的。** 标签、置顶、合集、曲目顺序和角色存在扩展的 Raycast 存储里，视图偏好和分析结果会被缓存。Raycast 按扩展分别保存这些数据，所以**卸载或重装扩展会把它们删掉**。Raycast 自带的 Export Settings & Data 看起来也不包含这部分。
+
+**怎么跟着工程走。**
+
+- **在 Finder 里改名或删除工程**，下次打开 Search Projects 时会被识别，按文件夹的创建时间匹配工程。如果给了 Raycast **完全磁盘访问权限**，会对照废纸篓确认删除；没有这个权限时不会自动改动任何数据，可以运行 **Clean up Leftovers** 清理已移除工程的数据。
+- 如果很多工程同时消失（比如拔掉了外接盘），什么都不会改动。换一个 Projects Folder 不会触发这个保护，每个文件夹是分开记录的。
+- **把工程移到废纸篓**后，它的标签、轨号和角色会保留 **30 天**，自定义文件夹里的笔记和歌词会被移进 `Deleted Projects/` 子文件夹。30 天内放回，一切都会还原。只是同名的新工程不会继承任何数据。
+- **存在自定义文件夹里的笔记和歌词**按文件名（`<工程名>.md`）和工程对应。在扩展里改工程名，文件会跟着改名。文件名中不安全、或在 Obsidian 里有特殊含义的字符（`/ \ : * ? " < > | # ^ [ ]`）会被替换成外观相近的全角字符（如 `Beat #3` → `Beat ＃3.md`），保证两个工程不会共用同一个文件。
+
 ## 已知限制
 
-- **整张合集排队播放**会写出一个标准的 `.m3u` 播放列表，并用系统默认处理 `.m3u` 的 App 打开。请使用支持播放列表的播放器（IINA、VLC、Swinsian 等）。**QuickTime Player 不支持 `.m3u`**，无法把合集当作队列播放。
-- **存在自定义文件夹里的笔记和歌词**是**按文件名**（`<工程名>.md`）和工程对应的。在扩展里改工程名，`.md` 会自动跟着改名；如果你自己手动改了 `.md` 的名字，扩展就找不到它了。
-- 文件名中不安全、或在 Obsidian 里有特殊含义的字符（`/ \ : * ? " < > | # ^ [ ]`）会被替换成**外观相近的全角字符**（如 `Beat #3` → `Beat ＃3.md`），保证两个工程不会共用同一个文件。
-- **把工程移到废纸篓**时，它在自定义文件夹里的笔记和歌词会被移进 `Deleted Projects/` 子文件夹，它的标签、轨号和角色会被保留 **30 天**。30 天内从废纸篓放回，下次打开 Search Projects 时一切都会还原。只是同名的新工程不受影响。
-- **在 Finder 里改名或删除工程**会被自动识别（按文件夹的创建时间匹配工程）。如果给了 Raycast **完全磁盘访问权限**，会对照废纸篓确认删除；没有这个权限时不会自动改动任何数据，需要手动运行 **Clean up Leftovers** 清理已移除工程的数据。如果很多工程同时消失（比如拔掉了外接盘），什么都不会改动。
+- **整张合集排队播放**会写出一个标准的 `.m3u` 播放列表，并用系统默认处理 `.m3u` 的 App 打开。请使用支持播放列表的播放器，比如 IINA、VLC、Swinsian；**QuickTime Player 不支持**。
+- 如果你自己手动改了笔记或歌词 `.md` 的名字，扩展就找不到它了。
 - 如果自定义的笔记或歌词文件夹被改名或移走，扩展会显示警告，并且在你到扩展设置里重新选择文件夹之前**不会写入任何内容**。
+
+## 开发
+
+需要 Node.js 22+ 和 npm。
+
+```bash
+git clone https://github.com/iyekChen/ableton-project-manager.git
+cd ableton-project-manager
+npm install
+npm run build:player   # 编译内置的 Swift（AVFoundation）音频播放器
+npm run dev            # 以开发模式在 Raycast 中运行扩展
+```
+
+```bash
+npm run lint       # ESLint + Prettier
+npm run fix-lint   # 自动修复
+npm test           # 单元测试（Vitest）
+npm run build      # 生产构建
+```
+
+### 工作原理
+
+- **`.als` 解析**：Set 文件是 gzip 压缩的 XML，用 `fast-xml-parser` 和 `saxes` 读取其中的 BPM、调性和拍号。
+- **音频播放与分析**：由一个内置的 Swift AVFoundation 小程序播放 bounce，并测量能量特征。它作为一个独立的后台进程运行，所以切换视图、关掉窗口后播放都不会中断；扩展通过几个小的命令文件和状态文件控制它。这个二进制（`assets/audio-player`）由 [`scripts/build-audio-player.sh`](scripts/build-audio-player.sh) 从 [`swift/AudioPlayer.swift`](swift/AudioPlayer.swift) 编译而来，是同时支持 arm64 和 x86_64 的通用二进制。CI 会检查提交的二进制和源码是否一致。
+- **存储**：标签、置顶和每个工程的元数据存在 Raycast LocalStorage 里，视图偏好存在 Raycast Cache 里，笔记和歌词是 Markdown 文件。
 
 ## 许可证
 
