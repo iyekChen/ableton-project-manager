@@ -4,6 +4,7 @@ import path from "node:path";
 import { LocalStorage } from "@raycast/api";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { archiveDeletedProject, restorePutBackProjects } from "../src/core/fs/deleted-projects";
+import { StorageUnreadableError } from "../src/core/fs/storage";
 import { deleteProjectMetadata, getProjectMetadata, saveProjectMetadata } from "../src/core/metadata/project-metadata";
 import { getTrackMap, removeProjectFromAllOrders, setTrackMap } from "../src/core/metadata/collection-order";
 import type { Project } from "../src/core/projects/types";
@@ -28,6 +29,7 @@ function makeProject(id: string, createdAt = 1000, inode = 42): Project {
     genreIds: [],
     collectionIds: [],
     notes: "",
+    lyrics: "",
     pinned: false,
     pinOrder: null,
     setsCount: 1,
@@ -89,6 +91,15 @@ describe("删除 → 放回 → 重试", () => {
 
     // 全部还原后记录被清掉
     expect(JSON.parse((await LocalStorage.getItem<string>("deleted-projects")) ?? "[]")).toEqual([]);
+  });
+
+  it("删除记录损坏：直接报错，笔记留在原处，记录不被覆盖", async () => {
+    await LocalStorage.setItem("deleted-projects", "{not json");
+    fs.writeFileSync(path.join(notes, "Song.md"), "mine");
+
+    await expect(archiveDeletedProject(makeProject("Song"))).rejects.toBeInstanceOf(StorageUnreadableError);
+    expect(fs.readFileSync(path.join(notes, "Song.md"), "utf8")).toBe("mine");
+    expect(await LocalStorage.getItem<string>("deleted-projects")).toBe("{not json");
   });
 
   it("同名新项目（不同文件夹）不继承旧数据", async () => {

@@ -9,6 +9,7 @@ export type Project = {
   genreIds: string[];
   collectionIds: string[];
   notes: string;
+  lyrics: string; // 和 notes 一样在加载时读入，已去掉 frontmatter；渲染时不再读文件
   pinned: boolean;
   pinOrder: number | null;
   setsCount: number;

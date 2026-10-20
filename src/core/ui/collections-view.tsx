@@ -842,7 +842,7 @@ function CollectionPanel({
     const role = roles[p.id];
     const stage = stages.find((s) => s.id === p.stageId);
     const level = energyLevelOf(p);
-    const detailBody = detailDoc === "notes" ? (p.notes ?? "") : stripFrontmatter(readDocFile(p, "lyrics"));
+    const detailBody = detailDoc === "notes" ? (p.notes ?? "") : (p.lyrics ?? "");
     const detailPlaceholder = docPlaceholder(detailDoc, p.title);
 
     return (

@@ -161,8 +161,9 @@ export default function Command() {
     const metadataStore = await getAllProjectMetadata();
     const updatedProjects = baseProjectsRef.current.map((project) => {
       const metadata = metadataStore[project.id];
-      // 总是读：applyMetadata 只在挂载时创建一次，按 showDetail 判断会锁死首帧的值，切到 Detail 时笔记为空。
+      // 笔记和歌词都总是读：applyMetadata 只在挂载时创建一次，按 showDetail 判断会锁死首帧的值，切到 Detail 时内容为空。
       const notes = stripFrontmatter(readDocFile(project, "notes"));
+      const lyrics = stripFrontmatter(readDocFile(project, "lyrics"));
       const externalBounceFolders = metadata?.externalBounceFolders ?? [];
       const externalBounceFiles = metadata?.externalBounceFiles ?? [];
       // 无外部来源时复用 loadProjects 已算好的默认文件夹计数，省去重复扫描；
@@ -177,6 +178,7 @@ export default function Command() {
         genreIds: metadata?.genreIds ?? [],
         collectionIds: metadata?.collectionIds ?? [],
         notes,
+        lyrics,
         pinned: metadata?.pinned ?? false,
         pinOrder: metadata?.pinOrder ?? null,
         externalBounceFolders,
@@ -441,11 +443,7 @@ export default function Command() {
     const genreNames = namesFor(item.genreIds, genreOptions);
     const collectionNames = namesFor(item.collectionIds, collectionOptions);
     const stagePill = stage ? [{ tag: { value: stage.name, color: stage.color ?? Color.SecondaryText } }] : [];
-    const detailBody = !showDetail
-      ? ""
-      : detailDoc === "notes"
-        ? item.notes
-        : stripFrontmatter(readDocFile(item, "lyrics"));
+    const detailBody = !showDetail ? "" : detailDoc === "notes" ? item.notes : item.lyrics;
     const detailPlaceholder = docPlaceholder(detailDoc, item.title);
 
     const isThisPlaying = playingId === item.id;

@@ -60,6 +60,7 @@ export function loadProjects(projectsRoot: string): Project[] {
         genreIds: [],
         collectionIds: [],
         notes: "",
+        lyrics: "",
         pinned: false,
         pinOrder: null,
         setsCount: setFiles.length,

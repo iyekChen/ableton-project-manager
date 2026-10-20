@@ -49,6 +49,7 @@ function makeProject(id: string, createdAt: number, inode: number): Project {
     genreIds: [],
     collectionIds: [],
     notes: "",
+    lyrics: "",
     pinned: false,
     pinOrder: null,
     setsCount: 1,
