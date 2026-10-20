@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { LocalStorage } from "@raycast/api";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { archiveDeletedProject, restorePutBackProjects } from "../src/core/fs/deleted-projects";
+import { archiveDeletedProject, assertDeletionWritable, restorePutBackProjects } from "../src/core/fs/deleted-projects";
 import { StorageUnreadableError } from "../src/core/fs/storage";
 import { deleteProjectMetadata, getProjectMetadata, saveProjectMetadata } from "../src/core/metadata/project-metadata";
 import { getTrackMap, removeProjectFromAllOrders, setTrackMap } from "../src/core/metadata/collection-order";
@@ -100,6 +100,14 @@ describe("删除 → 放回 → 重试", () => {
     await expect(archiveDeletedProject(makeProject("Song"))).rejects.toBeInstanceOf(StorageUnreadableError);
     expect(fs.readFileSync(path.join(notes, "Song.md"), "utf8")).toBe("mine");
     expect(await LocalStorage.getItem<string>("deleted-projects")).toBe("{not json");
+  });
+
+  it("删除前预检：任一份要写的存储损坏都拒绝", async () => {
+    await setTrackMap("ep", { Song: 1 });
+    await expect(assertDeletionWritable()).resolves.toBeUndefined();
+
+    await LocalStorage.setItem("collection-roles:ep", "{not json");
+    await expect(assertDeletionWritable()).rejects.toBeInstanceOf(StorageUnreadableError);
   });
 
   it("同名新项目（不同文件夹）不继承旧数据", async () => {

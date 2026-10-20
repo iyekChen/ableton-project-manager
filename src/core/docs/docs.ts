@@ -375,6 +375,27 @@ export function readDocFile(project: { title: string; folderPath: string }, kind
   }
 }
 
+/** 文件存在但读不出来时抛出（权限不够、iCloud 文件还没下载到本地等）。 */
+export class DocUnreadableError extends Error {
+  constructor(readonly file: string) {
+    super(`Couldn't read: ${file}`);
+    this.name = "DocUnreadableError";
+  }
+}
+
+// 编辑前读取：和 readDocFile 不同，要区分「文件不存在」（返回空，可以新建）和「存在但读不出来」（抛错）。
+// 后者若也当成空，编辑表单会以空白打开，一保存就覆盖原文。
+export function readDocFileForEdit(project: { title: string; folderPath: string }, kind: DocKind): string {
+  if (docSharedWith(project.title, kind).length > 0) return "";
+  const file = docFilePath(project, kind);
+  try {
+    return fs.readFileSync(file, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code === "ENOENT") return "";
+    throw new DocUnreadableError(file);
+  }
+}
+
 /** 文档文件当前的修改时间（不存在为 null）。编辑前记下、保存前比对，用来发现外部改动。 */
 export function docFileMtime(project: { title: string; folderPath: string }, kind: DocKind): number | null {
   try {

@@ -1,6 +1,6 @@
 import { ActionPanel, Action, Alert, Form, Icon, confirmAlert, showToast, Toast, useNavigation } from "@raycast/api";
 import { useEffect, useRef, useState } from "react";
-import { docFileMtime, readDocFile, stripFrontmatter, writeDocBody } from "@/core/docs/docs";
+import { docFileMtime, readDocFileForEdit, stripFrontmatter, writeDocBody } from "@/core/docs/docs";
 import { showDocError } from "@/core/docs/doc-actions";
 import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
@@ -12,15 +12,24 @@ const t = getTranslations(settings.language);
 export function EditNote({ project, onSaved }: { project: Project; onSaved: () => void }) {
   const { pop } = useNavigation();
   const [note, setNote] = useState("");
+  // 原文读进来之前不给保存：读不出来时若以空白表单打开，一保存就把原文覆盖了。
+  const [loaded, setLoaded] = useState(false);
   // 打开时文件的修改时间：保存前比对，发现表单开着期间别处（如 Obsidian）改过这份笔记。
   const loadedMtime = useRef<number | null>(null);
 
   useEffect(() => {
     loadedMtime.current = docFileMtime(project, "notes");
-    setNote(stripFrontmatter(readDocFile(project, "notes")));
-  }, [project]);
+    try {
+      setNote(stripFrontmatter(readDocFileForEdit(project, "notes")));
+      setLoaded(true);
+    } catch {
+      void showToast({ style: Toast.Style.Failure, title: t.docUnreadable, message: t.docUnreadableHint });
+      pop();
+    }
+  }, [project, pop]);
 
   async function handleSubmit() {
+    if (!loaded) return;
     if (docFileMtime(project, "notes") !== loadedMtime.current) {
       const confirmed = await confirmAlert({
         icon: Icon.Warning,
@@ -52,12 +61,9 @@ export function EditNote({ project, onSaved }: { project: Project; onSaved: () =
 
   return (
     <Form
+      isLoading={!loaded}
       navigationTitle={`${t.editNote} — ${project.title}`}
-      actions={
-        <ActionPanel>
-          <Action.SubmitForm title={t.save} onSubmit={handleSubmit} />
-        </ActionPanel>
-      }
+      actions={<ActionPanel>{loaded && <Action.SubmitForm title={t.save} onSubmit={handleSubmit} />}</ActionPanel>}
     >
       <Form.TextArea id="note" title={t.notes} value={note} onChange={setNote} />
     </Form>

@@ -1,8 +1,13 @@
 import { assertWritable, readJson, updateJson } from "./storage";
 import { archiveDocFiles, restoreArchivedDoc, type ArchivedDoc } from "@/core/docs/docs";
-import { getAllProjectMetadata, restoreProjectMetadata, type ProjectMetadata } from "@/core/metadata/project-metadata";
-import { getProjectOrders, restoreTrackNumber } from "@/core/metadata/collection-order";
-import { getProjectRoles, restoreRole } from "@/core/metadata/collection-roles";
+import {
+  assertMetadataWritable,
+  getAllProjectMetadata,
+  restoreProjectMetadata,
+  type ProjectMetadata,
+} from "@/core/metadata/project-metadata";
+import { assertOrdersWritable, getProjectOrders, restoreTrackNumber } from "@/core/metadata/collection-order";
+import { assertRolesWritable, getProjectRoles, restoreRole } from "@/core/metadata/collection-roles";
 import { collectionTaxonomy } from "@/core/metadata/taxonomies";
 import { sameFolder, type FolderIdentity } from "./project-snapshot";
 import type { Project } from "@/core/projects/types";
@@ -65,6 +70,15 @@ export async function pruneDeletedRecords(
     const kept = records.filter((record) => keep(record));
     return kept.length !== records.length ? kept : null;
   });
+}
+
+/** Move to Trash 之前调用：删除流程要写的存储（删除记录、元数据、轨号、角色）都能写才放行。
+ *  有一份损坏就抛 StorageUnreadableError，项目文件夹还没动。 */
+export async function assertDeletionWritable(): Promise<void> {
+  await assertWritable(STORAGE_KEY);
+  await assertMetadataWritable();
+  await assertOrdersWritable();
+  await assertRolesWritable();
 }
 
 /** 项目移到废纸篓后、清理数据前调用：存下标签/合集轨号/角色，并把自定义文件夹里的文档移进 Deleted Projects/。 */

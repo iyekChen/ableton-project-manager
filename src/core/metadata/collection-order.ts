@@ -1,4 +1,4 @@
-import { listKeySuffixes, readJson, removeJson, updateJson } from "@/core/fs/storage";
+import { assertPrefixWritable, listKeySuffixes, readJson, removeJson, updateJson } from "@/core/fs/storage";
 
 const KEY_PREFIX = "collection-order:";
 
@@ -19,6 +19,11 @@ const emptyMap = (): TrackMap => ({});
 
 function updateTrackMap(collectionId: string, update: (map: TrackMap) => TrackMap | null): Promise<TrackMap> {
   return updateJson(KEY_PREFIX + collectionId, parseTrackMap, emptyMap, update);
+}
+
+/** 预检：所有合集的轨号映射都能写（有损坏的就抛 StorageUnreadableError）。 */
+export function assertOrdersWritable(): Promise<void> {
+  return assertPrefixWritable(KEY_PREFIX);
 }
 
 /** 读取某个 collection 的轨号映射 */

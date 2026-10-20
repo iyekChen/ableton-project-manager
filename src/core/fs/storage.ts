@@ -79,6 +79,16 @@ export async function assertWritable(key: string): Promise<void> {
   if (isCorruptJson(await LocalStorage.getItem<string>(key))) throw new StorageUnreadableError();
 }
 
+/** 预检一组 key：以 prefix 开头的 key 里有损坏的就抛 StorageUnreadableError（按合集分 key 存的映射用）。 */
+export async function assertPrefixWritable(prefix: string): Promise<void> {
+  const all = await LocalStorage.allItems();
+  for (const [key, value] of Object.entries(all)) {
+    if (key.startsWith(prefix) && typeof value === "string" && isCorruptJson(value)) {
+      throw new StorageUnreadableError();
+    }
+  }
+}
+
 /** LocalStorage 里以 prefix 开头的所有 key，去掉前缀后返回（按合集分 key 存的映射用）。 */
 export async function listKeySuffixes(prefix: string): Promise<string[]> {
   const all = await LocalStorage.allItems();

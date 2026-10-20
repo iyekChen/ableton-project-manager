@@ -1,4 +1,4 @@
-import { listKeySuffixes, readJson, removeJson, updateJson } from "@/core/fs/storage";
+import { assertPrefixWritable, listKeySuffixes, readJson, removeJson, updateJson } from "@/core/fs/storage";
 
 const KEY_PREFIX = "collection-roles:";
 
@@ -26,6 +26,11 @@ async function updateAllRoleMaps(update: (map: RoleMap) => RoleMap | null): Prom
   for (const collectionId of await listKeySuffixes(KEY_PREFIX)) {
     await updateRoleMap(collectionId, update);
   }
+}
+
+/** 预检：所有合集的角色映射都能写（有损坏的就抛 StorageUnreadableError）。 */
+export function assertRolesWritable(): Promise<void> {
+  return assertPrefixWritable(KEY_PREFIX);
 }
 
 /** 读取某个 collection 的角色映射 */

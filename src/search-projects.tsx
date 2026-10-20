@@ -40,7 +40,7 @@ import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "@/core/metadat
 import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import { displayDoc, readDocFile, setKnownProjectTitles, stripFrontmatter } from "@/core/docs/docs";
 import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
-import { archiveDeletedProject, restorePutBackProjects } from "@/core/fs/deleted-projects";
+import { archiveDeletedProject, assertDeletionWritable, restorePutBackProjects } from "@/core/fs/deleted-projects";
 import { StorageUnreadableError } from "@/core/fs/storage";
 import { syncFinderChanges } from "@/core/fs/finder-sync";
 import { removedProjectIds } from "@/core/fs/removed-projects";
@@ -406,6 +406,8 @@ export default function Command() {
     if (!confirmed) return;
     trashingIds.add(project.id);
     try {
+      // 删除流程要写的存储先全部预检：有一份损坏就在动文件夹之前停下，什么都不改。
+      await assertDeletionWritable();
       await trash(project.folderPath);
       // 先存档（标签/轨号/角色，并把自定义文件夹里的文档移进 Deleted Projects/），再清理残留数据。
       // 30 天内从废纸篓放回，下次加载会按「同名 + 同创建时间」识别并还原；同名新项目不受影响。

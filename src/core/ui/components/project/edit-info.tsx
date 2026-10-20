@@ -14,7 +14,13 @@ import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { getProjectMetadata, renameProjectMetadata, saveProjectMetadata } from "@/core/metadata/project-metadata";
+import {
+  assertMetadataWritable,
+  getProjectMetadata,
+  renameProjectMetadata,
+  saveProjectMetadata,
+} from "@/core/metadata/project-metadata";
+import { StorageUnreadableError } from "@/core/fs/storage";
 import { getTranslations } from "@/i18n";
 import { getSettings } from "@/settings";
 import {
@@ -25,8 +31,20 @@ import {
   renameDocFiles,
   type DocRenameResult,
 } from "@/core/docs/docs";
-import { getTrackMap, removeNumber, renameProjectInAllOrders, setTrackMap } from "@/core/metadata/collection-order";
-import { clearRole, getRoleMap, renameProjectInAllRoles, setRoleMap } from "@/core/metadata/collection-roles";
+import {
+  assertOrdersWritable,
+  getTrackMap,
+  removeNumber,
+  renameProjectInAllOrders,
+  setTrackMap,
+} from "@/core/metadata/collection-order";
+import {
+  assertRolesWritable,
+  clearRole,
+  getRoleMap,
+  renameProjectInAllRoles,
+  setRoleMap,
+} from "@/core/metadata/collection-roles";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
 import type { Project } from "@/core/projects/types";
 
@@ -117,6 +135,17 @@ export function EditInfo({
       return;
     }
 
+    // 保存会写元数据、各合集的轨号和角色（改名时还要迁移）：先确认都能写，再动文件夹或弹确认框。
+    try {
+      await assertMetadataWritable();
+      await assertOrdersWritable();
+      await assertRolesWritable();
+    } catch (error) {
+      if (!(error instanceof StorageUnreadableError)) throw error;
+      await showToast({ style: Toast.Style.Failure, title: t.storageUnreadable });
+      return;
+    }
+
     // 移出了合集：独立确认（点明会清掉那些合集里的排序与角色），放在改名确认之前，
     // 避免改完名/写完盘后用户才在这一步取消、留下半成品。
     if (removedCollections.length > 0) {
@@ -193,10 +222,23 @@ export function EditInfo({
         return;
       }
 
-      await renameProjectMetadata(project.id, trimmedName);
-      // 合集里的轨号/角色也以项目 id 为键，一并迁移，否则改名后曲目会掉进 Unsorted、角色丢失。
-      await renameProjectInAllOrders(project.id, trimmedName);
-      await renameProjectInAllRoles(project.id, trimmedName);
+      try {
+        await renameProjectMetadata(project.id, trimmedName);
+        // 合集里的轨号/角色也以项目 id 为键，一并迁移，否则改名后曲目会掉进 Unsorted、角色丢失。
+        await renameProjectInAllOrders(project.id, trimmedName);
+        await renameProjectInAllRoles(project.id, trimmedName);
+      } catch (error) {
+        // 预检之后仍写入失败：文件夹已改名，不往回改。下次加载列表时，Finder 同步会按 inode 认出这次改名，
+        // 把没迁完的数据和文档补齐（每一步都能重复执行）；同步成功前不会更新项目清单，所以每次加载都会重试。
+        onSaved({ oldId: project.id, newId: trimmedName, folderPath: newPath });
+        await showToast({
+          style: Toast.Style.Failure,
+          title: t.renameDataPending,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        pop();
+        return;
+      }
       docRenameResult = renameDocFiles(project.title, trimmedName);
       targetId = trimmedName;
       rename = { oldId: project.id, newId: trimmedName, folderPath: newPath };

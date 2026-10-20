@@ -181,6 +181,9 @@ type TranslationKeys = {
   noNotesYet: string;
   noLyricsYet: string;
   storageUnreadable: string;
+  renameDataPending: string;
+  docUnreadable: string;
+  docUnreadableHint: string;
   trashFailed: string;
   sectionPlayback: string;
   sectionDetails: string;
@@ -408,6 +411,10 @@ const translations: Record<Language, TranslationKeys> = {
     noNotesYet: "_No notes yet_",
     noLyricsYet: "_No lyrics yet_",
     storageUnreadable: "Couldn't read your saved data — the change was skipped to avoid overwriting it",
+    renameDataPending: "Renamed — some tags will catch up next time the list loads",
+    docUnreadable: "Couldn't read this note",
+    docUnreadableHint:
+      "The file exists but couldn't be opened (e.g. not downloaded from iCloud yet). Nothing was changed.",
     trashFailed: "Couldn't move to Trash",
     sectionPlayback: "Playback",
     sectionDetails: "Details",

@@ -1,4 +1,4 @@
-import { readJson, updateJson } from "@/core/fs/storage";
+import { assertWritable, readJson, updateJson } from "@/core/fs/storage";
 
 export type ProjectMetadata = {
   stageId: string | null;
@@ -40,6 +40,11 @@ function readStore(): Promise<ProjectMetadataStore> {
 // 所有写入都走这里：一次读—改—写回，并发更新排队，存储损坏时拒绝写入。update 返回 null 表示没有变化。
 async function updateStore(update: (store: ProjectMetadataStore) => ProjectMetadataStore | null): Promise<void> {
   await updateJson(PROJECT_METADATA_STORAGE_KEY, parseStore, emptyStore, update);
+}
+
+/** 预检：元数据能写（损坏时抛 StorageUnreadableError）。在改名、删除这类会先动文件的操作之前调用。 */
+export function assertMetadataWritable(): Promise<void> {
+  return assertWritable(PROJECT_METADATA_STORAGE_KEY);
 }
 
 // 用 EMPTY 兜底展开，保证老数据缺的字段也有默认值。
