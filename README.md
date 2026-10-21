@@ -130,7 +130,6 @@ While Search Projects is open, it watches your Projects Folder and reloads when 
 ## ⛓️ Known limitations
 
 - **Queue Collection in Player:** use a player that supports `.m3u` playlists, such as IINA, VLC, or Swinsian. QuickTime Player doesn't.
-- **Bounces:** only files directly inside the Bounces Subfolder (or the external folders you add) are found. Subfolders aren't scanned.
 - **Renaming files externally:** if you rename a note or lyrics `.md` file yourself, the extension can no longer find it.
 - **Moving custom folders:** if a custom notes or lyrics folder is renamed or moved, the extension shows a warning and won't write anything until you choose the folder again in Extension Preferences.
 
