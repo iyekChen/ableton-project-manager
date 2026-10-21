@@ -46,14 +46,14 @@
 		{
 			"name": "notesTemplateFile",
 			"title": "Notes Template",
-			"description": "Optional .md file to use as the starting point for new notes. Supports {{title}} and {{date}}.",
+			"description": "Optional .md file used as the starting point for new notes. Supports {{title}}, {{date}}, and {{time}}.",
 			"type": "file",
 			"required": false
 		},
 		{
 			"name": "lyricsTemplateFile",
 			"title": "Lyrics Template",
-			"description": "Optional .md file to use as the starting point for new lyrics. Supports {{title}} and {{date}}.",
+			"description": "Optional .md file used as the starting point for new lyrics. Supports {{title}}, {{date}}, and {{time}}.",
 			"type": "file",
 			"required": false
 		},

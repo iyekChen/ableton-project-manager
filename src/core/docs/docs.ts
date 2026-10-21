@@ -320,11 +320,56 @@ export function unreadableTemplate(kind: DocKind): string | null {
   }
 }
 
-// 替换模板占位符。
-function renderTemplate(template: string, project: { title: string }): string {
-  const today = new Date().toISOString().slice(0, 10);
-  // 用函数形式替换：字符串形式会把标题里的 $&、$$ 等当成替换模式（如 “Money $$” 会变成 “Money $”）。
-  return template.replaceAll("{{title}}", () => project.title).replaceAll("{{date}}", () => today);
+// 日期格式记号，与 Obsidian（Moment.js）一致；长的写在前面，避免 MMMM 被拆成 MM + MM。[文字] 原样输出。
+const DATE_TOKENS = /\[([^\]]*)]|YYYY|YY|MMMM|MMM|MM|M|DD|D|dddd|ddd|HH|mm/g;
+
+/** 按格式把日期格式化成文字（本地时区）。不认识的字符原样保留。 */
+export function formatDate(date: Date, format: string): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return format.replace(DATE_TOKENS, (token: string, literal: string | undefined) => {
+    if (literal !== undefined) return literal;
+    switch (token) {
+      case "YYYY":
+        return String(date.getFullYear());
+      case "YY":
+        return pad(date.getFullYear() % 100);
+      case "MMMM":
+        return date.toLocaleString("en-US", { month: "long" });
+      case "MMM":
+        return date.toLocaleString("en-US", { month: "short" });
+      case "MM":
+        return pad(date.getMonth() + 1);
+      case "M":
+        return String(date.getMonth() + 1);
+      case "DD":
+        return pad(date.getDate());
+      case "D":
+        return String(date.getDate());
+      case "dddd":
+        return date.toLocaleString("en-US", { weekday: "long" });
+      case "ddd":
+        return date.toLocaleString("en-US", { weekday: "short" });
+      case "HH":
+        return pad(date.getHours());
+      case "mm":
+        return pad(date.getMinutes());
+      default:
+        return token;
+    }
+  });
+}
+
+// 占位符：{{title}}、{{date}}、{{time}}，后两个可带格式，如 {{date:YYYY/MM/DD}}、{{time:HH.mm}}。
+const PLACEHOLDER = /\{\{(title|date|time)(?::([^}]*))?\}\}/g;
+const DEFAULT_FORMAT = { date: "YYYY-MM-DD", time: "HH:mm" } as const;
+
+// 替换模板占位符。一次扫描替换全部：标题里若恰好含 {{date}}，不会被二次替换。
+// 用函数形式替换：字符串形式会把标题里的 $&、$$ 等当成替换模式（如 “Money $$” 会变成 “Money $”）。
+export function renderTemplate(template: string, project: { title: string }, now = new Date()): string {
+  return template.replace(PLACEHOLDER, (_match, name: "title" | "date" | "time", format: string | undefined) => {
+    if (name === "title") return project.title;
+    return formatDate(now, format || DEFAULT_FORMAT[name]);
+  });
 }
 
 const FRONTMATTER = /^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/;
