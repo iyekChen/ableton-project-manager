@@ -2,7 +2,7 @@
 	"$schema": "https://www.raycast.com/schemas/extension.json",
 	"name": "ableton-project-manager",
 	"title": "Ableton Project Manager",
-	"description": "Manage, search, and organize your Ableton Live projects — a DAW project manager for music producers",
+	"description": "Browse, organize, and listen to your Ableton Live projects",
 	"icon": "icon.png",
 	"author": "iyek",
 	"platforms": [
@@ -149,7 +149,7 @@
 		{
 			"name": "search-projects",
 			"title": "Search Projects",
-			"description": "Search and open Ableton Live projects",
+			"description": "Search, play, and organize your Ableton Live projects and collections",
 			"mode": "view",
 			"subtitle": "Ableton Live",
 			"keywords": [
@@ -182,11 +182,9 @@
 			]
 		}
 	],
-	"tools": [],
 	"dependencies": {
-		"@raycast/api": "^1.104.20",
-		"@raycast/utils": "^2.2.7",
-		"fast-xml-parser": "^5.11.2",
+		"@raycast/api": "^2.8.2",
+		"@raycast/utils": "^2.3.3",
 		"saxes": "^6.0.0"
 	},
 	"devDependencies": {
