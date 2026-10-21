@@ -327,8 +327,15 @@ function renderTemplate(template: string, project: { title: string }): string {
   return template.replaceAll("{{title}}", () => project.title).replaceAll("{{date}}", () => today);
 }
 
-// 新建文件的初始内容：有模板文件就套模板，否则空。
-function initialContent(project: { title: string }, kind: DocKind): string {
+const FRONTMATTER = /^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/;
+
+/** 内容为空（只有空白字符或 BOM）的文档视同新建：套用模板。 */
+export function isBlankDoc(content: string): boolean {
+  return content.replace(/^\uFEFF/, "").trim() === "";
+}
+
+// 新建文件的初始内容：有模板文件就套模板，否则空。Edit Note 新建笔记时也用它预填正文。
+export function initialContent(project: { title: string }, kind: DocKind): string {
   const templateFile = getTemplateFile(kind);
   if (templateFile) {
     try {
@@ -424,8 +431,21 @@ export function ensureDocFile(project: { title: string; folderPath: string }, ki
   if (!fs.existsSync(file)) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, initialContent(project, kind), "utf8");
+  } else if (fileIsBlank(file)) {
+    // 已存在但是空文件：同样套模板。没模板时不写，免得白白改动修改时间。
+    const content = initialContent(project, kind);
+    if (content) fs.writeFileSync(file, content, "utf8");
   }
   return file;
+}
+
+// 读得出来且内容为空才算空；读不出来的文件不碰。
+function fileIsBlank(file: string): boolean {
+  try {
+    return isBlankDoc(fs.readFileSync(file, "utf8"));
+  } catch {
+    return false;
+  }
 }
 
 // 写入正文，但保留文件原有的 frontmatter（编辑笔记时用）。自定义文件夹失效时抛 DocFolderMissingError。
@@ -438,7 +458,9 @@ export function writeDocBody(project: { title: string; folderPath: string }, kin
   } catch {
     // 文件不存在 = 没有 frontmatter 可保留。
   }
-  const match = existing.match(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+  // 新建或空文件：frontmatter 取自模板；否则保留文件原有的。
+  const source = isBlankDoc(existing) ? initialContent(project, kind) : existing;
+  const match = source.match(FRONTMATTER);
   const frontmatter = match ? match[0] : "";
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, frontmatter + body, "utf8");

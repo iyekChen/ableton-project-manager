@@ -1,6 +1,13 @@
 import { ActionPanel, Action, Alert, Form, Icon, confirmAlert, showToast, Toast, useNavigation } from "@raycast/api";
 import { useEffect, useRef, useState } from "react";
-import { docFileMtime, readDocFileForEdit, stripFrontmatter, writeDocBody } from "@/core/docs/docs";
+import {
+  docFileMtime,
+  initialContent,
+  isBlankDoc,
+  readDocFileForEdit,
+  stripFrontmatter,
+  writeDocBody,
+} from "@/core/docs/docs";
 import { showDocError } from "@/core/docs/doc-actions";
 import { getSettings } from "@/settings";
 import { showFailure } from "@/core/ui/toast";
@@ -21,7 +28,9 @@ export function EditNote({ project, onSaved }: { project: Project; onSaved: () =
   useEffect(() => {
     loadedMtime.current = docFileMtime(project, "notes");
     try {
-      setNote(stripFrontmatter(readDocFileForEdit(project, "notes")));
+      const raw = readDocFileForEdit(project, "notes");
+      // 新建或空笔记：用模板正文预填；保存时 frontmatter 也取自模板（见 writeDocBody）。
+      setNote(stripFrontmatter(isBlankDoc(raw) ? initialContent(project, "notes") : raw));
       setLoaded(true);
     } catch (error) {
       void showFailure(t.docUnreadable, error, { message: t.docUnreadableHint });
