@@ -26,9 +26,9 @@
 - To tag a single project, use Edit Info.
 
 ### ④ Build a collection
-1. In Search Projects, press `⌃↵` to browse collections and `⌘N` to create one.
-2. Open the collection and press `⌘N` to add projects.
-3. Assign track numbers with Set Track Number (`↵`) or Add to Tracklist (`⌘.`).
+1. In Search Projects, use Browse Collections, then Create.
+2. Open the collection and use Add Projects.
+3. Give each track a number with Set Track Number or Add to Tracklist. Numbered tracks form the Tracklist; the rest wait in Unsorted.
 
 ## ⚙️ Configuration
 
