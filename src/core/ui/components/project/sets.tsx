@@ -59,11 +59,20 @@ type ProjectSet = CachedAlsMetadata & {
 
 const ALS_METADATA_CONCURRENCY = 3;
 
+const SET_EXTENSION = daw.projectFileExtension;
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// 结尾的工程后缀（不区分大小写），用于去掉用户顺手输入的后缀。
+const SET_EXTENSION_PATTERN = new RegExp(escapeRegExp(SET_EXTENSION) + "$", "i");
+
 function uniqueCopyPath(dir: string, baseName: string): string {
-  let candidate = path.join(dir, `${baseName} copy.als`);
+  let candidate = path.join(dir, `${baseName} copy${SET_EXTENSION}`);
   let counter = 2;
   while (fs.existsSync(candidate)) {
-    candidate = path.join(dir, `${baseName} copy ${counter}.als`);
+    candidate = path.join(dir, `${baseName} copy ${counter}${SET_EXTENSION}`);
     counter++;
   }
   return candidate;
@@ -85,8 +94,8 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
   const [name, setName] = useState(set.name);
 
   async function handleSubmit() {
-    // 用户顺手输了 .als 也接受，统一由这里补后缀。
-    const trimmed = name.trim().replace(/\.als$/i, "");
+    // 用户顺手输了工程后缀也接受，统一由这里补后缀。
+    const trimmed = name.trim().replace(SET_EXTENSION_PATTERN, "");
     if (trimmed === "" || trimmed === set.name) {
       pop();
       return;
@@ -96,7 +105,7 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
       return;
     }
 
-    const target = path.join(path.dirname(set.path), `${trimmed}.als`);
+    const target = path.join(path.dirname(set.path), `${trimmed}${SET_EXTENSION}`);
     // 目标已存在且不是它自己（只改大小写）时拦下，绝不覆盖另一个 Set。
     if (fs.existsSync(target) && !isSameFile(target, set.path)) {
       await showToast({ style: Toast.Style.Failure, title: t.setNameExists });
@@ -119,7 +128,7 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
     }
 
     onRenamed();
-    await showToast({ style: Toast.Style.Success, title: t.setRenamed, message: `${trimmed}.als` });
+    await showToast({ style: Toast.Style.Success, title: t.setRenamed, message: `${trimmed}${SET_EXTENSION}` });
     pop();
   }
 
@@ -167,7 +176,7 @@ export function Sets({ project }: { project: Project }) {
 
         if (cancelled) return;
 
-        const files = fs.readdirSync(project.folderPath).filter((file) => file.endsWith(daw.projectFileExtension));
+        const files = fs.readdirSync(project.folderPath).filter((file) => file.endsWith(SET_EXTENSION));
 
         const pendingSets: PendingSet[] = files.map((file) => {
           const setPath = path.join(project.folderPath, file);
