@@ -47,6 +47,7 @@ import {
 } from "@/core/metadata/collection-roles";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
 import type { Project } from "@/core/projects/types";
+import { daw } from "@/daws";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -168,7 +169,7 @@ export function EditInfo({
         return;
       }
 
-      const newPath = path.join(path.dirname(project.folderPath), trimmedName);
+      const newPath = path.join(path.dirname(project.folderPath), daw.entryNameFor(trimmedName, project.kind));
 
       // 目标路径已存在时，看它是不是项目自己（只改大小写、不区分大小写的卷）；是别的文件夹就拦下。
       let targetIsSelf = false;

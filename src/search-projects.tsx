@@ -49,13 +49,14 @@ import { CleanUpRemovedProjects } from "@/core/ui/clean-up-removed-projects";
 import { EditInfo } from "@/core/ui/components/project/edit-info";
 import { EditNote } from "@/core/ui/components/project/edit-note";
 import { DuplicateProject } from "@/core/ui/components/project/duplicate-project";
-import { Sets } from "@/core/ui/components/project/sets";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
 import { loadProjects } from "@/core/projects/load-projects";
 import { countProjectBounces, findLatestProjectBounce } from "@/core/projects/bounces";
 import { viewPrefs } from "@/core/ui/view-prefs";
 import { daw } from "@/daws";
+import { SetsView } from "@/daws/ui";
+import { LOG_PREFIX } from "@/core/log";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -115,7 +116,7 @@ export default function Command() {
   const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">(() =>
     viewPrefs.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
   );
-  const [abletonApp, setAbletonApp] = useState<Application | null>(null);
+  const [dawApp, setDawApp] = useState<Application | null>(null);
   const baseProjectsRef = useRef<Project[]>([]);
   // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
   const leftoverToastShownRef = useRef(false);
@@ -128,10 +129,10 @@ export default function Command() {
       playerPath: PLAYER_PATH,
     });
 
-  // 解析 Ableton Live，用于 New Live Set（取其图标 + 启动）。
+  // 找到 DAW 应用，用于 New Live Set（启动它）。
   useEffect(() => {
     void getApplications().then((apps) => {
-      setAbletonApp(apps.find((app) => app.name.toLowerCase().includes(daw.appNameMatch)) ?? null);
+      setDawApp(apps.find((app) => app.name.toLowerCase().includes(daw.appNameMatch)) ?? null);
     });
   }, []);
 
@@ -249,7 +250,7 @@ export default function Command() {
       setOrphanIds(orphans);
       return orphans;
     } catch (error) {
-      console.error("[Ableton Project Manager] Failed to load projects:", error);
+      console.error(`${LOG_PREFIX} Failed to load projects:`, error);
       setProjects([]);
       setOrphanIds([]);
       await showFailure(t.loadProjectsFailed, error, { message: t.loadProjectsFailedHint });
@@ -534,7 +535,7 @@ export default function Command() {
         actions={
           <ActionPanel>
             <ActionPanel.Section>
-              <Action.Push title={t.viewSets} icon={Icon.Document} target={<Sets project={item} />} />
+              <Action.Push title={t.viewSets} icon={Icon.Document} target={<SetsView project={item} />} />
               <Action
                 title={toggleTitle}
                 icon={toggleIcon}
@@ -662,18 +663,18 @@ export default function Command() {
                 target={item.folderPath}
               />
               <Action
-                title={t.newLiveSet}
+                title={t.newProjectFile}
                 icon={Icon.NewDocument}
                 shortcut={Keyboard.Shortcut.Common.New}
                 onAction={async () => {
-                  if (!abletonApp) {
-                    await showToast({ style: Toast.Style.Failure, title: t.newLiveSetFailed });
+                  if (!dawApp) {
+                    await showToast({ style: Toast.Style.Failure, title: t.newProjectFileFailed });
                     return;
                   }
                   try {
-                    await open(abletonApp.path);
+                    await open(dawApp.path);
                   } catch (error) {
-                    await showFailure(t.newLiveSetFailed, error);
+                    await showFailure(t.newProjectFileFailed, error);
                   }
                 }}
               />

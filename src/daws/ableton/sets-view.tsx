@@ -18,15 +18,14 @@ import {
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { daw } from "@/daws";
+import type { DawSet, ProjectFileMetadata } from "@/daws";
+import { abletonAdapter, SET_EXTENSION } from "./adapter";
 import {
-  cacheAlsMetadata,
   EMPTY_METADATA,
-  fileSignature,
-  getCachedAlsMetadataEntry,
-  loadPersistentAlsMetadataCache,
-} from "@/core/projects/als-cache";
-import type { CachedAlsMetadata } from "@/core/projects/als-cache";
+  cachedSetMetadata,
+  loadPersistentProjectFileCache,
+  parseSetMetadata,
+} from "@/core/projects/project-file-cache";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
 import type { SortOption } from "@/core/ui/sorting";
 import { GroupBySubmenu, groupItems, useGroupOption } from "@/core/ui/grouping";
@@ -34,6 +33,7 @@ import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
 import type { Project } from "@/core/projects/types";
 import { showFailure } from "@/core/ui/toast";
+import { LOG_PREFIX } from "@/core/log";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -50,16 +50,9 @@ const SETS_SORT_OPTIONS: SortOption[] = [
   "name-desc",
 ];
 
-type ProjectSet = CachedAlsMetadata & {
-  name: string;
-  path: string;
-  createdAt: number;
-  modifiedAt: number;
-};
+type ProjectSet = DawSet & ProjectFileMetadata;
 
-const ALS_METADATA_CONCURRENCY = 3;
-
-const SET_EXTENSION = daw.projectFileExtension;
+const METADATA_CONCURRENCY = 3;
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -146,7 +139,7 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
   );
 }
 
-export function Sets({ project }: { project: Project }) {
+export function SetsView({ project }: { project: Project }) {
   const [sets, setSets] = useState<ProjectSet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useSortOption(SETS_SORT_STORAGE_KEY, SETS_SORT_OPTIONS, "created-desc");
@@ -157,63 +150,39 @@ export function Sets({ project }: { project: Project }) {
   // 解析 Ableton Live，仅用于 Open in Ableton Live 的图标。
   useEffect(() => {
     void getApplications().then((apps) => {
-      setAbletonApp(apps.find((app) => app.name.toLowerCase().includes(daw.appNameMatch)) ?? null);
+      setAbletonApp(apps.find((app) => app.name.toLowerCase().includes(abletonAdapter.appNameMatch)) ?? null);
     });
   }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    type PendingSet = {
-      set: ProjectSet;
-      signature: string;
-      cached: boolean;
-    };
-
     async function loadSets() {
       try {
-        await loadPersistentAlsMetadataCache();
+        await loadPersistentProjectFileCache();
 
         if (cancelled) return;
 
-        const files = fs.readdirSync(project.folderPath).filter((file) => file.endsWith(SET_EXTENSION));
-
-        const pendingSets: PendingSet[] = files.map((file) => {
-          const setPath = path.join(project.folderPath, file);
-          const stats = fs.statSync(setPath);
-          const signature = fileSignature(stats);
-          const cachedEntry = getCachedAlsMetadataEntry(setPath);
-          const cacheIsValid = cachedEntry !== undefined && cachedEntry.signature === signature;
-
-          return {
-            set: {
-              name: path.basename(file, daw.projectFileExtension),
-              path: setPath,
-              createdAt: stats.birthtimeMs,
-              modifiedAt: stats.mtimeMs,
-              ...(cacheIsValid ? cachedEntry.metadata : EMPTY_METADATA),
-            },
-            signature,
-            cached: cacheIsValid,
-          };
+        // 有缓存的先显示，没缓存的再并发解析。
+        const items = abletonAdapter.listSets(project).map((dawSet) => {
+          const cached = cachedSetMetadata(dawSet);
+          const set: ProjectSet = { ...dawSet, ...(cached ?? EMPTY_METADATA) };
+          return { set, cached: cached !== null };
         });
 
-        const missing = pendingSets.filter((item) => !item.cached);
+        const missing = items.filter((item) => !item.cached);
 
-        async function parseSet(item: PendingSet) {
+        async function parseSet(set: ProjectSet) {
           try {
-            const normalizedMetadata: CachedAlsMetadata = await daw.parseProjectFile(item.set.path);
+            const metadata = await parseSetMetadata(set);
 
             if (cancelled) return;
 
-            if (fileSignature(fs.statSync(item.set.path)) !== item.signature) return;
-
-            cacheAlsMetadata(item.set.path, item.signature, normalizedMetadata);
-            item.set.bpm = normalizedMetadata.bpm;
-            item.set.timeSignature = normalizedMetadata.timeSignature;
-            item.set.key = normalizedMetadata.key;
+            set.bpm = metadata.bpm;
+            set.timeSignature = metadata.timeSignature;
+            set.key = metadata.key;
           } catch (error) {
-            console.error(`[Ableton Project Manager] Failed to load ALS metadata: ${item.set.path}`, error);
+            console.error(`${LOG_PREFIX} Failed to load set metadata: ${set.path}`, error);
           }
         }
 
@@ -224,18 +193,18 @@ export function Sets({ project }: { project: Project }) {
             const index = nextIndex++;
             if (index >= missing.length) return;
 
-            await parseSet(missing[index]);
+            await parseSet(missing[index].set);
           }
         }
 
-        await Promise.all(Array.from({ length: Math.min(ALS_METADATA_CONCURRENCY, missing.length) }, () => worker()));
+        await Promise.all(Array.from({ length: Math.min(METADATA_CONCURRENCY, missing.length) }, () => worker()));
 
         if (cancelled) return;
 
-        setSets(pendingSets.map((item) => item.set));
+        setSets(items.map((item) => item.set));
       } catch (error) {
         if (!cancelled) {
-          console.error("[Ableton Project Manager] Failed to load Sets:", error);
+          console.error(`${LOG_PREFIX} Failed to load sets:`, error);
           setSets([]);
         }
       } finally {
@@ -250,7 +219,7 @@ export function Sets({ project }: { project: Project }) {
     return () => {
       cancelled = true;
     };
-  }, [project.folderPath, reloadToken]);
+  }, [project.folderPath, project.kind, reloadToken]);
 
   const handleDuplicate = async (set: ProjectSet) => {
     try {
@@ -315,7 +284,7 @@ export function Sets({ project }: { project: Project }) {
                 <ActionPanel>
                   <ActionPanel.Section>
                     <Action.Open
-                      title={t.openInAbletonLive}
+                      title={t.openInDaw}
                       icon={abletonApp ? { fileIcon: abletonApp.path } : Icon.Document}
                       target={set.path}
                     />

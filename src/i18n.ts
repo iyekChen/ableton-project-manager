@@ -11,7 +11,7 @@ type TranslationKeys = {
   searchRoles: string;
   searchLeftovers: string;
   viewSets: string;
-  openInAbletonLive: string;
+  openInDaw: string;
   editInfo: string;
   save: string;
   pinProject: string;
@@ -145,8 +145,8 @@ type TranslationKeys = {
   restartTrack: string;
   showDetail: string;
   showOverview: string;
-  newLiveSet: string;
-  newLiveSetFailed: string;
+  newProjectFile: string;
+  newProjectFileFailed: string;
   duplicateSet: string;
   duplicateProject: string;
   duplicatingProject: string;
@@ -248,7 +248,7 @@ const translations: Record<Language, TranslationKeys> = {
     searchRoles: "Search Roles",
     searchLeftovers: "Search Leftovers",
     viewSets: "View Sets",
-    openInAbletonLive: "Open in Ableton Live",
+    openInDaw: "Open in Ableton Live",
     editInfo: "Edit Info",
     save: "Save",
     pinProject: "Pin",
@@ -388,8 +388,8 @@ const translations: Record<Language, TranslationKeys> = {
     restartTrack: "Restart Track",
     showDetail: "Show Detail",
     showOverview: "Show Overview",
-    newLiveSet: "New Live Set",
-    newLiveSetFailed: "Ableton Live not found",
+    newProjectFile: "New Live Set",
+    newProjectFileFailed: "Ableton Live not found",
     duplicateSet: "Duplicate Set",
     duplicateProject: "Duplicate Project",
     duplicatingProject: "Duplicating Project…",
