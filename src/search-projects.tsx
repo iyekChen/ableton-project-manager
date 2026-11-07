@@ -58,7 +58,7 @@ import { viewPrefs } from "@/core/ui/view-prefs";
 import { daw } from "@/daws";
 import { SetsView } from "@/daws/ui";
 import { LOG_PREFIX } from "@/core/log";
-import { nameKeywords } from "@/core/ui/search-keywords";
+import { dateKeywords, nameKeywords } from "@/core/ui/search-keywords";
 import { findLatestSet } from "@/core/projects/latest-set";
 
 const settings = getSettings();
@@ -450,6 +450,8 @@ export default function Command() {
     const id = selectedFilter.slice(separator + 1);
     if (dimension === "stage") return projects.filter((project) => project.stageId === id);
     if (dimension === "genre") return projects.filter((project) => project.genreIds.includes(id));
+    if (dimension === "created")
+      return projects.filter((project) => new Date(project.createdAt).getFullYear() === Number(id));
     return projects;
   })();
 
@@ -494,6 +496,11 @@ export default function Command() {
         key={item.id}
         icon="icon.png"
         title={item.title}
+        keywords={[
+          ...(stage ? [stage.name, ...nameKeywords(stage.name)] : []),
+          ...genreNames.flatMap((name) => [name, ...nameKeywords(name)]),
+          ...dateKeywords(item.createdAt),
+        ]}
         accessories={
           showDetail
             ? []
@@ -816,6 +823,8 @@ export default function Command() {
   };
 
   const currentSortTitle = sortOptionTitle(sortBy);
+  // Filter 的 Created 分组只列出有项目的年份，新的在前。
+  const createdYears = [...new Set(projects.map((p) => new Date(p.createdAt).getFullYear()))].sort((a, b) => b - a);
 
   return (
     <List
@@ -846,6 +855,17 @@ export default function Command() {
                 value={`genre:${option.id}`}
                 keywords={["genre", "genres", t.genre, ...nameKeywords(option.name)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Tag}
+              />
+            ))}
+          </List.Dropdown.Section>
+          <List.Dropdown.Section title={t.created}>
+            {createdYears.map((year) => (
+              <List.Dropdown.Item
+                key={`created:${year}`}
+                title={String(year)}
+                value={`created:${year}`}
+                keywords={["created", "year", t.created]}
+                icon={Icon.Calendar}
               />
             ))}
           </List.Dropdown.Section>
