@@ -48,6 +48,7 @@ import {
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
 import type { Project } from "@/core/projects/types";
 import { daw } from "@/daws";
+import { nameKeywords } from "@/core/ui/search-keywords";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -297,6 +298,7 @@ export function EditInfo({
             key={option.id}
             value={option.id}
             title={option.name}
+            keywords={nameKeywords(option.name)}
             icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
           />
         ))}
@@ -322,7 +324,7 @@ export function EditInfo({
               key={option.id}
               value={option.name}
               title={option.name}
-              keywords={option.name.includes("&") ? [option.name.replace(/&/g, "n")] : undefined}
+              keywords={nameKeywords(option.name)}
             />
           ))}
         </Form.Dropdown>

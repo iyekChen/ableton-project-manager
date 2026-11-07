@@ -57,6 +57,7 @@ import { viewPrefs } from "@/core/ui/view-prefs";
 import { daw } from "@/daws";
 import { SetsView } from "@/daws/ui";
 import { LOG_PREFIX } from "@/core/log";
+import { nameKeywords } from "@/core/ui/search-keywords";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -803,7 +804,7 @@ export default function Command() {
                 key={`stage:${option.id}`}
                 title={option.name}
                 value={`stage:${option.id}`}
-                keywords={["stage", "stages", t.stage]}
+                keywords={["stage", "stages", t.stage, ...nameKeywords(option.name)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
               />
             ))}
@@ -814,7 +815,7 @@ export default function Command() {
                 key={`genre:${option.id}`}
                 title={option.name}
                 value={`genre:${option.id}`}
-                keywords={["genre", "genres", t.genre]}
+                keywords={["genre", "genres", t.genre, ...nameKeywords(option.name)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Tag}
               />
             ))}
