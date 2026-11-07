@@ -11,6 +11,9 @@ type TranslationKeys = {
   searchRoles: string;
   searchLeftovers: string;
   viewSets: string;
+  openLatestSet: string;
+  noSets: string;
+  openSetFailed: string;
   openInDaw: string;
   editInfo: string;
   save: string;
@@ -250,6 +253,9 @@ const translations: Record<Language, TranslationKeys> = {
     searchRoles: "Search Roles",
     searchLeftovers: "Search Leftovers",
     viewSets: "View Sets",
+    openLatestSet: "Open Latest Set",
+    noSets: "No Sets Found",
+    openSetFailed: "Couldn't Open Set",
     openInDaw: "Open in Ableton Live",
     editInfo: "Edit Info",
     save: "Save",

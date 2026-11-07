@@ -2,6 +2,7 @@ import {
   ActionPanel,
   Action,
   Clipboard,
+  closeMainWindow,
   Color,
   getApplications,
   Icon,
@@ -58,6 +59,7 @@ import { daw } from "@/daws";
 import { SetsView } from "@/daws/ui";
 import { LOG_PREFIX } from "@/core/log";
 import { nameKeywords } from "@/core/ui/search-keywords";
+import { findLatestSet } from "@/core/projects/latest-set";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -384,6 +386,21 @@ export default function Command() {
     });
   }, []);
 
+  // 和 Open in Ableton Live 一样：打开后关掉 Raycast 窗口。
+  const openLatestSet = useCallback(async (project: Project) => {
+    const set = findLatestSet(daw.listSets(project));
+    if (!set) {
+      await showToast({ style: Toast.Style.Failure, title: t.noSets });
+      return;
+    }
+    try {
+      await open(set.path);
+      await closeMainWindow();
+    } catch (error) {
+      await showFailure(t.openSetFailed, error);
+    }
+  }, []);
+
   const handlePinToggle = async (project: Project) => {
     await setProjectPinned(project.id, !project.pinned);
     await applyMetadata();
@@ -591,6 +608,12 @@ export default function Command() {
                   void reloadProjects();
                   void collectionTaxonomy.get().then(setCollectionOptions);
                 }}
+              />
+              <Action
+                title={t.openLatestSet}
+                icon={dawApp ? { fileIcon: dawApp.path } : Icon.Document}
+                shortcut={Keyboard.Shortcut.Common.Open}
+                onAction={() => openLatestSet(item)}
               />
             </ActionPanel.Section>
             {isAnythingPlaying && (
