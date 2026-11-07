@@ -639,6 +639,12 @@ export default function Command() {
                 shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
                 target={<EditNote project={item} onSaved={reloadProjects} />}
               />
+              <Action.Push
+                title={t.editLyrics}
+                icon={Icon.Highlight}
+                shortcut={{ modifiers: ["cmd", "opt"], key: "l" }}
+                target={<EditNote project={item} kind="lyrics" onSaved={reloadProjects} />}
+              />
               <Action
                 title={t.openNote}
                 icon={Icon.Book}

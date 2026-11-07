@@ -48,11 +48,13 @@ type TranslationKeys = {
   filter: string;
   all: string;
   notes: string;
+  lyrics: string;
   openNote: string;
   openLyrics: string;
   showNotes: string;
   showLyrics: string;
   editNote: string;
+  editLyrics: string;
   none: string;
   pinned: string;
   sortBy: string;
@@ -285,11 +287,13 @@ const translations: Record<Language, TranslationKeys> = {
     filter: "Filter",
     all: "All",
     notes: "Notes",
+    lyrics: "Lyrics",
     openNote: "Open Note",
     openLyrics: "Open Lyrics",
     showNotes: "Show Notes",
     showLyrics: "Show Lyrics",
     editNote: "Edit Note",
+    editLyrics: "Edit Lyrics",
     none: "None",
     pinned: "Pinned",
     sortBy: "Sort By",

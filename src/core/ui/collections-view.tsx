@@ -580,10 +580,10 @@ function CollectionPanel({
     [],
   );
 
-  // Edit Note 存盘后：重读该曲目的 Note 正文，让详情面板即时回显。
-  function reloadNote(project: Project) {
-    const notes = stripFrontmatter(readDocFile(project, "notes"));
-    setProjectList((prev) => prev.map((p) => (p.id === project.id ? { ...p, notes } : p)));
+  // Edit Note / Edit Lyrics 存盘后：重读该曲目的那份文档，让详情面板即时回显。
+  function reloadDoc(project: Project, kind: "notes" | "lyrics") {
+    const body = stripFrontmatter(readDocFile(project, kind));
+    setProjectList((prev) => prev.map((p) => (p.id === project.id ? { ...p, [kind]: body } : p)));
   }
 
   // 从 tracklist 移出时，连带清掉该曲目在本 collection 的角色。
@@ -710,7 +710,13 @@ function CollectionPanel({
         title={t.editNote}
         icon={Icon.Highlight}
         shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
-        target={<EditNote project={p} onSaved={() => reloadNote(p)} />}
+        target={<EditNote project={p} onSaved={() => reloadDoc(p, "notes")} />}
+      />
+      <Action.Push
+        title={t.editLyrics}
+        icon={Icon.Highlight}
+        shortcut={{ modifiers: ["cmd", "opt"], key: "l" }}
+        target={<EditNote project={p} kind="lyrics" onSaved={() => reloadDoc(p, "lyrics")} />}
       />
       <Action
         title={t.openNote}
