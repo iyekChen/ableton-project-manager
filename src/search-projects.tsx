@@ -55,7 +55,12 @@ import type { Project } from "@/core/projects/types";
 import { loadProjects } from "@/core/projects/load-projects";
 import { countProjectBounces, findLatestProjectBounce } from "@/core/projects/bounces";
 import { viewPrefs } from "@/core/ui/view-prefs";
-import { daw } from "@/daws";
+import { daw, type DawSet, type ProjectFileMetadata } from "@/daws";
+import {
+  cachedSetMetadata,
+  loadPersistentProjectFileCache,
+  parseSetMetadata,
+} from "@/core/projects/project-file-cache";
 import { SetsView } from "@/daws/ui";
 import { LOG_PREFIX } from "@/core/log";
 import { dateKeywords, matchesSearch, nameKeywords, optionKeywords } from "@/core/ui/search-keywords";
@@ -70,6 +75,13 @@ const VIEW_MODE_STORAGE_KEY = "view-mode:projects";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:projects";
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
+// 同时解析的 Set 数，和 View Sets 一样。
+const METADATA_CONCURRENCY = 3;
+// 要读的 Set 少于这个数时不弹进度提示（如在 Ableton 里刚存了一个 Set），免得一闪而过。
+const SET_PROGRESS_MIN = 5;
+
+// 每个项目的最新 Set 和它的元数据；还没读完时 metadata 为 null。
+type LatestSetInfo = { set: DawSet; metadata: ProjectFileMetadata | null };
 // 正在由扩展执行 Move to Trash 的项目：已归档，目录监听触发的重载不要再当成 Finder 删除处理。
 const trashingIds = new Set<string>();
 
@@ -121,6 +133,10 @@ export default function Command() {
     viewPrefs.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
   );
   const [dawApp, setDawApp] = useState<Application | null>(null);
+  const [latestSets, setLatestSets] = useState<Record<string, LatestSetInfo>>({});
+  const [readingSets, setReadingSets] = useState(false);
+  // 每次读取编号：新一轮开始后，旧一轮的结果不再写入。
+  const latestSetsRunRef = useRef(0);
   const baseProjectsRef = useRef<Project[]>([]);
   // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
   const leftoverToastShownRef = useRef(false);
@@ -199,6 +215,56 @@ export default function Command() {
     setProjects(updatedProjects);
   }, []);
 
+  // 读出每个项目最新 Set 的元数据：有缓存的立刻显示，其余在后台解析，读完一个显示一个。
+  const refreshLatestSets = useCallback(async (list: Project[]) => {
+    const run = ++latestSetsRunRef.current;
+    await loadPersistentProjectFileCache();
+    if (run !== latestSetsRunRef.current) return;
+
+    const initial: Record<string, LatestSetInfo> = {};
+    const missing: [string, DawSet][] = [];
+    for (const project of list) {
+      const set = findLatestSet(daw.listSets(project));
+      if (!set) continue;
+      const cached = cachedSetMetadata(set);
+      initial[project.id] = { set, metadata: cached };
+      if (!cached) missing.push([project.id, set]);
+    }
+    setLatestSets(initial);
+    setReadingSets(missing.length > 0);
+    if (missing.length === 0) return;
+
+    // 正在播放时不弹，免得盖住播放提示。
+    const toast =
+      missing.length >= SET_PROGRESS_MIN && !toastActiveRef.current
+        ? await showToast({ style: Toast.Style.Animated, title: t.readingSets, message: `0 / ${missing.length}` })
+        : null;
+
+    let done = 0;
+    let nextIndex = 0;
+    async function worker() {
+      while (run === latestSetsRunRef.current) {
+        const index = nextIndex++;
+        if (index >= missing.length) return;
+        const [id, set] = missing[index];
+        try {
+          const metadata = await parseSetMetadata(set);
+          if (run !== latestSetsRunRef.current) return;
+          // 期间项目的最新 Set 换了（又存了一个）就不写，等下一轮。
+          setLatestSets((prev) => (prev[id]?.set.path === set.path ? { ...prev, [id]: { set, metadata } } : prev));
+        } catch (error) {
+          console.error(`${LOG_PREFIX} Failed to load set metadata: ${set.path}`, error);
+        }
+        done++;
+        if (toast) toast.message = `${done} / ${missing.length}`;
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(METADATA_CONCURRENCY, missing.length) }, () => worker()));
+
+    void toast?.hide();
+    if (run === latestSetsRunRef.current) setReadingSets(false);
+  }, []);
+
   const runReload = useCallback(async (): Promise<string[]> => {
     try {
       baseProjectsRef.current = loadProjects(PROJECTS_ROOT);
@@ -244,6 +310,8 @@ export default function Command() {
       // 先还原从废纸篓放回的项目（标签/轨号/角色/文档），再套用元数据。
       const { restored, docConflicts } = await restorePutBackProjects(baseProjectsRef.current);
       await applyMetadata();
+      // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
+      void refreshLatestSets(baseProjectsRef.current);
       if (docConflicts.length > 0) {
         await showToast({ style: Toast.Style.Failure, title: t.restoreDocConflict, message: docConflicts.join(", ") });
       } else if (restored.length > 0) {
@@ -260,7 +328,7 @@ export default function Command() {
       await showFailure(t.loadProjectsFailed, error, { message: t.loadProjectsFailedHint });
     }
     return [] as string[];
-  }, [applyMetadata]);
+  }, [applyMetadata, refreshLatestSets]);
 
   // 同一时刻只跑一次：执行中再被触发（目录监听、返回刷新、保存回调）只记一笔，结束后补跑一次。
   // 避免两次 Finder 同步交错——后一次可能拿已被前一次清掉的空数据去覆盖删除记录。
@@ -492,6 +560,8 @@ export default function Command() {
     const stage = stageOptions.find((option) => option.id === item.stageId);
     const genreNames = namesFor(item.genreIds, genreOptions);
     const collectionNames = namesFor(item.collectionIds, collectionOptions);
+    const latest = latestSets[item.id];
+    const latestBpm = latest?.metadata?.bpm ?? null;
     const stagePill = stage ? [{ tag: { value: stage.name, color: stage.color ?? Color.SecondaryText } }] : [];
     const detailBody = !showDetail ? "" : detailDoc === "notes" ? item.notes : item.lyrics;
     const detailPlaceholder = docPlaceholder(detailDoc, item.title);
@@ -564,6 +634,10 @@ export default function Command() {
                   <List.Item.Detail.Metadata.Separator />
                   <List.Item.Detail.Metadata.Label title="Bounces" text={String(item.bouncesCount)} />
                   <List.Item.Detail.Metadata.Label title="Sets" text={String(item.setsCount)} />
+                  <List.Item.Detail.Metadata.Separator />
+                  <List.Item.Detail.Metadata.Label title="Latest Set" text={latest?.set.name ?? ""} />
+                  <List.Item.Detail.Metadata.Label title="Key" text={latest?.metadata?.key ?? ""} />
+                  <List.Item.Detail.Metadata.Label title="BPM" text={latestBpm === null ? "" : String(latestBpm)} />
                   <List.Item.Detail.Metadata.Separator />
                   <List.Item.Detail.Metadata.Label title="Created" text={formatDate(item.createdAt)} />
                   <List.Item.Detail.Metadata.Label title="Modified" text={formatDate(item.modifiedAt)} />
@@ -843,7 +917,7 @@ export default function Command() {
 
   return (
     <List
-      isLoading={isLoading}
+      isLoading={isLoading || readingSets}
       isShowingDetail={showDetail}
       filtering={!isTagSearch}
       onSearchTextChange={setSearchText}

@@ -244,6 +244,7 @@ type TranslationKeys = {
   noProjectsFoundHint: string;
   templateMissing: string;
   analyzing: string;
+  readingSets: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -506,6 +507,7 @@ const translations: Record<Language, TranslationKeys> = {
     noProjectsFoundHint: "Nothing in {folder} contains a Live Set. Check the Projects Folder in preferences.",
     templateMissing: "Template not found — started empty",
     analyzing: "Analyzing",
+    readingSets: "Reading Sets…",
   },
 };
 
