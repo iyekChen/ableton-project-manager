@@ -41,7 +41,9 @@ export function EditNote({
       setNote(stripFrontmatter(isBlankDoc(raw) ? initialContent(project, kind) : raw));
       setLoaded(true);
     } catch (error) {
-      void showFailure(t.docUnreadable, error, { message: t.docUnreadableHint });
+      void showFailure(kind === "notes" ? t.docUnreadable : t.lyricsUnreadable, error, {
+        message: t.docUnreadableHint,
+      });
       pop();
     }
   }, [project, pop]);
@@ -51,8 +53,8 @@ export function EditNote({
     if (docFileMtime(project, kind) !== loadedMtime.current) {
       const confirmed = await confirmAlert({
         icon: Icon.Warning,
-        title: t.docChangedExternally,
-        message: t.docChangedExternallyHint,
+        title: kind === "notes" ? t.docChangedExternally : t.lyricsChangedExternally,
+        message: kind === "notes" ? t.docChangedExternallyHint : t.lyricsChangedExternallyHint,
         primaryAction: { title: t.overwriteDoc, style: Alert.ActionStyle.Destructive },
       });
       // 不覆盖：留在表单里，已输入的内容不丢。

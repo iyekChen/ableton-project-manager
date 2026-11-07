@@ -90,6 +90,8 @@ type TranslationKeys = {
   collectionNameExists: string;
   tagNameExists: string;
   docChangedExternally: string;
+  lyricsChangedExternally: string;
+  lyricsChangedExternallyHint: string;
   docChangedExternallyHint: string;
   overwriteDoc: string;
   projectsRestored: string;
@@ -188,6 +190,7 @@ type TranslationKeys = {
   storageUnreadable: string;
   renameDataPending: string;
   docUnreadable: string;
+  lyricsUnreadable: string;
   docUnreadableHint: string;
   trashFailed: string;
   sectionPlayback: string;
@@ -336,6 +339,9 @@ const translations: Record<Language, TranslationKeys> = {
     docChangedExternallyHint:
       "This note was edited outside Raycast (e.g. in Obsidian) after you opened it. Saving will replace those changes.",
     overwriteDoc: "Overwrite",
+    lyricsChangedExternally: "Lyrics Changed Elsewhere",
+    lyricsChangedExternallyHint:
+      "These lyrics were edited outside Raycast (e.g. in Obsidian) after you opened them. Saving will replace those changes.",
     projectsRestored: "Restored put-back project",
     restoreDocConflict: "Restored — a note name was taken",
     docFolderMissing: "Notes / lyrics folder not found",
@@ -438,6 +444,7 @@ const translations: Record<Language, TranslationKeys> = {
     storageUnreadable: "Saved data unreadable — nothing changed",
     renameDataPending: "Renamed — tags not moved yet",
     docUnreadable: "Couldn't read this note",
+    lyricsUnreadable: "Couldn't read these lyrics",
     docUnreadableHint:
       "The file exists but couldn't be opened (e.g. not downloaded from iCloud yet). Nothing was changed.",
     trashFailed: "Couldn't move to Trash",
