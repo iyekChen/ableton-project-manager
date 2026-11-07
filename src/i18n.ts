@@ -89,6 +89,8 @@ type TranslationKeys = {
   renameAnyway: string;
   collectionNameExists: string;
   tagNameExists: string;
+  aliases: string;
+  aliasesInfo: string;
   docChangedExternally: string;
   lyricsChangedExternally: string;
   lyricsChangedExternallyHint: string;
@@ -335,6 +337,8 @@ const translations: Record<Language, TranslationKeys> = {
     renameAnyway: "Rename Anyway",
     collectionNameExists: "A collection with that name already exists",
     tagNameExists: "A tag with that name already exists",
+    aliases: "Aliases",
+    aliasesInfo: "Other names to search by, separated by commas (e.g. dnb for Drum & Bass).",
     docChangedExternally: "Note Changed Elsewhere",
     docChangedExternallyHint:
       "This note was edited outside Raycast (e.g. in Obsidian) after you opened it. Saving will replace those changes.",

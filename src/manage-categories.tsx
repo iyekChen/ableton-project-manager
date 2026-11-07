@@ -27,6 +27,7 @@ import {
 import { loadProjects } from "@/core/projects/load-projects";
 import type { Project } from "@/core/projects/types";
 import { showFailure } from "@/core/ui/toast";
+import { optionKeywords } from "@/core/ui/search-keywords";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
 
@@ -75,15 +76,29 @@ function hasTag(meta: ProjectMetadata | undefined, kind: ProjectTagKind, id: str
   return kind === "stage" ? meta?.stageId === id : (meta?.genreIds ?? []).includes(id);
 }
 
+// 别名用逗号分隔（中英文逗号都行），去掉空项和重复。
+function parseAliases(text: string): string[] {
+  return [
+    ...new Set(
+      text
+        .split(/[,，]/)
+        .map((alias) => alias.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
 function CategoryForm(props: {
   title: string;
   currentName?: string;
+  currentAliases?: string[];
   showColor?: boolean;
   currentColor?: Color;
-  onSubmit: (name: string, color?: Color) => Promise<void>;
+  onSubmit: (name: string, aliases: string[], color?: Color) => Promise<void>;
 }) {
   const { pop } = useNavigation();
   const [name, setName] = useState("");
+  const [aliases, setAliases] = useState((props.currentAliases ?? []).join(", "));
   const [color, setColor] = useState<Color>(props.currentColor ?? Color.Blue);
 
   return (
@@ -100,7 +115,7 @@ function CategoryForm(props: {
                 await showToast({ style: Toast.Style.Failure, title: t.invalidName });
                 return;
               }
-              await props.onSubmit(finalName, props.showColor ? color : undefined);
+              await props.onSubmit(finalName, parseAliases(aliases), props.showColor ? color : undefined);
               pop();
             }}
           />
@@ -108,6 +123,14 @@ function CategoryForm(props: {
       }
     >
       <Form.TextField id="name" title={t.name} placeholder={props.currentName} value={name} onChange={setName} />
+      <Form.TextField
+        id="aliases"
+        title={t.aliases}
+        placeholder="dnb, d&b"
+        info={t.aliasesInfo}
+        value={aliases}
+        onChange={setAliases}
+      />
       {props.showColor && (
         <Form.Dropdown id="color" title={t.color} value={color} onChange={(value) => setColor(value as Color)}>
           {COLOR_CHOICES.map((choice) => (
@@ -219,7 +242,7 @@ export default function Command() {
     void reload(kind);
   }, [kind]);
 
-  async function createOption(name: string) {
+  async function createOption(name: string, aliases: string[]) {
     const hasCustomOrder = options.some((option) => option.order !== undefined);
     const maxOrder = Math.max(0, ...options.map((option) => option.order ?? 0));
 
@@ -227,6 +250,7 @@ export default function Command() {
       id: slugify(name),
       name,
       ...(hasCustomOrder ? { order: maxOrder + 1 } : {}),
+      ...(aliases.length > 0 ? { aliases } : {}),
     };
 
     if (options.some((o) => o.id === option.id)) {
@@ -240,7 +264,7 @@ export default function Command() {
     await showToast({ style: Toast.Style.Success, title: t.created });
   }
 
-  async function editOption(id: string, name: string, color?: Color) {
+  async function editOption(id: string, name: string, aliases: string[], color?: Color) {
     // 不许改成另一个选项的名字：Role 按名字存，重名会把两边的曲目合在一起。
     const key = name.trim().toLowerCase();
     if (options.some((o) => o.id !== id && o.name.trim().toLowerCase() === key)) {
@@ -250,7 +274,9 @@ export default function Command() {
     const existing = options.find((o) => o.id === id);
     const next = options.map((o) => {
       if (o.id !== id) return o;
-      return kind === "stage" ? { ...o, name, color } : { ...o, name };
+      // 别名清空时存成 undefined，写入 JSON 时这一项会被省掉。
+      const nextAliases = aliases.length > 0 ? aliases : undefined;
+      return kind === "stage" ? { ...o, name, color, aliases: nextAliases } : { ...o, name, aliases: nextAliases };
     });
     await TAXONOMIES[kind].save(next);
     setOptions(next);
@@ -386,6 +412,8 @@ export default function Command() {
         <List.Item
           key={option.id}
           title={option.name}
+          subtitle={option.aliases?.join(", ")}
+          keywords={optionKeywords(option)}
           icon={kind === "stage" ? { source: Icon.Circle, tintColor: option.color ?? Color.SecondaryText } : Icon.Tag}
           actions={
             <ActionPanel>
@@ -397,9 +425,10 @@ export default function Command() {
                   <CategoryForm
                     title={t.edit}
                     currentName={option.name}
+                    currentAliases={option.aliases}
                     showColor={kind === "stage"}
                     currentColor={option.color}
-                    onSubmit={(name, color) => editOption(option.id, name, color)}
+                    onSubmit={(name, aliases, color) => editOption(option.id, name, aliases, color)}
                   />
                 }
               />

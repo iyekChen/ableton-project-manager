@@ -20,9 +20,9 @@ export function nameKeywords(name: string): string[] {
   return [...new Set([name, ...variants, ...variants.map(compact)])];
 }
 
-// Tag 选项可被搜到的写法：名字的各种写法。
+// Tag 选项可被搜到的写法：名字和用户自填的别名，各自展开成各种写法。
 export function optionKeywords(option: TaxonomyOption): string[] {
-  return nameKeywords(option.name);
+  return [...new Set([option.name, ...(option.aliases ?? [])].flatMap(nameKeywords))];
 }
 
 const MONTH_LONG = new Intl.DateTimeFormat("en", { month: "long" });
