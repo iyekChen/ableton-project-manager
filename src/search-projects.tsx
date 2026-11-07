@@ -63,7 +63,7 @@ import {
 } from "@/core/projects/project-file-cache";
 import { SetsView } from "@/daws/ui";
 import { LOG_PREFIX } from "@/core/log";
-import { dateKeywords, matchesSearch, nameKeywords, optionKeywords } from "@/core/ui/search-keywords";
+import { bpmMatches, dateKeywords, matchesSearch, nameKeywords, optionKeywords } from "@/core/ui/search-keywords";
 import { findLatestSet } from "@/core/projects/latest-set";
 import { keyKeywords, keyToken } from "@/core/projects/musical-key";
 
@@ -546,7 +546,12 @@ export default function Command() {
 
   const matchProject = (project: Project, query: string) => {
     const keyTokens = new Set(keyWordsOf(project).map(keyToken));
-    return matchesSearch(searchTerms(project), query, (word) => (keyTokens.has(keyToken(word)) ? true : undefined));
+    const bpm = latestSets[project.id]?.metadata?.bpm ?? null;
+    return matchesSearch(
+      searchTerms(project),
+      query,
+      (word) => bpmMatches(bpm, word) ?? (keyTokens.has(keyToken(word)) ? true : undefined),
+    );
   };
 
   // 以 # 开头时用组合搜索（每个词都要命中）；否则交给 Raycast 的模糊搜索。

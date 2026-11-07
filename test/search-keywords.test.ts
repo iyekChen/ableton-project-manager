@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesSearch, nameKeywords } from "../src/core/ui/search-keywords";
+import { bpmMatches, matchesSearch, nameKeywords } from "../src/core/ui/search-keywords";
 
 describe("nameKeywords", () => {
   it("& 换成 n / and", () => {
@@ -38,5 +38,39 @@ describe("matchesSearch 的 matchWord", () => {
     const matchWord = (word: string) => (word === "cm" ? false : undefined);
     expect(matchesSearch(["cmaj"], "cm", matchWord)).toBe(false);
     expect(matchesSearch(["cmaj"], "cma", matchWord)).toBe(true);
+  });
+});
+
+describe("bpmMatches", () => {
+  it("单个数字：四舍五入后相等，含半速、倍速", () => {
+    expect(bpmMatches(140, "140")).toBe(true);
+    expect(bpmMatches(139.6, "140")).toBe(true);
+    expect(bpmMatches(70, "140")).toBe(true);
+    expect(bpmMatches(280, "140")).toBe(true);
+    expect(bpmMatches(120, "140")).toBe(false);
+    expect(bpmMatches(120, "120bpm")).toBe(true);
+  });
+
+  it("范围：两端都算，顺序不限，含半速、倍速", () => {
+    expect(bpmMatches(95, "90-100")).toBe(true);
+    expect(bpmMatches(100, "90-100")).toBe(true);
+    expect(bpmMatches(95, "100-90")).toBe(true);
+    expect(bpmMatches(190, "90-100")).toBe(true);
+    expect(bpmMatches(120, "90-100")).toBe(false);
+  });
+
+  it("没有 BPM 的项目不算命中", () => {
+    expect(bpmMatches(null, "120")).toBe(false);
+  });
+
+  it("不是 BPM 写法的交给文字比较", () => {
+    expect(bpmMatches(120, "2025")).toBeUndefined();
+    expect(bpmMatches(120, "rnb")).toBeUndefined();
+  });
+
+  it("matchesSearch 里数字按 BPM 判断，不再按文字", () => {
+    const matchWord = (word: string) => bpmMatches(92, word);
+    expect(matchesSearch(["Song 120"], "120", matchWord)).toBe(false);
+    expect(matchesSearch(["Song"], "92", matchWord)).toBe(true);
   });
 });

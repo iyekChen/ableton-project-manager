@@ -53,3 +53,23 @@ export function matchesSearch(
     return compacted === "" || haystack.some((term) => term.includes(compacted));
   });
 }
+
+/**
+ * BPM 的搜索词：120、120bpm 是四舍五入后等于 120；90-100 是 90 到 100 之间（两端都算）。
+ * 半速、倍速也算（140 也搜到 70 和 280）。不是这几种写法时返回 undefined，交给文字比较。
+ * 只认三位数以内：四位数留给年份。
+ */
+export function bpmMatches(bpm: number | null, word: string): boolean | undefined {
+  const lower = word.toLowerCase();
+  const single = lower.match(/^(\d{1,3})(bpm)?$/);
+  const range = lower.match(/^(\d{1,3})-(\d{1,3})$/);
+  if (!single && !range) return undefined;
+  if (bpm === null) return false;
+  const candidates = [bpm, bpm * 2, bpm / 2];
+  if (single) {
+    const target = Number(single[1]);
+    return candidates.some((value) => Math.round(value) === target);
+  }
+  const [low, high] = [Number(range![1]), Number(range![2])].sort((a, b) => a - b);
+  return candidates.some((value) => value >= low && value <= high);
+}
