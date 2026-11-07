@@ -36,13 +36,20 @@ export function dateKeywords(ms: number): string[] {
 
 // 组合搜索：按空格拆词，每个词规整后都要出现在某一项的规整写法里，全部命中才算。
 // 输入里的 & 也当 n，所以 r&b 和 rnb 搜到的一样。
-export function matchesSearch(terms: string[], query: string): boolean {
-  const words = query
-    .normalize("NFKC")
-    .split(/\s+/)
-    .map((word) => compact(word.replace(/&/g, "n")))
-    .filter(Boolean);
+// matchWord 先判断一个词（Key、BPM 这类要整词对上的）：返回 true / false 就以它为准，
+// 返回 undefined 才按文字比。只剩标点的词忽略。
+export function matchesSearch(
+  terms: string[],
+  query: string,
+  matchWord?: (word: string) => boolean | undefined,
+): boolean {
+  const words = query.normalize("NFKC").split(/\s+/).filter(Boolean);
   if (words.length === 0) return true;
   const haystack = terms.map(compact);
-  return words.every((word) => haystack.some((term) => term.includes(word)));
+  return words.every((word) => {
+    const decided = matchWord?.(word);
+    if (decided !== undefined) return decided;
+    const compacted = compact(word.replace(/&/g, "n"));
+    return compacted === "" || haystack.some((term) => term.includes(compacted));
+  });
 }

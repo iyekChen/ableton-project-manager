@@ -32,3 +32,11 @@ describe("matchesSearch", () => {
     expect(matchesSearch(["anything"], "")).toBe(true);
   });
 });
+
+describe("matchesSearch 的 matchWord", () => {
+  it("matchWord 判断过的词以它为准", () => {
+    const matchWord = (word: string) => (word === "cm" ? false : undefined);
+    expect(matchesSearch(["cmaj"], "cm", matchWord)).toBe(false);
+    expect(matchesSearch(["cmaj"], "cma", matchWord)).toBe(true);
+  });
+});

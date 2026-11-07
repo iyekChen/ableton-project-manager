@@ -65,6 +65,7 @@ import { SetsView } from "@/daws/ui";
 import { LOG_PREFIX } from "@/core/log";
 import { dateKeywords, matchesSearch, nameKeywords, optionKeywords } from "@/core/ui/search-keywords";
 import { findLatestSet } from "@/core/projects/latest-set";
+import { keyKeywords, keyToken } from "@/core/projects/musical-key";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -536,10 +537,22 @@ export default function Command() {
     return projects;
   })();
 
+  // 最新 Set 的 Key 的各种写法。不放进 searchTerms：组合搜索里 Key 要整词对上，
+  // 否则 cm（C 小调）会被当成 cmaj（C 大调）的一部分搜到。
+  const keyWordsOf = (project: Project) => {
+    const key = latestSets[project.id]?.metadata?.key;
+    return key ? [key, ...keyKeywords(key)] : [];
+  };
+
+  const matchProject = (project: Project, query: string) => {
+    const keyTokens = new Set(keyWordsOf(project).map(keyToken));
+    return matchesSearch(searchTerms(project), query, (word) => (keyTokens.has(keyToken(word)) ? true : undefined));
+  };
+
   // 以 # 开头时用组合搜索（每个词都要命中）；否则交给 Raycast 的模糊搜索。
   const isTagSearch = searchText.trimStart().startsWith("#");
   const filteredProjects = isTagSearch
-    ? filteredByDropdown.filter((project) => matchesSearch(searchTerms(project), searchText.trimStart().slice(1)))
+    ? filteredByDropdown.filter((project) => matchProject(project, searchText.trimStart().slice(1)))
     : filteredByDropdown;
 
   const pinnedProjects = filteredProjects
@@ -585,7 +598,7 @@ export default function Command() {
         key={item.id}
         icon="icon.png"
         title={item.title}
-        keywords={searchTerms(item)}
+        keywords={[...searchTerms(item), ...keyWordsOf(item)]}
         accessories={
           showDetail
             ? []
