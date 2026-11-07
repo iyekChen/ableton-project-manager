@@ -16,7 +16,8 @@ export const EMPTY_METADATA: ProjectFileMetadata = {
   key: null,
 };
 
-const CACHE_LIMIT = 100;
+// Search Projects 要给每个项目的最新 Set 留缓存，View Sets 也会用。每条约 150 字节，2000 条约 300 KB。
+const CACHE_LIMIT = 2000;
 // 沿用旧键名：改了只会让已有缓存全部作废、重新解析。
 const STORAGE_KEY = "als-metadata-cache-v2";
 const PARSER_VERSION = 1;
@@ -54,6 +55,9 @@ export async function loadPersistentProjectFileCache() {
           if (typeof entry?.signature !== "string" || typeof entry?.metadata !== "object" || entry.metadata === null) {
             continue;
           }
+
+          // 文件已经不在了（Set 被删、改名或移走）：丢掉，不占缓存名额。
+          if (!fs.existsSync(filePath)) continue;
 
           cache.set(filePath, entry);
         }
