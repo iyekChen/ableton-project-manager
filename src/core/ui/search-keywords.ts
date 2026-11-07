@@ -14,3 +14,15 @@ export function dateKeywords(ms: number): string[] {
   const date = new Date(ms);
   return [String(date.getFullYear()), MONTH_LONG.format(date), MONTH_SHORT.format(date)];
 }
+
+// 搜索栏的多词搜索：按空格拆开，每个词都要出现在某一项里（不分大小写、忽略空格），全部命中才算。
+// Raycast 自带的过滤遇到多个词时不会组合匹配（rnb 2025 搜不出 2025 年的 R&B）。
+export function matchesSearch(terms: string[], query: string): boolean {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return true;
+  const haystack = terms.flatMap((term) => {
+    const lower = term.toLowerCase();
+    return [lower, lower.replace(/\s+/g, "")];
+  });
+  return words.every((word) => haystack.some((term) => term.includes(word)));
+}

@@ -58,7 +58,7 @@ import { viewPrefs } from "@/core/ui/view-prefs";
 import { daw } from "@/daws";
 import { SetsView } from "@/daws/ui";
 import { LOG_PREFIX } from "@/core/log";
-import { dateKeywords, nameKeywords } from "@/core/ui/search-keywords";
+import { dateKeywords, matchesSearch, nameKeywords } from "@/core/ui/search-keywords";
 import { findLatestSet } from "@/core/projects/latest-set";
 
 const settings = getSettings();
@@ -109,6 +109,7 @@ export default function Command() {
   const [genreOptions, setGenreOptions] = useState<TaxonomyOption[]>([]);
   const [collectionOptions, setCollectionOptions] = useState<TaxonomyOption[]>([]);
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
   const [groupBy, setGroupBy] = useGroupOption(GROUP_STORAGE_KEY, "created");
   const [projects, setProjects] = useState<Project[]>([]);
@@ -443,7 +444,18 @@ export default function Command() {
     }
   };
 
-  const filteredProjects = (() => {
+  // 每个项目可被搜到的内容：标题、Stage、Genre（含 & 的别写）、创建年月。
+  const searchTerms = (project: Project) => {
+    const stage = stageOptions.find((option) => option.id === project.stageId);
+    const names = [...(stage ? [stage.name] : []), ...namesFor(project.genreIds, genreOptions)];
+    return [
+      project.title,
+      ...names.flatMap((name) => [name, ...nameKeywords(name)]),
+      ...dateKeywords(project.createdAt),
+    ];
+  };
+
+  const filteredByDropdown = (() => {
     if (selectedFilter === "all") return projects;
     const separator = selectedFilter.indexOf(":");
     const dimension = selectedFilter.slice(0, separator);
@@ -454,6 +466,8 @@ export default function Command() {
       return projects.filter((project) => new Date(project.createdAt).getFullYear() === Number(id));
     return projects;
   })();
+
+  const filteredProjects = filteredByDropdown.filter((project) => matchesSearch(searchTerms(project), searchText));
 
   const pinnedProjects = filteredProjects
     .filter((project) => project.pinned)
@@ -496,11 +510,6 @@ export default function Command() {
         key={item.id}
         icon="icon.png"
         title={item.title}
-        keywords={[
-          ...(stage ? [stage.name, ...nameKeywords(stage.name)] : []),
-          ...genreNames.flatMap((name) => [name, ...nameKeywords(name)]),
-          ...dateKeywords(item.createdAt),
-        ]}
         accessories={
           showDetail
             ? []
@@ -830,6 +839,8 @@ export default function Command() {
     <List
       isLoading={isLoading}
       isShowingDetail={showDetail}
+      filtering={false}
+      onSearchTextChange={setSearchText}
       searchBarPlaceholder={t.searchProjects}
       searchBarAccessory={
         <List.Dropdown tooltip={t.filter} value={selectedFilter} onChange={setSelectedFilter}>
