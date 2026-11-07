@@ -404,9 +404,10 @@ export default function Command() {
     toastActiveRef.current = isActive;
 
     if (isActive) {
-      const title = t.playingLatestBounce;
-      const time = durationSeconds > 0 ? `${formatTime(positionSeconds)} / ${formatTime(durationSeconds)}` : "";
-      const message = time ? `${name} ${time}` : name;
+      // 标题放歌名（主文字色），说明放进度（次要文字色）；动作名已经写了 Play Latest Bounce，这里不重复。
+      // 还不知道歌名时（如刚从后台恢复、列表未载入）退回 "Playing Latest Bounce"。
+      const title = name || t.playingLatestBounce;
+      const message = durationSeconds > 0 ? `${formatTime(positionSeconds)} / ${formatTime(durationSeconds)}` : "";
       if (toastRef.current) {
         toastRef.current.title = title;
         toastRef.current.message = message;
