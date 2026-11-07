@@ -467,7 +467,11 @@ export default function Command() {
     return projects;
   })();
 
-  const filteredProjects = filteredByDropdown.filter((project) => matchesSearch(searchTerms(project), searchText));
+  // 以 # 开头时用组合搜索（每个词都要命中）；否则交给 Raycast 的模糊搜索。
+  const isTagSearch = searchText.trimStart().startsWith("#");
+  const filteredProjects = isTagSearch
+    ? filteredByDropdown.filter((project) => matchesSearch(searchTerms(project), searchText.trimStart().slice(1)))
+    : filteredByDropdown;
 
   const pinnedProjects = filteredProjects
     .filter((project) => project.pinned)
@@ -510,6 +514,7 @@ export default function Command() {
         key={item.id}
         icon="icon.png"
         title={item.title}
+        keywords={searchTerms(item)}
         accessories={
           showDetail
             ? []
@@ -839,7 +844,7 @@ export default function Command() {
     <List
       isLoading={isLoading}
       isShowingDetail={showDetail}
-      filtering={false}
+      filtering={!isTagSearch}
       onSearchTextChange={setSearchText}
       searchBarPlaceholder={t.searchProjects}
       searchBarAccessory={
