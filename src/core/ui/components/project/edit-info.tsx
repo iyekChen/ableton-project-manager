@@ -88,6 +88,8 @@ export function EditInfo({
   const [originalCollectionIds, setOriginalCollectionIds] = useState<string[]>([]);
   const [roleOptions, setRoleOptions] = useState<TaxonomyOption[]>([]);
   const [role, setRole] = useState(currentRole ?? "none");
+  // Role 选项读完前不渲染下拉：选项为空时 Raycast 会退回 None 并触发 onChange，把当前角色覆盖掉。
+  const [rolesLoaded, setRolesLoaded] = useState(false);
   useEffect(() => {
     async function load() {
       const [stages, genres, collections, metadata] = await Promise.all([
@@ -108,6 +110,7 @@ export function EditInfo({
       if (collectionId) {
         setRoleOptions(await roleTaxonomy.get());
         setRole(currentRole ?? "none");
+        setRolesLoaded(true);
       }
     }
 
@@ -229,8 +232,6 @@ export function EditInfo({
         onSaved({ oldId: project.id, newId: trimmedName, folderPath: newPath });
         await showFailure(t.renameFailed, error);
         return;
-        pop();
-        return;
       }
       docRenameResult = renameDocFiles(project.title, trimmedName);
       targetId = trimmedName;
@@ -313,7 +314,7 @@ export function EditInfo({
       {originalCollectionIds.some((id) => !collectionIds.includes(id)) && (
         <Form.Description text={t.removeCollectionsFormHint} />
       )}
-      {collectionId && (
+      {collectionId && rolesLoaded && (
         <Form.Dropdown id="role" title={t.role} value={role} onChange={setRole}>
           <Form.Dropdown.Item value="none" title={t.none} />
           {roleOptions.map((option) => (
