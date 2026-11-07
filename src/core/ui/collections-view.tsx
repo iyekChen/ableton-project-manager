@@ -71,7 +71,7 @@ import { showFailure } from "@/core/ui/toast";
 import { onFinderRenames } from "@/core/fs/finder-sync";
 import { EditInfo, type ProjectRename } from "@/core/ui/components/project/edit-info";
 import { EditNote } from "@/core/ui/components/project/edit-note";
-import { nameKeywords } from "@/core/ui/search-keywords";
+import { optionKeywords } from "@/core/ui/search-keywords";
 
 const t = getTranslations(getSettings().language);
 
@@ -1088,7 +1088,7 @@ function CollectionPanel({
                 key={`stage:${option.id}`}
                 title={option.name}
                 value={`stage:${option.id}`}
-                keywords={["stage", "stages", t.stage, ...nameKeywords(option.name)]}
+                keywords={["stage", "stages", t.stage, ...optionKeywords(option)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
               />
             ))}
@@ -1099,7 +1099,7 @@ function CollectionPanel({
                 key={`genre:${option.id}`}
                 title={option.name}
                 value={`genre:${option.id}`}
-                keywords={["genre", "genres", t.genre, ...nameKeywords(option.name)]}
+                keywords={["genre", "genres", t.genre, ...optionKeywords(option)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Tag}
               />
             ))}

@@ -58,7 +58,7 @@ import { viewPrefs } from "@/core/ui/view-prefs";
 import { daw } from "@/daws";
 import { SetsView } from "@/daws/ui";
 import { LOG_PREFIX } from "@/core/log";
-import { dateKeywords, matchesSearch, nameKeywords } from "@/core/ui/search-keywords";
+import { dateKeywords, matchesSearch, nameKeywords, optionKeywords } from "@/core/ui/search-keywords";
 import { findLatestSet } from "@/core/projects/latest-set";
 
 const settings = getSettings();
@@ -444,13 +444,14 @@ export default function Command() {
     }
   };
 
-  // 每个项目可被搜到的内容：标题、Stage、Genre（含 & 的别写）、创建年月。
+  // 每个项目可被搜到的内容：标题、Stage、Genre 的各种写法，加上创建年月。
   const searchTerms = (project: Project) => {
     const stage = stageOptions.find((option) => option.id === project.stageId);
-    const names = [...(stage ? [stage.name] : []), ...namesFor(project.genreIds, genreOptions)];
+    const genres = genreOptions.filter((option) => project.genreIds.includes(option.id));
     return [
-      project.title,
-      ...names.flatMap((name) => [name, ...nameKeywords(name)]),
+      ...nameKeywords(project.title),
+      ...(stage ? optionKeywords(stage) : []),
+      ...genres.flatMap(optionKeywords),
       ...dateKeywords(project.createdAt),
     ];
   };
@@ -858,7 +859,7 @@ export default function Command() {
                 key={`stage:${option.id}`}
                 title={option.name}
                 value={`stage:${option.id}`}
-                keywords={["stage", "stages", t.stage, ...nameKeywords(option.name)]}
+                keywords={["stage", "stages", t.stage, ...optionKeywords(option)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
               />
             ))}
@@ -869,7 +870,7 @@ export default function Command() {
                 key={`genre:${option.id}`}
                 title={option.name}
                 value={`genre:${option.id}`}
-                keywords={["genre", "genres", t.genre, ...nameKeywords(option.name)]}
+                keywords={["genre", "genres", t.genre, ...optionKeywords(option)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Tag}
               />
             ))}

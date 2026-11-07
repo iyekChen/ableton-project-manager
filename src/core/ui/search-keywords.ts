@@ -1,9 +1,28 @@
-// 搜索时 & 常被打成 n 或 and（R&B → rnb，Drum & Bass → drum n bass / drum and bass）：
-// 带 & 的名字额外给出这几种写法，Raycast 的关键词匹配才找得到。
+import type { TaxonomyOption } from "@/core/metadata/taxonomy";
+
+// 规整成只剩字母和数字：全角转半角、去掉重音、小写，再去掉空格和标点。
+// Hip-Hop → hiphop，Lo-Fi → lofi，Café → cafe，ｈｉｐｈｏｐ → hiphop。
+function compact(text: string): string {
+  return text
+    .normalize("NFKC")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+// 一个名字可被搜到的写法：原名，加上规整后的写法。
+// & 要先换成 n / and 再规整（R&B → rnb、randb；Drum & Bass → drumnbass、drumandbass）：
+// 顺序反过来，& 会被当成标点去掉，R&B 就成了 rb。
 export function nameKeywords(name: string): string[] {
-  if (!name.includes("&")) return [];
-  const withN = name.replace(/&/g, "n");
-  return [...new Set([withN, withN.replace(/\s+/g, ""), name.replace(/&/g, "and")])];
+  const base = name.normalize("NFKC");
+  const variants = base.includes("&") ? [base.replace(/&/g, "n"), base.replace(/&/g, "and")] : [base];
+  return [...new Set([name, ...variants, ...variants.map(compact)])];
+}
+
+// Tag 选项可被搜到的写法：名字的各种写法。
+export function optionKeywords(option: TaxonomyOption): string[] {
+  return nameKeywords(option.name);
 }
 
 const MONTH_LONG = new Intl.DateTimeFormat("en", { month: "long" });
@@ -15,14 +34,15 @@ export function dateKeywords(ms: number): string[] {
   return [String(date.getFullYear()), MONTH_LONG.format(date), MONTH_SHORT.format(date)];
 }
 
-// 搜索栏的多词搜索：按空格拆开，每个词都要出现在某一项里（不分大小写、忽略空格），全部命中才算。
-// Raycast 自带的过滤遇到多个词时不会组合匹配（rnb 2025 搜不出 2025 年的 R&B）。
+// 组合搜索：按空格拆词，每个词规整后都要出现在某一项的规整写法里，全部命中才算。
+// 输入里的 & 也当 n，所以 r&b 和 rnb 搜到的一样。
 export function matchesSearch(terms: string[], query: string): boolean {
-  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const words = query
+    .normalize("NFKC")
+    .split(/\s+/)
+    .map((word) => compact(word.replace(/&/g, "n")))
+    .filter(Boolean);
   if (words.length === 0) return true;
-  const haystack = terms.flatMap((term) => {
-    const lower = term.toLowerCase();
-    return [lower, lower.replace(/\s+/g, "")];
-  });
+  const haystack = terms.map(compact);
   return words.every((word) => haystack.some((term) => term.includes(word)));
 }
