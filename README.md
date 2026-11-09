@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  English | <a href="README.zh-CN.md">简体中文</a>
+  English | <a href="https://github.com/iyekChen/ableton-project-manager/blob/main/README.zh-CN.md">简体中文</a>
 </p>
 
 ## 🚀 Quick start
