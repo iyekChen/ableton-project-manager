@@ -5,6 +5,7 @@ export type DawId = "ableton" | "logic";
 export type ProjectFileMetadata = {
   bpm: number | null;
   timeSignature: string | null;
+  /** 统一成 Ableton 的写法，如 "E♭ Major"、"C♯/D♭ Minor"：Key 搜索（musical-key.ts）按这个格式拆分。 */
   key: string | null;
 };
 
