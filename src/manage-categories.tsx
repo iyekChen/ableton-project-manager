@@ -123,14 +123,7 @@ function CategoryForm(props: {
       }
     >
       <Form.TextField id="name" title={t.name} placeholder={props.currentName} value={name} onChange={setName} />
-      <Form.TextField
-        id="aliases"
-        title={t.aliases}
-        placeholder="dnb, d&b"
-        info={t.aliasesInfo}
-        value={aliases}
-        onChange={setAliases}
-      />
+      <Form.TextField id="aliases" title={t.aliases} info={t.aliasesInfo} value={aliases} onChange={setAliases} />
       {props.showColor && (
         <Form.Dropdown id="color" title={t.color} value={color} onChange={(value) => setColor(value as Color)}>
           {COLOR_CHOICES.map((choice) => (
