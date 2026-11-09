@@ -157,7 +157,7 @@ export default function Command() {
     });
   }, []);
 
-  // 常驻 Toast：播放时 title=Playing Latest Bounce / 暂停时 title=Paused，message=曲名（次级灰）。
+  // 常驻 Toast：只在播放时显示，title=曲名，message=进度；暂停或停止时隐藏。
   const toastRef = useRef<Toast | null>(null);
   const toastBusyRef = useRef(false);
   const toastActiveRef = useRef(false);
