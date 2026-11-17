@@ -48,10 +48,12 @@ import {
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
 import type { Project } from "@/core/projects/types";
 import { daw } from "@/daws";
+import { getDawLabels } from "@/daws/labels";
 import { optionKeywords } from "@/core/ui/search-keywords";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
+const labels = getDawLabels(settings.language);
 
 /** 改名成功时回传给调用方，便于其刷新内存中以旧 id 为键的状态。 */
 export type ProjectRename = { oldId: string; newId: string; folderPath: string };
@@ -203,8 +205,8 @@ export function EditInfo({
         icon: { source: Icon.Warning, tintColor: Color.Yellow },
         title: t.renameConfirmTitle,
         message: hasDocConflicts
-          ? `${t.renameConfirmMessage}\n\n${t.docConflictWarning.replace("{files}", docConflicts.join(", "))}`
-          : t.renameConfirmMessage,
+          ? `${labels.renameConfirmMessage}\n\n${t.docConflictWarning.replace("{files}", docConflicts.join(", "))}`
+          : labels.renameConfirmMessage,
         primaryAction: {
           title: hasDocConflicts ? t.renameAnyway : t.rename,
           style: hasDocConflicts ? Alert.ActionStyle.Destructive : Alert.ActionStyle.Default,

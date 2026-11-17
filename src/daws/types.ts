@@ -60,3 +60,20 @@ export interface DawAdapter {
   /** 解析一个 Set 的音乐元数据（BPM / 拍号 / 调）。读不到时各字段为 null。 */
   parseSet(set: DawSet): Promise<ProjectFileMetadata>;
 }
+
+/** 和 DAW 有关的界面文字。每个仓库在 src/daws/labels.ts 里各给一份，共用代码只从这里取。 */
+export type DawLabels = {
+  /** 项目里各版本的叫法（复数），如 Sets、Alternatives。 */
+  sets: string;
+  latestSet: string;
+  viewSets: string;
+  openLatestSet: string;
+  noSets: string;
+  openSetFailed: string;
+  readingSets: string;
+  newProjectFile: string;
+  newProjectFileFailed: string;
+  noProjectsFound: string;
+  noProjectsFoundHint: string;
+  renameConfirmMessage: string;
+};

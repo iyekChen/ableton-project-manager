@@ -30,9 +30,11 @@ import { showFailure } from "@/core/ui/toast";
 import { optionKeywords } from "@/core/ui/search-keywords";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
+import { getDawLabels } from "@/daws/labels";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
+const labels = getDawLabels(settings.language);
 
 type CategoryKind = "stage" | "genre" | "role";
 // 能直接打在项目上的分类。Role 只在合集里生效，不能脱离合集指定。
@@ -207,7 +209,7 @@ function AssignProjectsForm({ kind, option }: { kind: ProjectTagKind; option: Ta
         </ActionPanel>
       }
     >
-      {!isLoading && projects.length === 0 && <Form.Description text={t.noProjectsFound} />}
+      {!isLoading && projects.length === 0 && <Form.Description text={labels.noProjectsFound} />}
       {projects.length > 0 && (
         <Form.TagPicker id="projects" title={t.projects} value={selected} onChange={setSelected}>
           {projects.map((p) => (

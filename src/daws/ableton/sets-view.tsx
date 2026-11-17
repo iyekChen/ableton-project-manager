@@ -34,9 +34,11 @@ import { getTranslations } from "@/i18n";
 import type { Project } from "@/core/projects/types";
 import { showFailure } from "@/core/ui/toast";
 import { LOG_PREFIX } from "@/core/log";
+import { getSetsViewStrings } from "./strings";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
+const setsText = getSetsViewStrings(settings.language);
 
 const SETS_SORT_STORAGE_KEY = "sets-sort-option";
 const SETS_GROUP_STORAGE_KEY = "sets-group-option";
@@ -101,14 +103,14 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
     const target = path.join(path.dirname(set.path), `${trimmed}${SET_EXTENSION}`);
     // 目标已存在且不是它自己（只改大小写）时拦下，绝不覆盖另一个 Set。
     if (fs.existsSync(target) && !isSameFile(target, set.path)) {
-      await showToast({ style: Toast.Style.Failure, title: t.setNameExists });
+      await showToast({ style: Toast.Style.Failure, title: setsText.setNameExists });
       return;
     }
 
     const confirmed = await confirmAlert({
       icon: { source: Icon.Warning, tintColor: Color.Yellow },
-      title: t.renameSetConfirmTitle,
-      message: t.renameSetConfirmMessage,
+      title: setsText.renameSetConfirmTitle,
+      message: setsText.renameSetConfirmMessage,
       primaryAction: { title: t.rename, style: Alert.ActionStyle.Default },
     });
     if (!confirmed) return;
@@ -121,13 +123,13 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
     }
 
     onRenamed();
-    await showToast({ style: Toast.Style.Success, title: t.setRenamed, message: `${trimmed}${SET_EXTENSION}` });
+    await showToast({ style: Toast.Style.Success, title: setsText.setRenamed, message: `${trimmed}${SET_EXTENSION}` });
     pop();
   }
 
   return (
     <Form
-      navigationTitle={`${t.renameSet} — ${set.name}`}
+      navigationTitle={`${setsText.renameSet} — ${set.name}`}
       actions={
         <ActionPanel>
           <Action.SubmitForm title={t.save} onSubmit={handleSubmit} />
@@ -226,7 +228,7 @@ export function SetsView({ project }: { project: Project }) {
       const target = uniqueCopyPath(path.dirname(set.path), set.name);
       fs.copyFileSync(set.path, target);
       setReloadToken((n) => n + 1);
-      await showToast({ style: Toast.Style.Success, title: t.setDuplicated, message: path.basename(target) });
+      await showToast({ style: Toast.Style.Success, title: setsText.setDuplicated, message: path.basename(target) });
     } catch (error) {
       await showFailure(t.duplicateFailed, error);
     }
@@ -236,7 +238,7 @@ export function SetsView({ project }: { project: Project }) {
     const confirmed = await confirmAlert({
       title: t.moveToTrash,
       icon: Icon.Trash,
-      message: `${t.trashSetHint}\n${set.name}`,
+      message: `${setsText.trashSetHint}\n${set.name}`,
       primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
@@ -256,7 +258,12 @@ export function SetsView({ project }: { project: Project }) {
   }));
 
   return (
-    <List isLoading={isLoading} isShowingDetail navigationTitle={project.title} searchBarPlaceholder={t.searchSets}>
+    <List
+      isLoading={isLoading}
+      isShowingDetail
+      navigationTitle={project.title}
+      searchBarPlaceholder={setsText.searchSets}
+    >
       {groupItems(
         sortedSets,
         groupBy,
@@ -284,7 +291,7 @@ export function SetsView({ project }: { project: Project }) {
                 <ActionPanel>
                   <ActionPanel.Section>
                     <Action.Open
-                      title={t.openInDaw}
+                      title={setsText.openInDaw}
                       icon={abletonApp ? { fileIcon: abletonApp.path } : Icon.Document}
                       target={set.path}
                     />
@@ -294,13 +301,13 @@ export function SetsView({ project }: { project: Project }) {
                       shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                     />
                     <Action.Push
-                      title={t.renameSet}
+                      title={setsText.renameSet}
                       icon={Icon.Pencil}
                       shortcut={Keyboard.Shortcut.Common.Edit}
                       target={<RenameSetForm set={set} onRenamed={() => setReloadToken((n) => n + 1)} />}
                     />
                     <Action
-                      title={t.duplicateSet}
+                      title={setsText.duplicateSet}
                       icon={Icon.Duplicate}
                       shortcut={Keyboard.Shortcut.Common.Duplicate}
                       onAction={() => handleDuplicate(set)}
@@ -309,13 +316,13 @@ export function SetsView({ project }: { project: Project }) {
                   <ActionPanel.Section title={t.sectionCopy}>
                     <Action.CopyToClipboard
                       content={set.path.split("/").pop() ?? ""}
-                      title={t.copySetName}
+                      title={setsText.copySetName}
                       icon={Icon.CopyClipboard}
                       shortcut={Keyboard.Shortcut.Common.CopyName}
                     />
                     <Action.CopyToClipboard
                       content={set.path}
-                      title={t.copySetPath}
+                      title={setsText.copySetPath}
                       icon={Icon.CopyClipboard}
                       shortcut={Keyboard.Shortcut.Common.CopyPath}
                     />

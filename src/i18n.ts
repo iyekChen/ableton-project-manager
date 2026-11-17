@@ -2,7 +2,6 @@ import { Language } from "./settings";
 
 type TranslationKeys = {
   searchProjects: string;
-  searchSets: string;
   searchBounces: string;
   searchCollections: string;
   searchTracks: string;
@@ -10,11 +9,6 @@ type TranslationKeys = {
   searchGenres: string;
   searchRoles: string;
   searchLeftovers: string;
-  viewSets: string;
-  openLatestSet: string;
-  noSets: string;
-  openSetFailed: string;
-  openInDaw: string;
   editInfo: string;
   save: string;
   pinProject: string;
@@ -23,8 +17,6 @@ type TranslationKeys = {
   moveDown: string;
   copyProjectName: string;
   copyProjectPath: string;
-  copySetName: string;
-  copySetPath: string;
   copyLatestBounce: string;
   copyBounce: string;
   copyBounceName: string;
@@ -111,7 +103,6 @@ type TranslationKeys = {
   docSharedHint: string;
   docNameTaken: string;
   renameConfirmTitle: string;
-  renameConfirmMessage: string;
   rename: string;
   edit: string;
   color: string;
@@ -154,23 +145,13 @@ type TranslationKeys = {
   restartTrack: string;
   showDetail: string;
   showOverview: string;
-  newProjectFile: string;
-  newProjectFileFailed: string;
-  duplicateSet: string;
   duplicateProject: string;
   duplicatingProject: string;
   projectDuplicated: string;
   duplicateFailed: string;
-  renameSet: string;
-  setRenamed: string;
-  setNameExists: string;
-  renameSetConfirmTitle: string;
-  renameSetConfirmMessage: string;
-  setDuplicated: string;
   moveToTrash: string;
   movedToTrash: string;
   trashProjectHint: string;
-  trashSetHint: string;
   trashBounceHint: string;
   cleanUpLeftovers: string;
   leftoversFound: string;
@@ -240,17 +221,13 @@ type TranslationKeys = {
   tagsAssigned: string;
   deleteTagInUse: string;
   deleteRoleInUse: string;
-  noProjectsFound: string;
-  noProjectsFoundHint: string;
   templateMissing: string;
   analyzing: string;
-  readingSets: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
   en: {
     searchProjects: "Search Projects",
-    searchSets: "Search Sets",
     searchBounces: "Search Bounces",
     searchCollections: "Search Collections",
     searchTracks: "Search Tracks",
@@ -258,11 +235,6 @@ const translations: Record<Language, TranslationKeys> = {
     searchGenres: "Search Genres",
     searchRoles: "Search Roles",
     searchLeftovers: "Search Leftovers",
-    viewSets: "View Sets",
-    openLatestSet: "Open Latest Set",
-    noSets: "No Sets Found",
-    openSetFailed: "Couldn't Open Set",
-    openInDaw: "Open in Ableton Live",
     editInfo: "Edit Info",
     save: "Save",
     pinProject: "Pin",
@@ -271,8 +243,6 @@ const translations: Record<Language, TranslationKeys> = {
     moveDown: "Move Down",
     copyProjectName: "Copy Project Name",
     copyProjectPath: "Copy Project Path",
-    copySetName: "Copy Set Name",
-    copySetPath: "Copy Set Path",
     copyLatestBounce: "Copy Latest Bounce",
     copyBounce: "Copy Bounce",
     copyBounceName: "Copy Bounce Name",
@@ -364,8 +334,6 @@ const translations: Record<Language, TranslationKeys> = {
       "This project's notes / lyrics file would be the same as {names}'s. Rename this project so each keeps its own file — nothing is read or written until then.",
     docNameTaken: "Note file name already used",
     renameConfirmTitle: "Rename project?",
-    renameConfirmMessage:
-      "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
     rename: "Rename",
     edit: "Edit",
     color: "Color",
@@ -409,24 +377,13 @@ const translations: Record<Language, TranslationKeys> = {
     restartTrack: "Restart Track",
     showDetail: "Show Detail",
     showOverview: "Show Overview",
-    newProjectFile: "New Live Set",
-    newProjectFileFailed: "Ableton Live not found",
-    duplicateSet: "Duplicate Set",
     duplicateProject: "Duplicate Project",
     duplicatingProject: "Duplicating Project…",
     projectDuplicated: "Project Duplicated",
     duplicateFailed: "Duplicate Failed",
-    renameSet: "Rename Set",
-    setRenamed: "Set Renamed",
-    setNameExists: "A Set with that name already exists",
-    renameSetConfirmTitle: "Rename Set?",
-    renameSetConfirmMessage:
-      "Make sure this Set is closed in Ableton Live. Renaming while it's open can make Ableton keep saving to the old name.",
-    setDuplicated: "Set Duplicated",
     moveToTrash: "Move to Trash",
     movedToTrash: "Moved to Trash",
     trashProjectHint: "This moves the entire project folder to the Trash:",
-    trashSetHint: "This moves the Set to the Trash:",
     trashBounceHint: "This moves the bounce to the Trash:",
     cleanUpLeftovers: "Clean up Leftovers",
     leftoversFound: "Found leftover project data",
@@ -503,11 +460,8 @@ const translations: Record<Language, TranslationKeys> = {
     tagsAssigned: "Tags Updated",
     deleteTagInUse: "{count} project(s) use this. It will be removed from them.",
     deleteRoleInUse: "{count} track(s) in your collections use this role. It will be cleared from them.",
-    noProjectsFound: "No Ableton projects found",
-    noProjectsFoundHint: "Nothing in {folder} contains a Live Set. Check the Projects Folder in preferences.",
     templateMissing: "Template not found — started empty",
     analyzing: "Analyzing",
-    readingSets: "Reading Sets…",
   },
 };
 

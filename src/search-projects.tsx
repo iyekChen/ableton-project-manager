@@ -62,6 +62,7 @@ import {
   parseSetMetadata,
 } from "@/core/projects/project-file-cache";
 import { SetsView } from "@/daws/ui";
+import { getDawLabels } from "@/daws/labels";
 import { LOG_PREFIX } from "@/core/log";
 import { bpmMatches, dateKeywords, matchesSearch, nameKeywords, optionKeywords } from "@/core/ui/search-keywords";
 import { findLatestSet } from "@/core/projects/latest-set";
@@ -69,6 +70,7 @@ import { keyKeywords, keyToken } from "@/core/projects/musical-key";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
+const labels = getDawLabels(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
 const GROUP_STORAGE_KEY = "project-group-option";
@@ -78,7 +80,7 @@ const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
 // 同时解析的 Set 数，和 View Sets 一样。
 const METADATA_CONCURRENCY = 3;
-// 要读的 Set 少于这个数时不弹进度提示（如在 Ableton 里刚存了一个 Set），免得一闪而过。
+// 要读的 Set 少于这个数时不弹进度提示（如在 DAW 里刚存了一个 Set），免得一闪而过。
 const SET_PROGRESS_MIN = 5;
 
 // 每个项目的最新 Set 和它的元数据；还没读完时 metadata 为 null。
@@ -150,7 +152,7 @@ export default function Command() {
       playerPath: PLAYER_PATH,
     });
 
-  // 找到 DAW 应用，用于 New Live Set（启动它）。
+  // 找到 DAW 应用，用于新建项目（启动它）。
   useEffect(() => {
     void getApplications().then((apps) => {
       setDawApp(apps.find((app) => app.name.toLowerCase().includes(daw.appNameMatch)) ?? null);
@@ -238,7 +240,7 @@ export default function Command() {
     // 正在播放时不弹，免得盖住播放提示。
     const toast =
       missing.length >= SET_PROGRESS_MIN && !toastActiveRef.current
-        ? await showToast({ style: Toast.Style.Animated, title: t.readingSets, message: `0 / ${missing.length}` })
+        ? await showToast({ style: Toast.Style.Animated, title: labels.readingSets, message: `0 / ${missing.length}` })
         : null;
 
     let done = 0;
@@ -457,18 +459,18 @@ export default function Command() {
     });
   }, []);
 
-  // 和 Open in Ableton Live 一样：打开后关掉 Raycast 窗口。
+  // 和打开 Set 的其他入口一样：打开后关掉 Raycast 窗口。
   const openLatestSet = useCallback(async (project: Project) => {
     const set = findLatestSet(daw.listSets(project));
     if (!set) {
-      await showToast({ style: Toast.Style.Failure, title: t.noSets });
+      await showToast({ style: Toast.Style.Failure, title: labels.noSets });
       return;
     }
     try {
       await open(set.path);
       await closeMainWindow();
     } catch (error) {
-      await showFailure(t.openSetFailed, error);
+      await showFailure(labels.openSetFailed, error);
     }
   }, []);
 
@@ -610,8 +612,8 @@ export default function Command() {
             ? []
             : [
                 ...stagePill,
-                { text: String(item.setsCount), tooltip: `${item.setsCount} Sets` },
-                { icon: Icon.Document, tooltip: `${item.setsCount} Sets` },
+                { text: String(item.setsCount), tooltip: `${item.setsCount} ${labels.sets}` },
+                { icon: Icon.Document, tooltip: `${item.setsCount} ${labels.sets}` },
                 { text: String(item.bouncesCount), tooltip: `${item.bouncesCount} Bounces` },
                 { icon: Icon.Waveform, tooltip: `${item.bouncesCount} Bounces` },
               ]
@@ -652,9 +654,9 @@ export default function Command() {
                   )}
                   <List.Item.Detail.Metadata.Separator />
                   <List.Item.Detail.Metadata.Label title="Bounces" text={String(item.bouncesCount)} />
-                  <List.Item.Detail.Metadata.Label title="Sets" text={String(item.setsCount)} />
+                  <List.Item.Detail.Metadata.Label title={labels.sets} text={String(item.setsCount)} />
                   <List.Item.Detail.Metadata.Separator />
-                  <List.Item.Detail.Metadata.Label title="Latest Set" text={latest?.set.name ?? ""} />
+                  <List.Item.Detail.Metadata.Label title={labels.latestSet} text={latest?.set.name ?? ""} />
                   <List.Item.Detail.Metadata.Label title="Key" text={latest?.metadata?.key ?? ""} />
                   <List.Item.Detail.Metadata.Label title="BPM" text={latestBpm === null ? "" : String(latestBpm)} />
                   <List.Item.Detail.Metadata.Separator />
@@ -668,7 +670,7 @@ export default function Command() {
         actions={
           <ActionPanel>
             <ActionPanel.Section>
-              <Action.Push title={t.viewSets} icon={Icon.Document} target={<SetsView project={item} />} />
+              <Action.Push title={labels.viewSets} icon={Icon.Document} target={<SetsView project={item} />} />
               <Action
                 title={toggleTitle}
                 icon={toggleIcon}
@@ -725,7 +727,7 @@ export default function Command() {
                 }}
               />
               <Action
-                title={t.openLatestSet}
+                title={labels.openLatestSet}
                 icon={dawApp ? { fileIcon: dawApp.path } : Icon.Document}
                 shortcut={Keyboard.Shortcut.Common.Open}
                 onAction={() => openLatestSet(item)}
@@ -808,18 +810,18 @@ export default function Command() {
                 target={item.folderPath}
               />
               <Action
-                title={t.newProjectFile}
+                title={labels.newProjectFile}
                 icon={Icon.NewDocument}
                 shortcut={Keyboard.Shortcut.Common.New}
                 onAction={async () => {
                   if (!dawApp) {
-                    await showToast({ style: Toast.Style.Failure, title: t.newProjectFileFailed });
+                    await showToast({ style: Toast.Style.Failure, title: labels.newProjectFileFailed });
                     return;
                   }
                   try {
                     await open(dawApp.path);
                   } catch (error) {
-                    await showFailure(t.newProjectFileFailed, error);
+                    await showFailure(labels.newProjectFileFailed, error);
                   }
                 }}
               />
@@ -985,8 +987,8 @@ export default function Command() {
       {!isLoading && projects.length === 0 && (
         <List.EmptyView
           icon="icon.png"
-          title={t.noProjectsFound}
-          description={t.noProjectsFoundHint.replace("{folder}", PROJECTS_ROOT)}
+          title={labels.noProjectsFound}
+          description={labels.noProjectsFoundHint.replace("{folder}", PROJECTS_ROOT)}
           actions={
             <ActionPanel>
               <Action title={t.openPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
