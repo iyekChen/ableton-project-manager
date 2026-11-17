@@ -72,6 +72,7 @@ import { onFinderRenames } from "@/core/fs/finder-sync";
 import { EditInfo, type ProjectRename } from "@/core/ui/components/project/edit-info";
 import { EditNote } from "@/core/ui/components/project/edit-note";
 import { optionKeywords } from "@/core/ui/search-keywords";
+import { projectIcon } from "@/daws/icons";
 
 const t = getTranslations(getSettings().language);
 
@@ -1063,7 +1064,7 @@ function CollectionPanel({
     matchesFilter(p) ? (
       <List.Item
         key={p.id}
-        icon="icon.png"
+        icon={projectIcon(p.kind)}
         title={p.title}
         accessories={showDetail ? [] : trackAccessories(p)}
         detail={showDetail ? renderDetail(p) : undefined}
@@ -1165,7 +1166,7 @@ function AddProjectsForm({
       ) : (
         <Form.TagPicker id="projects" title={t.projects} value={ids} onChange={setIds}>
           {candidates.map((p) => (
-            <Form.TagPicker.Item key={p.id} value={p.id} title={p.title} icon="icon.png" />
+            <Form.TagPicker.Item key={p.id} value={p.id} title={p.title} icon={projectIcon(p.kind)} />
           ))}
         </Form.TagPicker>
       )}

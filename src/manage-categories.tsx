@@ -31,6 +31,7 @@ import { optionKeywords } from "@/core/ui/search-keywords";
 import { getSettings } from "./settings";
 import { getTranslations } from "./i18n";
 import { getDawLabels } from "@/daws/labels";
+import { projectIcon } from "@/daws/icons";
 
 const settings = getSettings();
 const t = getTranslations(settings.language);
@@ -213,7 +214,7 @@ function AssignProjectsForm({ kind, option }: { kind: ProjectTagKind; option: Ta
       {projects.length > 0 && (
         <Form.TagPicker id="projects" title={t.projects} value={selected} onChange={setSelected}>
           {projects.map((p) => (
-            <Form.TagPicker.Item key={p.id} value={p.id} title={p.title} icon="icon.png" />
+            <Form.TagPicker.Item key={p.id} value={p.id} title={p.title} icon={projectIcon(p.kind)} />
           ))}
         </Form.TagPicker>
       )}

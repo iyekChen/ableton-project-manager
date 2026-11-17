@@ -63,6 +63,7 @@ import {
 } from "@/core/projects/project-file-cache";
 import { SetsView } from "@/daws/ui";
 import { getDawLabels } from "@/daws/labels";
+import { projectIcon } from "@/daws/icons";
 import { LOG_PREFIX } from "@/core/log";
 import { bpmMatches, dateKeywords, matchesSearch, nameKeywords, optionKeywords } from "@/core/ui/search-keywords";
 import { findLatestSet } from "@/core/projects/latest-set";
@@ -604,7 +605,7 @@ export default function Command() {
     return (
       <List.Item
         key={item.id}
-        icon="icon.png"
+        icon={projectIcon(item.kind)}
         title={item.title}
         keywords={[...searchTerms(item), ...keyWordsOf(item)]}
         accessories={
