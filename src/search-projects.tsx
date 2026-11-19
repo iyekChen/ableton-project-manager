@@ -1099,6 +1099,7 @@ export default function Command() {
               {showDetail && (
                 <Action
                   title={detailDoc === "notes" ? t.showLyrics : t.showNotes}
+                  shortcut={{ modifiers: ["cmd", "opt", "shift"], key: "t" }}
                   icon={Icon.Paragraph}
                   onAction={toggleDetailDoc}
                 />
