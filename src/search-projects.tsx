@@ -589,6 +589,7 @@ export default function Command() {
 
   // 以 # 开头时用组合搜索（每个词都要命中）；否则交给 Raycast 的模糊搜索。
   const isTagSearch = searchText.trimStart().startsWith("#");
+  const isEmptyTagSearch = isTagSearch && searchText.trimStart().slice(1).trim() === "";
   const filteredProjects = isTagSearch
     ? filteredByDropdown.filter((project) => matchProject(project, searchText.trimStart().slice(1)))
     : filteredByDropdown;
@@ -1101,12 +1102,18 @@ export default function Command() {
           }
         />
       )}
-      {renderPinned.length > 0 && <List.Section title={t.pinned}>{renderPinned.map(renderProject)}</List.Section>}
-      {renderGroups.map((group) => (
-        <List.Section key={group.key} title={group.title} subtitle={group.subtitle}>
-          {group.items.map(renderProject)}
-        </List.Section>
-      ))}
+      {isEmptyTagSearch && (
+        <List.EmptyView icon={Icon.MagnifyingGlass} title={t.advancedSearch} description={t.advancedSearchHint} />
+      )}
+      {!isEmptyTagSearch && renderPinned.length > 0 && (
+        <List.Section title={t.pinned}>{renderPinned.map(renderProject)}</List.Section>
+      )}
+      {!isEmptyTagSearch &&
+        renderGroups.map((group) => (
+          <List.Section key={group.key} title={group.title} subtitle={group.subtitle}>
+            {group.items.map(renderProject)}
+          </List.Section>
+        ))}
     </List>
   );
 }
