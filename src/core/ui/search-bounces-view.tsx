@@ -201,7 +201,13 @@ export function SearchBouncesView() {
                 keywords={b.unmatched ? [...b.owners.map((o) => o.title), "unmatched"] : b.owners.map((o) => o.title)}
                 accessories={
                   b.unmatched
-                    ? [{ tag: { value: t.unmatchedTag, color: Color.Orange } }, { text: formatSize(b.size) }]
+                    ? [
+                        {
+                          icon: { source: Icon.QuestionMarkCircle, tintColor: Color.Orange },
+                          tooltip: t.unmatchedBounceTooltip,
+                        },
+                        { text: formatSize(b.size) },
+                      ]
                     : [{ text: b.owners.map((o) => o.title).join(", ") }, { text: formatSize(b.size) }]
                 }
                 actions={

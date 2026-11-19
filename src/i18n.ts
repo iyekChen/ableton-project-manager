@@ -206,7 +206,7 @@ type TranslationKeys = {
   sourceExternal: string;
   sourceSharedFolder: string;
   unmatchedBounces: string;
-  unmatchedTag: string;
+  unmatchedBounceTooltip: string;
   searchUnmatchedBounces: string;
   noUnmatchedBounces: string;
   noUnmatchedBouncesHint: string;
@@ -517,7 +517,7 @@ const translations: Record<Language, TranslationKeys> = {
     sourceExternal: "External",
     sourceSharedFolder: "Shared Folder",
     unmatchedBounces: "Unmatched Bounces",
-    unmatchedTag: "Unmatched",
+    unmatchedBounceTooltip: "Unmatched bounce",
     searchUnmatchedBounces: "Search Unmatched Bounces",
     noUnmatchedBounces: "No Unmatched Bounces",
     noUnmatchedBouncesHint: "Every bounce in the shared bounces folder belongs to a project.",
