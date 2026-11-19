@@ -72,7 +72,14 @@ import { getDawLabels } from "@/daws/labels";
 import { projectIcon } from "@/daws/icons";
 import { openWithDaw, resolveDawApp } from "@/core/daw-app";
 import { LOG_PREFIX } from "@/core/log";
-import { bpmMatches, dateKeywords, matchesSearch, nameKeywords, optionKeywords } from "@/core/ui/search-keywords";
+import {
+  bpmMatches,
+  dateKeywords,
+  matchesSearch,
+  nameKeywords,
+  optionKeywords,
+  timeSignatureMatches,
+} from "@/core/ui/search-keywords";
 import { findLatestSet } from "@/core/projects/latest-set";
 import { keyKeywords, keyToken } from "@/core/projects/musical-key";
 
@@ -546,14 +553,16 @@ export default function Command() {
     }
   };
 
-  // 每个项目可被搜到的内容：标题、Stage、Genre 的各种写法，加上创建年月。
+  // 每个项目可被搜到的内容：标题、Stage、Genre、合集名的各种写法，加上创建年月。
   const searchTerms = (project: Project) => {
     const stage = stageOptions.find((option) => option.id === project.stageId);
     const genres = genreOptions.filter((option) => project.genreIds.includes(option.id));
+    const collections = collectionOptions.filter((option) => project.collectionIds.includes(option.id));
     return [
       ...nameKeywords(project.title),
       ...(stage ? optionKeywords(stage) : []),
       ...genres.flatMap(optionKeywords),
+      ...collections.flatMap(optionKeywords),
       ...dateKeywords(project.createdAt),
     ];
   };
@@ -580,10 +589,14 @@ export default function Command() {
   const matchProject = (project: Project, query: string) => {
     const keyTokens = new Set(keyWordsOf(project).map(keyToken));
     const bpm = latestSets[project.id]?.metadata?.bpm ?? null;
+    const timeSignature = latestSets[project.id]?.metadata?.timeSignature ?? null;
     return matchesSearch(
       searchTerms(project),
       query,
-      (word) => bpmMatches(bpm, word) ?? (keyTokens.has(keyToken(word)) ? true : undefined),
+      (word) =>
+        bpmMatches(bpm, word) ??
+        timeSignatureMatches(timeSignature, word) ??
+        (keyTokens.has(keyToken(word)) ? true : undefined),
     );
   };
 

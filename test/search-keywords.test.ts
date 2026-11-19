@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bpmMatches, matchesSearch, nameKeywords } from "../src/core/ui/search-keywords";
+import { bpmMatches, matchesSearch, nameKeywords, timeSignatureMatches } from "../src/core/ui/search-keywords";
 
 describe("nameKeywords", () => {
   it("& 换成 n / and", () => {
@@ -72,5 +72,30 @@ describe("bpmMatches", () => {
     const matchWord = (word: string) => bpmMatches(92, word);
     expect(matchesSearch(["Song 120"], "120", matchWord)).toBe(false);
     expect(matchesSearch(["Song"], "92", matchWord)).toBe(true);
+  });
+});
+
+describe("timeSignatureMatches", () => {
+  it("整个对上才算", () => {
+    expect(timeSignatureMatches("3/4", "3/4")).toBe(true);
+    expect(timeSignatureMatches("6/8", "06/08")).toBe(true);
+    expect(timeSignatureMatches("6/4", "6/8")).toBe(false);
+    expect(timeSignatureMatches("4/4", "3/4")).toBe(false);
+  });
+
+  it("没有拍号的项目不算命中", () => {
+    expect(timeSignatureMatches(null, "4/4")).toBe(false);
+  });
+
+  it("不是拍号写法的交给文字比较", () => {
+    expect(timeSignatureMatches("4/4", "2025")).toBeUndefined();
+    expect(timeSignatureMatches("4/4", "120")).toBeUndefined();
+    expect(timeSignatureMatches("4/4", "rnb")).toBeUndefined();
+  });
+
+  it("matchesSearch 里拍号按拍号判断，不再按文字", () => {
+    const matchWord = (word: string) => timeSignatureMatches("4/4", word);
+    expect(matchesSearch(["Song 34"], "3/4", matchWord)).toBe(false);
+    expect(matchesSearch(["Song"], "4/4", matchWord)).toBe(true);
   });
 });
