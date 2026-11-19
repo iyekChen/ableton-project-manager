@@ -158,7 +158,6 @@
 			"title": "Search Projects",
 			"description": "Search, play, and organize your Ableton Live projects and collections",
 			"mode": "view",
-			"subtitle": "Ableton Live",
 			"keywords": [
 				"ableton",
 				"ableton live",
@@ -177,7 +176,6 @@
 			"title": "Manage Tags",
 			"description": "Create and manage Stages, Genres, and Track Roles",
 			"mode": "view",
-			"subtitle": "Ableton Live",
 			"keywords": [
 				"ableton",
 				"ableton live",
@@ -193,7 +191,6 @@
 			"title": "Export Data",
 			"description": "Save your tags, collections and other extension data to a file.",
 			"mode": "view",
-			"subtitle": "Ableton Live",
 			"keywords": [
 				"export",
 				"backup",
@@ -207,7 +204,6 @@
 			"title": "Import Data",
 			"description": "Restore extension data from an exported file.",
 			"mode": "view",
-			"subtitle": "Ableton Live",
 			"keywords": [
 				"import",
 				"restore",
