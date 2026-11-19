@@ -73,7 +73,7 @@ export const abletonAdapter: DawAdapter = {
     title: templateLabels.newProjectWithTemplate,
     // 和原来这个 Action 的图标一致（Icon.NewDocument）。适配层会被测试加载，那里没有 Icon，所以直接写图标名。
     icon: "new-document-16",
-    shortcut: { modifiers: ["cmd", "shift"], key: "n" },
+    shortcut: { modifiers: ["cmd", "opt", "ctrl"], key: "n" },
     component: TemplatesView,
   },
 };
