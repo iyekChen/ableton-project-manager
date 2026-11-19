@@ -1103,7 +1103,16 @@ export default function Command() {
         />
       )}
       {isEmptyTagSearch && (
-        <List.EmptyView icon={Icon.MagnifyingGlass} title={t.advancedSearch} description={t.advancedSearchHint} />
+        <List.EmptyView
+          icon={Icon.MagnifyingGlass}
+          title={t.advancedSearch}
+          description={t.advancedSearchHint}
+          actions={
+            <ActionPanel>
+              <Action.OpenInBrowser title={t.openReadme} icon={Icon.Book} url={daw.readmeUrl} />
+            </ActionPanel>
+          }
+        />
       )}
       {!isEmptyTagSearch && renderPinned.length > 0 && (
         <List.Section title={t.pinned}>{renderPinned.map(renderProject)}</List.Section>

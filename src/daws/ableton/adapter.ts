@@ -15,6 +15,7 @@ export const SET_EXTENSION = ".als";
 export const abletonAdapter: DawAdapter = {
   id: "ableton",
   appNameMatch: "ableton live",
+  readmeUrl: "https://github.com/iyekChen/ableton-project-manager#readme",
 
   // 文件夹名就是 id，不需要换算。
   projectIdForEntry: (entryName) => entryName,

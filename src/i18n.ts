@@ -5,6 +5,7 @@ type TranslationKeys = {
   searchProjectsPlaceholder: string;
   advancedSearch: string;
   advancedSearchHint: string;
+  openReadme: string;
   searchBounces: string;
   searchCollections: string;
   searchTracks: string;
@@ -306,7 +307,9 @@ const translations: Record<Language, TranslationKeys> = {
     searchProjects: "Search Projects",
     searchProjectsPlaceholder: "Search projects, or # to combine filters",
     advancedSearch: "Advanced Search",
-    advancedSearchHint: "Type words to combine filters: name, stage, genre, key, year or BPM (e.g. 120 or 90-100).",
+    advancedSearchHint:
+      "Every word must match. Search by name, stage, genre, created date, key or BPM.\ne.g. # rnb 2025 Am 120-128",
+    openReadme: "Open README",
     searchBounces: "Search Bounces",
     searchCollections: "Search Collections",
     searchTracks: "Search Tracks",

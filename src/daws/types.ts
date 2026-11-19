@@ -48,6 +48,9 @@ export interface DawAdapter {
   /** 匹配 DAW 桌面应用的名称子串（小写），供 getApplications 查找，如 "ableton live"。 */
   readonly appNameMatch: string;
 
+  /** 扩展 README 的地址，Advanced Search 空页面的「Open README」会打开它。 */
+  readonly readmeUrl: string;
+
   /** 磁盘上的条目名 → 项目 id（也是显示名）。须满足 projectIdForEntry(entryNameFor(id, kind)) === id。 */
   projectIdForEntry(entryName: string): string;
 
