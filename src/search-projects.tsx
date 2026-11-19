@@ -1176,7 +1176,7 @@ export default function Command() {
         // 一打字就补全，不等计时器。
         if (text) setShowAll(true);
       }}
-      searchBarPlaceholder={t.searchProjects}
+      searchBarPlaceholder={t.searchProjectsPlaceholder}
       searchBarAccessory={
         <List.Dropdown tooltip={t.filter} value={selectedFilter} onChange={setSelectedFilter}>
           <List.Dropdown.Section title="">

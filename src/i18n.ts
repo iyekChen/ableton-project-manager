@@ -2,6 +2,7 @@ import { Language } from "./settings";
 
 type TranslationKeys = {
   searchProjects: string;
+  searchProjectsPlaceholder: string;
   searchBounces: string;
   searchCollections: string;
   searchTracks: string;
@@ -299,6 +300,7 @@ type TranslationKeys = {
 const translations: Record<Language, TranslationKeys> = {
   en: {
     searchProjects: "Search Projects",
+    searchProjectsPlaceholder: "Search projects, or # to combine filters",
     searchBounces: "Search Bounces",
     searchCollections: "Search Collections",
     searchTracks: "Search Tracks",
