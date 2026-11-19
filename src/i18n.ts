@@ -294,6 +294,16 @@ type TranslationKeys = {
   corruptDataOrders: string;
   corruptDataRoles: string;
   corruptDataDeleted: string;
+  searchTemplates: string;
+  templates: string;
+  noTemplates: string;
+  noTemplatesHint: string;
+  createProject: string;
+  creatingProject: string;
+  createdProject: string;
+  createFromTemplateFailed: string;
+  templateNameExists: string;
+  templateTrashHint: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -609,6 +619,16 @@ const translations: Record<Language, TranslationKeys> = {
     corruptDataOrders: "track numbers",
     corruptDataRoles: "roles",
     corruptDataDeleted: "recently deleted projects",
+    searchTemplates: "Search Templates",
+    templates: "Templates",
+    noTemplates: "No templates found",
+    noTemplatesHint: "Nothing in {folder} looks like a template. Check the Templates Folder in preferences.",
+    createProject: "Create Project",
+    creatingProject: "Creating Project…",
+    createdProject: "Created {name}",
+    createFromTemplateFailed: "Couldn't Create Project",
+    templateNameExists: "A template with that name already exists",
+    templateTrashHint: "This moves the template to the Trash:",
   },
 };
 

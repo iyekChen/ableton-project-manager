@@ -59,6 +59,15 @@ export interface DawAdapter {
 
   /** 解析一个 Set 的音乐元数据（BPM / 拍号 / 调）。读不到时各字段为 null。 */
   parseSet(set: DawSet): Promise<ProjectFileMetadata>;
+
+  /** 没设 Templates Folder 时用的模板文件夹（DAW 自己的默认位置）。 */
+  defaultTemplatesFolder(): string;
+
+  /** 模板文件夹里的一个条目是不是模板。模板包本身也是文件夹，靠它和普通子文件夹区分。 */
+  isTemplate(entryPath: string, entryName: string): boolean;
+
+  /** 用模板新建项目，返回新项目的路径。目标已存在时抛错，不覆盖。 */
+  createFromTemplate(templatePath: string, projectsRoot: string, name: string): string;
 }
 
 /** 和 DAW 有关的界面文字。每个仓库在 src/daws/labels.ts 里各给一份，共用代码只从这里取。 */
@@ -73,6 +82,7 @@ export type DawLabels = {
   readingSets: string;
   newProjectFile: string;
   newProjectFileFailed: string;
+  newProjectWithTemplate: string;
   noProjectsFound: string;
   noProjectsFoundHint: string;
   renameConfirmMessage: string;

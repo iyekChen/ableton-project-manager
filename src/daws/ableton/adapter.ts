@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { getAlsMetadata } from "./als-metadata";
 import type { DawAdapter, DawSet } from "../types";
@@ -61,5 +62,32 @@ export const abletonAdapter: DawAdapter = {
       // inKey=false 表示工程未启用音阶，此时调性无意义，归一化为 null。
       key: metadata.inKey === false ? null : metadata.key,
     };
+  },
+
+  // Live 自己的模板位置。
+  defaultTemplatesFolder: () => path.join(os.homedir(), "Music", "Ableton", "User Library", "Templates"),
+
+  // 模板就是一个 .als 文件。
+  isTemplate(entryPath, entryName) {
+    if (!entryName.endsWith(SET_EXTENSION)) return false;
+    try {
+      return fs.statSync(entryPath).isFile();
+    } catch {
+      return false;
+    }
+  },
+
+  createFromTemplate(templatePath, projectsRoot, name) {
+    const target = path.join(projectsRoot, abletonAdapter.entryNameFor(name, "folder"));
+    // 目标已存在时报错，不覆盖。
+    if (fs.existsSync(target)) {
+      const error = new Error(`Target already exists: ${target}`) as NodeJS.ErrnoException;
+      error.code = "EEXIST";
+      throw error;
+    }
+    // 项目是文件夹，Set 是里面的 .als：模板复制成 <名字>.als。
+    fs.mkdirSync(target);
+    fs.copyFileSync(templatePath, path.join(target, `${name}${SET_EXTENSION}`));
+    return target;
   },
 };

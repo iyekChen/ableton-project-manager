@@ -54,6 +54,7 @@ import { CleanUpRemovedProjects } from "@/core/ui/clean-up-removed-projects";
 import { EditInfo } from "@/core/ui/components/project/edit-info";
 import { EditNote } from "@/core/ui/components/project/edit-note";
 import { DuplicateProject } from "@/core/ui/components/project/duplicate-project";
+import { TemplatesView } from "@/core/ui/templates-view";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
 import { loadProjects } from "@/core/projects/load-projects";
@@ -948,6 +949,12 @@ export default function Command() {
                     await showFailure(labels.newProjectFileFailed, error);
                   }
                 }}
+              />
+              <Action.Push
+                title={labels.newProjectWithTemplate}
+                icon={Icon.NewDocument}
+                shortcut={{ modifiers: ["cmd", "opt", "ctrl"], key: "n" }}
+                target={<TemplatesView onCreated={() => void reloadProjects()} />}
               />
               <Action.Push
                 title={t.duplicateProject}

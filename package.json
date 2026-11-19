@@ -37,6 +37,13 @@
 			"placeholder": "e.g. Bounces"
 		},
 		{
+			"name": "templatesFolder",
+			"title": "Templates Folder",
+			"description": "The folder that holds your templates. Leave empty to use the default location.",
+			"type": "directory",
+			"required": false
+		},
+		{
 			"name": "notesFolder",
 			"title": "Notes Folder",
 			"description": "The folder where notes are saved as .md files (e.g. an Obsidian vault). Leave empty to save Notes.md in each project folder.",

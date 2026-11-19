@@ -12,6 +12,7 @@ const labels: Record<Language, DawLabels> = {
     readingSets: "Reading Sets…",
     newProjectFile: "New Live Set",
     newProjectFileFailed: "Ableton Live not found",
+    newProjectWithTemplate: "New Live Set with Template",
     noProjectsFound: "No Ableton projects found",
     noProjectsFoundHint: "Nothing in {folder} contains a Live Set. Check the Projects Folder in preferences.",
     renameConfirmMessage:
