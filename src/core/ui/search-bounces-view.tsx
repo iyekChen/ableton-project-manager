@@ -63,7 +63,7 @@ export function SearchBouncesView() {
   const startupDoneRef = useRef(false);
   const [showAll, setShowAll] = useState(false);
   const [sortBy, setSortBy] = useSortOption(SEARCH_BOUNCES_SORT_STORAGE_KEY, BOUNCES_SORT_OPTIONS, "created-desc");
-  const [groupBy, setGroupByState] = useState<BounceGroup>("source");
+  const [groupBy, setGroupByState] = useState<BounceGroup>("created");
 
   // 读取持久化的分组选择（含 "source"）。
   useEffect(() => {
