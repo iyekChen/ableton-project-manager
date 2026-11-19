@@ -179,6 +179,13 @@
 			]
 		},
 		{
+			"name": "search-bounces",
+			"title": "Search Bounces",
+			"description": "Search the bounces of all your projects.",
+			"icon": "bounce.png",
+			"mode": "view"
+		},
+		{
 			"name": "manage-categories",
 			"title": "Manage Tags",
 			"description": "Create and manage Stages, Genres, and Track Roles",

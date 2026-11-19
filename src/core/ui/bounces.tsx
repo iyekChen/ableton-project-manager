@@ -38,7 +38,7 @@ const t = getTranslations(getSettings().language);
 
 const BOUNCES_SORT_STORAGE_KEY = "bounces-sort-option";
 const BOUNCES_GROUP_STORAGE_KEY = "bounces-group-option";
-const BOUNCES_SORT_OPTIONS: SortOption[] = [
+export const BOUNCES_SORT_OPTIONS: SortOption[] = [
   "created-desc",
   "created-asc",
   "modified-desc",
@@ -51,13 +51,13 @@ const BOUNCES_SORT_OPTIONS: SortOption[] = [
 
 // Browse Bounces 本地分组维度：在共享的日期分组之外额外支持按来源分组，
 // 不污染共享的 grouping 模块（其 GroupOption 还被 Search Projects 复用）。
-type BounceGroup = "source" | "created" | "modified" | "none";
+export type BounceGroup = "source" | "created" | "modified" | "none";
 
-function isBounceGroup(value: string): value is BounceGroup {
+export function isBounceGroup(value: string): value is BounceGroup {
   return value === "source" || value === "created" || value === "modified" || value === "none";
 }
 
-function formatSize(bytes: number): string {
+export function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   const units = ["KB", "MB", "GB", "TB"];
   let value = bytes / 1024;
@@ -70,12 +70,12 @@ function formatSize(bytes: number): string {
 }
 
 // 拆出文件名主体与后缀：后缀在列表里用 subtitle 以次级灰显示。
-function splitExt(name: string): { stem: string; ext: string } {
+export function splitExt(name: string): { stem: string; ext: string } {
   const ext = path.extname(name);
   return { stem: ext ? name.slice(0, -ext.length) : name, ext };
 }
 
-function BounceGroupSubmenu(props: { value: BounceGroup; onChange: (next: BounceGroup) => void }) {
+export function BounceGroupSubmenu(props: { value: BounceGroup; onChange: (next: BounceGroup) => void }) {
   const options: [BounceGroup, string][] = [
     ["source", t.groupBySource],
     ["created", t.groupByCreated],

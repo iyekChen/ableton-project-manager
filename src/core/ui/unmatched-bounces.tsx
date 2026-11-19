@@ -27,7 +27,7 @@ import { getSettings } from "@/settings";
 const settings = getSettings();
 const t = getTranslations(settings.language);
 
-type Assignment = { file: string } | { alias: string };
+export type Assignment = { file: string } | { alias: string };
 
 // 共享 Bounces 文件夹里没对上任何项目的 bounce：逐个指给项目，或加一个别名让同开头的都归它。
 export function UnmatchedBounces({ projects, onChanged }: { projects: Project[]; onChanged: () => void }) {
@@ -90,7 +90,7 @@ export function UnmatchedBounces({ projects, onChanged }: { projects: Project[];
   );
 }
 
-function AssignBounce({
+export function AssignBounce({
   bounce,
   projects,
   onAssigned,

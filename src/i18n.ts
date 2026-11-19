@@ -110,6 +110,7 @@ type TranslationKeys = {
   sizeLargest: string;
   sizeSmallest: string;
   browseBounces: string;
+  browseProjectBounces: string;
   playLatestBounce: string;
   playingLatestBounce: string;
   playbackFailed: string;
@@ -205,6 +206,7 @@ type TranslationKeys = {
   sourceExternal: string;
   sourceSharedFolder: string;
   unmatchedBounces: string;
+  unmatchedTag: string;
   searchUnmatchedBounces: string;
   noUnmatchedBounces: string;
   noUnmatchedBouncesHint: string;
@@ -413,6 +415,7 @@ const translations: Record<Language, TranslationKeys> = {
     sizeLargest: "Size — Largest",
     sizeSmallest: "Size — Smallest",
     browseBounces: "Browse Bounces",
+    browseProjectBounces: "Browse Project Bounces",
     playLatestBounce: "Play Latest Bounce",
     playingLatestBounce: "Playing Latest Bounce",
     playbackFailed: "Playback Failed",
@@ -514,6 +517,7 @@ const translations: Record<Language, TranslationKeys> = {
     sourceExternal: "External",
     sourceSharedFolder: "Shared Folder",
     unmatchedBounces: "Unmatched Bounces",
+    unmatchedTag: "Unmatched",
     searchUnmatchedBounces: "Search Unmatched Bounces",
     noUnmatchedBounces: "No Unmatched Bounces",
     noUnmatchedBouncesHint: "Every bounce in the shared bounces folder belongs to a project.",

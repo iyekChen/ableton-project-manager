@@ -318,7 +318,7 @@ export type BounceSourceInput = {
 };
 
 /** 规范化真实路径用于去重（跟随 symlink；失败时回退原路径）。 */
-function canonicalPath(p: string): string {
+export function canonicalPath(p: string): string {
   try {
     return fs.realpathSync(p);
   } catch {
