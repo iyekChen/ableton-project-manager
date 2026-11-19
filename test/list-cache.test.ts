@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProjectList, serializeProjectList } from "../src/core/projects/list-cache";
+import { parseProjectList, sameFsFields, serializeProjectList } from "../src/core/projects/list-cache";
 import type { Project } from "../src/core/projects/types";
 
 const project = (over: Partial<Project> = {}): Project => ({
@@ -69,5 +69,51 @@ describe("serializeProjectList / parseProjectList", () => {
 
   it("projects 不是数组返回 undefined", () => {
     expect(parseProjectList(JSON.stringify({ version: 1, projects: {} }))).toBeUndefined();
+  });
+});
+
+describe("sameFsFields", () => {
+  it("完全相同返回 true", () => {
+    expect(sameFsFields([project()], [project()])).toBe(true);
+  });
+
+  it("只是顺序不同返回 true", () => {
+    const a = project();
+    const b = project({ id: "Other", title: "Other", folderPath: "/Projects/Other" });
+    expect(sameFsFields([a, b], [b, a])).toBe(true);
+  });
+
+  it("多一个项目返回 false", () => {
+    const b = project({ id: "Other", title: "Other", folderPath: "/Projects/Other" });
+    expect(sameFsFields([project(), b], [project()])).toBe(false);
+  });
+
+  it("少一个项目返回 false", () => {
+    const b = project({ id: "Other", title: "Other", folderPath: "/Projects/Other" });
+    expect(sameFsFields([project()], [project(), b])).toBe(false);
+  });
+
+  it("id 变了（改名）返回 false", () => {
+    expect(sameFsFields([project({ id: "Renamed", title: "Renamed" })], [project()])).toBe(false);
+  });
+
+  it("modifiedAt 变了返回 false", () => {
+    expect(sameFsFields([project({ modifiedAt: 1700000002000 })], [project()])).toBe(false);
+  });
+
+  it("只有元数据或文档字段不同返回 true", () => {
+    const cached = project({
+      stageId: "stage-1",
+      genreIds: ["genre-1"],
+      collectionIds: ["collection-1"],
+      notes: "note",
+      lyrics: "lyric",
+      pinned: true,
+      pinOrder: 0,
+      bouncesCount: 3,
+      externalBounceFolders: ["/Bounces"],
+      externalBounceFiles: ["/Bounces/a.wav"],
+    });
+    expect(sameFsFields([project()], [cached])).toBe(true);
   });
 });

@@ -57,7 +57,12 @@ import { DuplicateProject } from "@/core/ui/components/project/duplicate-project
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
 import { loadProjects } from "@/core/projects/load-projects";
-import { readProjectListCache, writeProjectListCache } from "@/core/projects/list-cache";
+import {
+  readProjectListCache,
+  sameFsFields,
+  serializeProjectList,
+  writeProjectListCache,
+} from "@/core/projects/list-cache";
 import {
   countProjectBounces,
   findLatestProjectBounce,
@@ -153,8 +158,14 @@ export default function Command() {
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
   const [groupBy, setGroupBy] = useGroupOption(GROUP_STORAGE_KEY, "created");
   // 冷启动先显示上次读到的列表，扫描完再替换。
-  const [projects, setProjects] = useState<Project[]>(() => readProjectListCache(PROJECTS_ROOT) ?? []);
-  const [isLoading, setIsLoading] = useState(true);
+  const [initialCache] = useState(() => readProjectListCache(PROJECTS_ROOT));
+  const [projects, setProjects] = useState<Project[]>(() => initialCache ?? []);
+  // 读到缓存时先不显示加载：扫描完发现没变化就什么都不做。
+  const [isLoading, setIsLoading] = useState(initialCache === undefined);
+  // 静默启动刷新：只在读到缓存的那一次刷新里为 true，结束后复位。
+  const silentStartupRef = useRef(initialCache !== undefined);
+  // 上次写进缓存的列表：打开时刚读出来的那份不重复写。
+  const lastWrittenRef = useRef(initialCache);
   const [orphanIds, setOrphanIds] = useState<string[]>([]);
   // 默认 Detail；只有记过 Overview 才进 Overview。
   const [showDetail, setShowDetail] = useState(() => viewPrefs.get(VIEW_MODE_STORAGE_KEY) !== "overview");
@@ -292,7 +303,12 @@ export default function Command() {
         bouncesCount,
       };
     });
-    setProjects(updatedProjects);
+    // 静默启动刷新：内容没变就保留原引用，不触发重渲染，也不重写缓存。
+    setProjects((prev) =>
+      silentStartupRef.current && serializeProjectList(updatedProjects) === serializeProjectList(prev)
+        ? prev
+        : updatedProjects,
+    );
   }, []);
 
   // 读出每个项目最新 Set 的元数据：有缓存的立刻显示，其余在后台解析，读完一个显示一个。
@@ -348,6 +364,10 @@ export default function Command() {
   const runReload = useCallback(async (): Promise<string[]> => {
     try {
       baseProjectsRef.current = loadProjects(PROJECTS_ROOT);
+      // 静默启动刷新：磁盘上的项目有变化才显示加载。
+      if (silentStartupRef.current && !sameFsFields(baseProjectsRef.current, projectsRef.current)) {
+        setIsLoading(true);
+      }
       // 预先算好哪些项目会共用同一个笔记/歌词文件，读写时据此拦截。
       setKnownProjectTitles(baseProjectsRef.current.map((p) => p.title));
       // 先补做在 Finder 里做的改名/删除，再处理放回、套用元数据。
@@ -406,6 +426,9 @@ export default function Command() {
       setProjects([]);
       setOrphanIds([]);
       await showFailure(t.loadProjectsFailed, error, { message: t.loadProjectsFailedHint });
+    } finally {
+      // 静默启动刷新只做一次，成功失败都复位。
+      silentStartupRef.current = false;
     }
     return [] as string[];
   }, [applyMetadata, refreshLatestSets]);
@@ -501,7 +524,9 @@ export default function Command() {
   // 列表刷新完就更新缓存：下次冷启动先显示这一份。
   useEffect(() => {
     if (isLoading) return;
+    if (projects === lastWrittenRef.current) return;
     writeProjectListCache(PROJECTS_ROOT, projects);
+    lastWrittenRef.current = projects;
   }, [isLoading, projects]);
 
   // 首帧只渲染前 INITIAL_ITEM_COUNT 项，这里补全其余部分。

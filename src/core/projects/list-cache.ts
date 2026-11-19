@@ -37,6 +37,27 @@ export function parseProjectList(raw: string | undefined): Project[] | undefined
   return projects as Project[];
 }
 
+// 文件系统字段：loadProjects 从磁盘读出来、applyMetadata 不会改写的那些。
+// 这些字段变了，说明项目本身有变化（新增、删除、改名、内容更新），值得显示加载状态。
+// 其余字段（stageId、genreIds、collectionIds、notes、lyrics、pinned、pinOrder、
+// externalBounceFolders、externalBounceFiles、bouncesCount）由元数据套用，
+// 缓存里可能比磁盘新，拿来比较会误判成「有变化」。id 用作对应键，不放进这里。
+export const FS_FIELDS = ["title", "folderPath", "kind", "createdAt", "inode", "modifiedAt", "setsCount"] as const;
+
+/** 两份列表在文件系统层面是否一致：id 集合相同，且每个项目的 FS_FIELDS 全部相等。顺序无关。 */
+export function sameFsFields(base: Project[], cached: Project[]): boolean {
+  if (base.length !== cached.length) return false;
+  const byId = new Map(cached.map((project) => [project.id, project]));
+  for (const project of base) {
+    const other = byId.get(project.id);
+    if (!other) return false;
+    for (const field of FS_FIELDS) {
+      if (project[field] !== other[field]) return false;
+    }
+  }
+  return true;
+}
+
 export function readProjectListCache(projectsRoot: string): Project[] | undefined {
   return parseProjectList(cache.get(cacheKey(projectsRoot)));
 }
