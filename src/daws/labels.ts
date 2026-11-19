@@ -38,7 +38,7 @@ const templateLabels: Record<
   }
 > = {
   en: {
-    newProjectWithTemplate: "New Live Set with Template",
+    newProjectWithTemplate: "New Live Set from Template",
     createLiveSet: "Create Live Set",
     searchTemplates: "Search Templates",
     templates: "Templates",

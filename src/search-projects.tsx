@@ -1023,6 +1023,7 @@ export default function Command() {
               <Action.Push
                 title={t.manageExternalBounce}
                 icon={Icon.Link}
+                shortcut={{ modifiers: ["cmd"], key: "b" }}
                 target={
                   <ManageExternalBounces
                     projectId={item.id}
@@ -1037,6 +1038,7 @@ export default function Command() {
                 <Action.Push
                   title={t.unmatchedBounces}
                   icon={Icon.QuestionMarkCircle}
+                  shortcut={{ modifiers: ["cmd", "shift"], key: "b" }}
                   target={<UnmatchedBounces projects={projects} onChanged={() => void reloadProjects()} />}
                 />
               )}
@@ -1091,6 +1093,7 @@ export default function Command() {
               <Action
                 title={showDetail ? t.showOverview : t.showDetail}
                 icon={Icon.AppWindowSidebarRight}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "t" }}
                 onAction={toggleDetail}
               />
               {showDetail && (
