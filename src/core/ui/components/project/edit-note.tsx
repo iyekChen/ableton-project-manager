@@ -46,7 +46,7 @@ export function EditNote({
       });
       pop();
     }
-  }, [project, pop]);
+  }, [project, kind, pop]);
 
   async function handleSubmit() {
     if (!loaded) return;
@@ -62,7 +62,7 @@ export function EditNote({
     }
 
     try {
-      writeDocBody(project, "notes", note);
+      writeDocBody(project, kind, note);
     } catch (error) {
       // 自定义文件夹失效等：不返回上一页，保留已输入的内容。
       await showDocError(error);
