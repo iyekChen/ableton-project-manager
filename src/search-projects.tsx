@@ -43,7 +43,7 @@ import { GroupBySubmenu, groupItems, useGroupOption } from "@/core/ui/grouping";
 import { Bounces } from "@/core/ui/bounces";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "@/core/metadata/taxonomies";
 import type { TaxonomyOption } from "@/core/metadata/taxonomy";
-import { displayDoc, readDocFile, setKnownProjectTitles, stripFrontmatter } from "@/core/docs/docs";
+import { displayDoc, missingDocFolder, readDocFile, setKnownProjectTitles, stripFrontmatter } from "@/core/docs/docs";
 import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
 import { archiveDeletedProject, assertDeletionWritable, restorePutBackProjects } from "@/core/fs/deleted-projects";
 import { showFailure } from "@/core/ui/toast";
@@ -57,6 +57,7 @@ import { DuplicateProject } from "@/core/ui/components/project/duplicate-project
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
 import { loadProjects } from "@/core/projects/load-projects";
+import { readProjectListCache, writeProjectListCache } from "@/core/projects/list-cache";
 import {
   countProjectBounces,
   findLatestProjectBounce,
@@ -102,6 +103,9 @@ const METADATA_CONCURRENCY = 3;
 // 要读的 Set 少于这个数时不弹进度提示（如在 DAW 里刚存了一个 Set），免得一闪而过。
 const SET_PROGRESS_MIN = 5;
 
+const INITIAL_ITEM_COUNT = 15;
+const FILL_DELAY_MS = 0;
+
 // 每个项目的最新 Set 和它的元数据；还没读完时 metadata 为 null。
 type LatestSetInfo = { set: DawSet; metadata: ProjectFileMetadata | null };
 // 正在由扩展执行 Move to Trash 的项目：已归档，目录监听触发的重载不要再当成 Finder 删除处理。
@@ -144,9 +148,12 @@ export default function Command() {
   const [collectionOptions, setCollectionOptions] = useState<TaxonomyOption[]>([]);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchText, setSearchText] = useState("");
+  // 先渲染前 INITIAL_ITEM_COUNT 项，首帧之后补全；一打字也立刻补全。
+  const [showAll, setShowAll] = useState(false);
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
   const [groupBy, setGroupBy] = useGroupOption(GROUP_STORAGE_KEY, "created");
-  const [projects, setProjects] = useState<Project[]>([]);
+  // 冷启动先显示上次读到的列表，扫描完再替换。
+  const [projects, setProjects] = useState<Project[]>(() => readProjectListCache(PROJECTS_ROOT) ?? []);
   const [isLoading, setIsLoading] = useState(true);
   const [orphanIds, setOrphanIds] = useState<string[]>([]);
   // 默认 Detail；只有记过 Overview 才进 Overview。
@@ -433,7 +440,7 @@ export default function Command() {
     if (onboardingShownRef.current) return;
     const folder = resolveSharedBouncesFolder();
     if (folder === null) {
-      if ((await LocalStorage.getItem<string>(ONBOARDING_ASKED_KEY)) === "true") return;
+      if ((await LocalStorage.getItem(ONBOARDING_ASKED_KEY)) === "true") return;
       onboardingShownRef.current = true;
       await confirmAlert({
         title: t.onboardingSharedTitle,
@@ -445,7 +452,7 @@ export default function Command() {
       return;
     }
 
-    if ((await LocalStorage.getItem<string>(ONBOARDING_UNMATCHED_KEY)) === folder) return;
+    if ((await LocalStorage.getItem(ONBOARDING_UNMATCHED_KEY)) === folder) return;
     // 先记下这个文件夹：没有未匹配的也算判断过，换文件夹前不再重复检查。
     await LocalStorage.setItem(ONBOARDING_UNMATCHED_KEY, folder);
     const metadataStore = await getAllProjectMetadata();
@@ -465,7 +472,12 @@ export default function Command() {
     });
   }, [push, reloadProjects]);
 
+  // 启动只加载一遍：依赖里的 push 每次渲染都是新函数，会让这个 effect 重跑。
+  const startupDoneRef = useRef(false);
+
   useEffect(() => {
+    if (startupDoneRef.current) return;
+    startupDoneRef.current = true;
     async function load() {
       const orphans = await reloadProjects();
       setIsLoading(false);
@@ -485,6 +497,20 @@ export default function Command() {
     }
     void load();
   }, [reloadProjects, push, runOnboarding]);
+
+  // 列表刷新完就更新缓存：下次冷启动先显示这一份。
+  useEffect(() => {
+    if (isLoading) return;
+    writeProjectListCache(PROJECTS_ROOT, projects);
+  }, [isLoading, projects]);
+
+  // 首帧只渲染前 INITIAL_ITEM_COUNT 项，这里补全其余部分。
+  // 依赖里带 showAll：StrictMode 模拟卸载后重新挂载时会重新设置计时器，不会被清掉后再也不设。
+  useEffect(() => {
+    if (showAll || projects.length === 0) return;
+    const timer = setTimeout(() => setShowAll(true), FILL_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [showAll, projects.length]);
 
   // 监听项目根目录（fs.watch 为 Node 内置，底层走 FSEvents）：Finder 里新建、删除、改名或从废纸篓放回项目时自动重载。
   // 去抖 0.5 秒，合并 Finder 连续触发的多次事件。
@@ -687,6 +713,12 @@ export default function Command() {
     }),
   );
 
+  // 每次渲染只查一次：笔记 / 歌词文件夹是否存在。占位文字按这个结果生成，不再逐项 existsSync。
+  const missingDocFolders: Record<"notes" | "lyrics", string | null> = {
+    notes: missingDocFolder("notes"),
+    lyrics: missingDocFolder("lyrics"),
+  };
+
   const renderProject = (item: Project) => {
     const stage = stageOptions.find((option) => option.id === item.stageId);
     const genreNames = namesFor(item.genreIds, genreOptions);
@@ -695,7 +727,7 @@ export default function Command() {
     const latestBpm = latest?.metadata?.bpm ?? null;
     const stagePill = stage ? [{ tag: { value: stage.name, color: stage.color ?? Color.SecondaryText } }] : [];
     const detailBody = !showDetail ? "" : detailDoc === "notes" ? item.notes : item.lyrics;
-    const detailPlaceholder = docPlaceholder(detailDoc, item.title);
+    const detailPlaceholder = docPlaceholder(detailDoc, item.title, missingDocFolders[detailDoc]);
 
     const isThisPlaying = playingId === item.id;
     const isAnythingPlaying = playingId !== null;
@@ -1088,12 +1120,34 @@ export default function Command() {
   // Filter 的 Created 分组只列出有项目的年份，新的在前。
   const createdYears = [...new Set(projects.map((p) => new Date(p.createdAt).getFullYear()))].sort((a, b) => b - a);
 
+  const groups = groupItems(
+    unpinnedProjects,
+    groupBy,
+    (p) => ({ created: p.createdAt, modified: p.modifiedAt }),
+    currentSortTitle,
+  );
+  // 先渲染前 INITIAL_ITEM_COUNT 项，首帧之后补全。分组和排序已完成，只截掉最后渲染的部分。
+  const itemLimit = showAll ? Number.POSITIVE_INFINITY : INITIAL_ITEM_COUNT;
+  const renderPinned = pinnedProjects.slice(0, itemLimit);
+  let itemBudget = itemLimit - renderPinned.length;
+  const renderGroups = groups
+    .map((group) => {
+      const items = group.items.slice(0, Math.max(0, itemBudget));
+      itemBudget -= items.length;
+      return { ...group, items };
+    })
+    .filter((group) => group.items.length > 0);
+
   return (
     <List
       isLoading={isLoading || readingSets}
       isShowingDetail={showDetail}
       filtering={!isTagSearch}
-      onSearchTextChange={setSearchText}
+      onSearchTextChange={(text) => {
+        setSearchText(text);
+        // 一打字就补全，不等计时器。
+        if (text) setShowAll(true);
+      }}
       searchBarPlaceholder={t.searchProjects}
       searchBarAccessory={
         <List.Dropdown tooltip={t.filter} value={selectedFilter} onChange={setSelectedFilter}>
@@ -1149,13 +1203,8 @@ export default function Command() {
           }
         />
       )}
-      {pinnedProjects.length > 0 && <List.Section title={t.pinned}>{pinnedProjects.map(renderProject)}</List.Section>}
-      {groupItems(
-        unpinnedProjects,
-        groupBy,
-        (p) => ({ created: p.createdAt, modified: p.modifiedAt }),
-        currentSortTitle,
-      ).map((group) => (
+      {renderPinned.length > 0 && <List.Section title={t.pinned}>{renderPinned.map(renderProject)}</List.Section>}
+      {renderGroups.map((group) => (
         <List.Section key={group.key} title={group.title} subtitle={group.subtitle}>
           {group.items.map(renderProject)}
         </List.Section>
