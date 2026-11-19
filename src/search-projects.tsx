@@ -54,7 +54,6 @@ import { CleanUpRemovedProjects } from "@/core/ui/clean-up-removed-projects";
 import { EditInfo } from "@/core/ui/components/project/edit-info";
 import { EditNote } from "@/core/ui/components/project/edit-note";
 import { DuplicateProject } from "@/core/ui/components/project/duplicate-project";
-import { TemplatesView } from "@/core/ui/templates-view";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
 import { loadProjects } from "@/core/projects/load-projects";
@@ -950,12 +949,14 @@ export default function Command() {
                   }
                 }}
               />
-              <Action.Push
-                title={labels.newProjectWithTemplate}
-                icon={Icon.NewDocument}
-                shortcut={{ modifiers: ["cmd", "opt", "ctrl"], key: "n" }}
-                target={<TemplatesView onCreated={() => void reloadProjects()} />}
-              />
+              {daw.extraNewAction && (
+                <Action.Push
+                  title={daw.extraNewAction.title}
+                  icon={daw.extraNewAction.icon}
+                  shortcut={daw.extraNewAction.shortcut}
+                  target={<daw.extraNewAction.component />}
+                />
+              )}
               <Action.Push
                 title={t.duplicateProject}
                 icon={Icon.Duplicate}

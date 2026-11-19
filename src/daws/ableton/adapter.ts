@@ -1,8 +1,12 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import { getSettings } from "@/settings";
+import { getTemplateLabels } from "../labels";
 import { getAlsMetadata } from "./als-metadata";
+import { TemplatesView } from "./templates-view";
 import type { DawAdapter, DawSet } from "../types";
+
+const templateLabels = getTemplateLabels(getSettings().language);
 
 /** Ableton 的 Set 文件后缀。 */
 export const SET_EXTENSION = ".als";
@@ -64,30 +68,12 @@ export const abletonAdapter: DawAdapter = {
     };
   },
 
-  // Live 自己的模板位置。
-  defaultTemplatesFolder: () => path.join(os.homedir(), "Music", "Ableton", "User Library", "Templates"),
-
-  // 模板就是一个 .als 文件。
-  isTemplate(entryPath, entryName) {
-    if (!entryName.endsWith(SET_EXTENSION)) return false;
-    try {
-      return fs.statSync(entryPath).isFile();
-    } catch {
-      return false;
-    }
-  },
-
-  createFromTemplate(templatePath, projectsRoot, name) {
-    const target = path.join(projectsRoot, abletonAdapter.entryNameFor(name, "folder"));
-    // 目标已存在时报错，不覆盖。
-    if (fs.existsSync(target)) {
-      const error = new Error(`Target already exists: ${target}`) as NodeJS.ErrnoException;
-      error.code = "EEXIST";
-      throw error;
-    }
-    // 项目是文件夹，Set 是里面的 .als：模板复制成 <名字>.als。
-    fs.mkdirSync(target);
-    fs.copyFileSync(templatePath, path.join(target, `${name}${SET_EXTENSION}`));
-    return target;
+  // 新建项目 Action 后面再加一个：进入模板列表。
+  extraNewAction: {
+    title: templateLabels.newProjectWithTemplate,
+    // 和原来这个 Action 的图标一致（Icon.NewDocument）。适配层会被测试加载，那里没有 Icon，所以直接写图标名。
+    icon: "new-document-16",
+    shortcut: { modifiers: ["cmd", "shift"], key: "n" },
+    component: TemplatesView,
   },
 };

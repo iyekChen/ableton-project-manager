@@ -12,7 +12,6 @@ const labels: Record<Language, DawLabels> = {
     readingSets: "Reading Sets…",
     newProjectFile: "New Live Set",
     newProjectFileFailed: "Ableton Live not found",
-    newProjectWithTemplate: "New Live Set with Template",
     noProjectsFound: "No Ableton projects found",
     noProjectsFoundHint: "Nothing in {folder} contains a Live Set. Check the Projects Folder in preferences.",
     renameConfirmMessage:
@@ -22,4 +21,34 @@ const labels: Record<Language, DawLabels> = {
 
 export function getDawLabels(language: Language): DawLabels {
   return labels[language];
+}
+
+// 模板列表的文字。只有 Live 有模板功能，所以不放进共用的 DawLabels。
+const templateLabels: Record<
+  Language,
+  {
+    newProjectWithTemplate: string;
+    createLiveSet: string;
+    searchTemplates: string;
+    templates: string;
+    noTemplates: string;
+    noTemplatesHint: string;
+    templateNameExists: string;
+    templateTrashHint: string;
+  }
+> = {
+  en: {
+    newProjectWithTemplate: "New Live Set with Template",
+    createLiveSet: "Create Live Set",
+    searchTemplates: "Search Templates",
+    templates: "Templates",
+    noTemplates: "No templates found",
+    noTemplatesHint: "Nothing in {folder} looks like a template. Check the Templates Folder in preferences.",
+    templateNameExists: "A template with that name already exists",
+    templateTrashHint: "This moves the template to the Trash:",
+  },
+};
+
+export function getTemplateLabels(language: Language) {
+  return templateLabels[language];
 }
