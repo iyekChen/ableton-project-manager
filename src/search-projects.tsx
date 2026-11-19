@@ -4,10 +4,11 @@ import {
   Clipboard,
   closeMainWindow,
   Color,
-  getApplications,
   Icon,
   Keyboard,
   List,
+  LocalStorage,
+  environment,
   open,
   showToast,
   Toast,
@@ -28,8 +29,11 @@ import {
   deleteProjectMetadata,
   getAllProjectMetadata,
   movePinnedProject,
+  replaceExternalBounceFiles,
+  setExternalBounces,
   setProjectPinned,
 } from "@/core/metadata/project-metadata";
+import { findMovedBounceFiles } from "@/core/projects/external-bounce-repair";
 import { removeProjectFromAllOrders } from "@/core/metadata/collection-order";
 import { removeProjectFromAllRoles } from "@/core/metadata/collection-roles";
 import { getTranslations } from "./i18n";
@@ -53,7 +57,17 @@ import { DuplicateProject } from "@/core/ui/components/project/duplicate-project
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
 import { loadProjects } from "@/core/projects/load-projects";
-import { countProjectBounces, findLatestProjectBounce } from "@/core/projects/bounces";
+import {
+  countProjectBounces,
+  findLatestProjectBounce,
+  resolveSharedBouncesFolder,
+  setSharedBounceAliases,
+  setSharedBounceExclusions,
+  setSharedBouncePreviousNames,
+  unmatchedSharedBounces,
+  type PreviousBounceName,
+} from "@/core/projects/bounces";
+import { UnmatchedBounces } from "@/core/ui/unmatched-bounces";
 import { viewPrefs } from "@/core/ui/view-prefs";
 import { daw, type DawSet, type ProjectFileMetadata } from "@/daws";
 import {
@@ -64,6 +78,7 @@ import {
 import { SetsView } from "@/daws/ui";
 import { getDawLabels } from "@/daws/labels";
 import { projectIcon } from "@/daws/icons";
+import { openWithDaw, resolveDawApp } from "@/core/daw-app";
 import { LOG_PREFIX } from "@/core/log";
 import { bpmMatches, dateKeywords, matchesSearch, nameKeywords, optionKeywords } from "@/core/ui/search-keywords";
 import { findLatestSet } from "@/core/projects/latest-set";
@@ -76,6 +91,9 @@ const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
 const GROUP_STORAGE_KEY = "project-group-option";
 const VIEW_MODE_STORAGE_KEY = "view-mode:projects";
+// 首次使用引导：问过共享文件夹没有；上次弹「未匹配」提示时用的共享文件夹路径。
+const ONBOARDING_ASKED_KEY = "onboarding:shared-bounces-asked";
+const ONBOARDING_UNMATCHED_KEY = "onboarding:unmatched-shown-for";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:projects";
 const PLAYER_PATH = ensureAudioPlayerBinary();
 const SEEK_STEP_SECONDS = 5;
@@ -142,8 +160,13 @@ export default function Command() {
   // 每次读取编号：新一轮开始后，旧一轮的结果不再写入。
   const latestSetsRunRef = useRef(0);
   const baseProjectsRef = useRef<Project[]>([]);
+  // 每次渲染都更新：load() 的闭包里拿不到最新的 projects state。
+  const projectsRef = useRef<Project[]>(projects);
+  projectsRef.current = projects;
   // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
   const leftoverToastShownRef = useRef(false);
+  // 首次使用引导每次打开最多弹一个。
+  const onboardingShownRef = useRef(false);
 
   // 外部编辑器改了笔记 / 歌词：只重读那一份，详情面板马上跟着变。
   useDocWatcher(PROJECTS_ROOT, (file) => setProjects((prev) => refreshDocFile(prev, file)));
@@ -153,11 +176,9 @@ export default function Command() {
       playerPath: PLAYER_PATH,
     });
 
-  // 找到 DAW 应用，用于新建项目（启动它）。
+  // 找到 DAW 应用，用于新建项目（启动它）和图标：偏好设置里选了版本就用那个版本。
   useEffect(() => {
-    void getApplications().then((apps) => {
-      setDawApp(apps.find((app) => app.name.toLowerCase().includes(daw.appNameMatch)) ?? null);
-    });
+    void resolveDawApp().then(setDawApp);
   }, []);
 
   // 常驻 Toast：只在播放时显示，title=曲名，message=进度；暂停或停止时隐藏。
@@ -188,7 +209,49 @@ export default function Command() {
   }, []);
 
   const applyMetadata = useCallback(async () => {
-    const metadataStore = await getAllProjectMetadata();
+    let metadataStore = await getAllProjectMetadata();
+    // 手动登记的外部文件在 Finder 里改名或移动后，登记路径会失效：按大小和修改时间找回，再往下算。
+    const sharedFolder = resolveSharedBouncesFolder();
+    let repaired = false;
+    for (const project of baseProjectsRef.current) {
+      const metadata = metadataStore[project.id];
+      if (!metadata || metadata.externalBounceFiles.length === 0) continue;
+      const moves = findMovedBounceFiles(
+        metadata.externalBounceFiles,
+        metadata.externalBounceFingerprints ?? {},
+        sharedFolder,
+      );
+      if (moves.size === 0) continue;
+      await replaceExternalBounceFiles(project.id, moves);
+      repaired = true;
+    }
+    if (repaired) metadataStore = await getAllProjectMetadata();
+    // 这个提交之前登记的文件还没有指纹：补记一次，下次改名才找得回来。一个项目只写一次。
+    for (const project of baseProjectsRef.current) {
+      const metadata = metadataStore[project.id];
+      if (!metadata || metadata.externalBounceFiles.length === 0) continue;
+      const fingerprints = metadata.externalBounceFingerprints ?? {};
+      if (metadata.externalBounceFiles.every((file) => file in fingerprints)) continue;
+      await setExternalBounces(project.id, metadata.externalBounceFolders, metadata.externalBounceFiles);
+      metadataStore = await getAllProjectMetadata();
+    }
+    // 别名、改名前的名字、排除的文件都存在元数据里：先登记给共享文件夹的分配，再算各项目的 bounce 数。
+    const bounceAliases: Record<string, string[]> = {};
+    const previousNames: Record<string, PreviousBounceName[]> = {};
+    const exclusions: Record<string, string[]> = {};
+    for (const project of baseProjectsRef.current) {
+      const metadata = metadataStore[project.id];
+      const aliases = metadata?.bounceAliases ?? [];
+      if (aliases.length > 0) bounceAliases[project.title] = aliases;
+      const previous = metadata?.previousBounceNames ?? [];
+      if (previous.length > 0) previousNames[project.title] = previous;
+      const excluded = metadata?.excludedSharedBounces ?? [];
+      if (excluded.length > 0) exclusions[project.title] = excluded;
+    }
+    setSharedBounceAliases(bounceAliases);
+    setSharedBouncePreviousNames(previousNames);
+    setSharedBounceExclusions(exclusions);
+    const hasShared = resolveSharedBouncesFolder() !== null;
     const updatedProjects = baseProjectsRef.current.map((project) => {
       const metadata = metadataStore[project.id];
       // 笔记和歌词都总是读：applyMetadata 只在挂载时创建一次，按 showDetail 判断会锁死首帧的值，切到 Detail 时内容为空。
@@ -199,9 +262,15 @@ export default function Command() {
       // 无外部来源时复用 loadProjects 已算好的默认文件夹计数，省去重复扫描；
       // 有外部来源才走聚合器（默认文件夹 + 外部来源，去重、排除不可用）。
       const hasExternal = externalBounceFolders.length > 0 || externalBounceFiles.length > 0;
-      const bouncesCount = hasExternal
-        ? countProjectBounces({ folderPath: project.folderPath, externalBounceFolders, externalBounceFiles })
-        : project.bouncesCount;
+      const bouncesCount =
+        hasExternal || hasShared
+          ? countProjectBounces({
+              title: project.title,
+              folderPath: project.folderPath,
+              externalBounceFolders,
+              externalBounceFiles,
+            })
+          : project.bouncesCount;
       return {
         ...project,
         stageId: metadata?.stageId ?? null,
@@ -359,6 +428,43 @@ export default function Command() {
     return promise;
   }, [runReload]);
 
+  // 首次使用引导：没设共享文件夹时问一次；换了共享文件夹时，有未匹配的 bounce 就提示一次。
+  const runOnboarding = useCallback(async () => {
+    if (onboardingShownRef.current) return;
+    const folder = resolveSharedBouncesFolder();
+    if (folder === null) {
+      if ((await LocalStorage.getItem<string>(ONBOARDING_ASKED_KEY)) === "true") return;
+      onboardingShownRef.current = true;
+      await confirmAlert({
+        title: t.onboardingSharedTitle,
+        message: t.onboardingSharedMessage,
+        primaryAction: { title: t.openPreferences, onAction: () => void openExtensionPreferences() },
+        dismissAction: { title: t.skip },
+      });
+      await LocalStorage.setItem(ONBOARDING_ASKED_KEY, "true");
+      return;
+    }
+
+    if ((await LocalStorage.getItem<string>(ONBOARDING_UNMATCHED_KEY)) === folder) return;
+    // 先记下这个文件夹：没有未匹配的也算判断过，换文件夹前不再重复检查。
+    await LocalStorage.setItem(ONBOARDING_UNMATCHED_KEY, folder);
+    const metadataStore = await getAllProjectMetadata();
+    const claimed = Object.values(metadataStore).flatMap((metadata) => metadata.externalBounceFiles);
+    const count = unmatchedSharedBounces(claimed).length;
+    if (count === 0) return;
+    onboardingShownRef.current = true;
+    await confirmAlert({
+      title: t.onboardingUnmatchedTitle.replace("{count}", String(count)),
+      message: t.onboardingUnmatchedMessage,
+      primaryAction: {
+        title: t.review,
+        onAction: () =>
+          push(<UnmatchedBounces projects={projectsRef.current} onChanged={() => void reloadProjects()} />),
+      },
+      dismissAction: { title: t.skip },
+    });
+  }, [push, reloadProjects]);
+
   useEffect(() => {
     async function load() {
       const orphans = await reloadProjects();
@@ -375,9 +481,10 @@ export default function Command() {
           },
         });
       }
+      await runOnboarding();
     }
     void load();
-  }, [reloadProjects, push]);
+  }, [reloadProjects, push, runOnboarding]);
 
   // 监听项目根目录（fs.watch 为 Node 内置，底层走 FSEvents）：Finder 里新建、删除、改名或从废纸篓放回项目时自动重载。
   // 去抖 0.5 秒，合并 Finder 连续触发的多次事件。
@@ -462,13 +569,15 @@ export default function Command() {
 
   // 和打开 Set 的其他入口一样：打开后关掉 Raycast 窗口。
   const openLatestSet = useCallback(async (project: Project) => {
-    const set = findLatestSet(daw.listSets(project));
-    if (!set) {
+    const sets = daw.listSets(project);
+    const set = findLatestSet(sets);
+    if (sets.length === 0) {
       await showToast({ style: Toast.Style.Failure, title: labels.noSets });
       return;
     }
     try {
-      await open(set.path);
+      // 找不到当前版本时（工程被手动改坏），打开任意一个，交给 DAW 自己决定打开哪个。只有记录了当前版本的 DAW 会走到这里。
+      await openWithDaw((set ?? sets[0]).path);
       await closeMainWindow();
     } catch (error) {
       await showFailure(labels.openSetFailed, error);
@@ -671,7 +780,12 @@ export default function Command() {
         actions={
           <ActionPanel>
             <ActionPanel.Section>
-              <Action.Push title={labels.viewSets} icon={Icon.Document} target={<SetsView project={item} />} />
+              <Action.Push
+                title={labels.viewSets}
+                icon={Icon.Document}
+                target={<SetsView project={item} />}
+                onPop={() => void reloadProjects()}
+              />
               <Action
                 title={toggleTitle}
                 icon={toggleIcon}
@@ -804,12 +918,21 @@ export default function Command() {
               />
             </ActionPanel.Section>
             <ActionPanel.Section title={t.sectionFile}>
-              <Action.Open
-                title={t.openInFinder}
-                icon={Icon.Finder}
-                shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-                target={item.folderPath}
-              />
+              {/* 包用「打开」会交给 DAW，所以改成在 Finder 里选中它；普通文件夹照旧在 Finder 里打开。 */}
+              {item.kind === "package" ? (
+                <Action.ShowInFinder
+                  path={item.folderPath}
+                  title={t.showInFinder}
+                  shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+                />
+              ) : (
+                <Action.Open
+                  title={t.openInFinder}
+                  icon={Icon.Finder}
+                  shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+                  target={item.folderPath}
+                />
+              )}
               <Action
                 title={labels.newProjectFile}
                 icon={Icon.NewDocument}
@@ -845,6 +968,13 @@ export default function Command() {
                   />
                 }
               />
+              {resolveSharedBouncesFolder() !== null && (
+                <Action.Push
+                  title={t.unmatchedBounces}
+                  icon={Icon.QuestionMarkCircle}
+                  target={<UnmatchedBounces projects={projects} onChanged={() => void reloadProjects()} />}
+                />
+              )}
             </ActionPanel.Section>
             <ActionPanel.Section title={t.sectionCopy}>
               {item.bouncesCount > 0 && (
@@ -927,6 +1057,19 @@ export default function Command() {
                 onAction={() => handleTrashProject(item)}
               />
             </ActionPanel.Section>
+            {environment.isDevelopment && (
+              <ActionPanel.Section>
+                <Action
+                  title="Reset Onboarding (Dev)"
+                  icon={Icon.ArrowCounterClockwise}
+                  onAction={async () => {
+                    await LocalStorage.removeItem(ONBOARDING_ASKED_KEY);
+                    await LocalStorage.removeItem(ONBOARDING_UNMATCHED_KEY);
+                    await showToast({ style: Toast.Style.Success, title: "Onboarding Reset" });
+                  }}
+                />
+              </ActionPanel.Section>
+            )}
           </ActionPanel>
         }
       />

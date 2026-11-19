@@ -771,14 +771,22 @@ function CollectionPanel({
     </ActionPanel.Section>
   );
 
-  const renderOpenInFinder = (p: Project) => (
-    <Action.Open
-      title={t.openInFinder}
-      icon={Icon.Finder}
-      shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-      target={p.folderPath}
-    />
-  );
+  // 工程包用「打开」会交给 DAW，所以改成在 Finder 里选中它；普通文件夹照旧在 Finder 里打开。
+  const renderOpenInFinder = (p: Project) =>
+    p.kind === "package" ? (
+      <Action.ShowInFinder
+        path={p.folderPath}
+        title={t.showInFinder}
+        shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+      />
+    ) : (
+      <Action.Open
+        title={t.openInFinder}
+        icon={Icon.Finder}
+        shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
+        target={p.folderPath}
+      />
+    );
 
   const renderCopySection = (p: Project) => (
     <ActionPanel.Section title={t.sectionCopy}>

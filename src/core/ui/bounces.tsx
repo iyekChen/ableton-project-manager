@@ -23,9 +23,14 @@ import { getTranslations } from "@/i18n";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
 import type { SortOption } from "@/core/ui/sorting";
 import { groupItems } from "@/core/ui/grouping";
-import { collectBounces, resolveBouncesFolder } from "@/core/projects/bounces";
+import {
+  collectBounces,
+  getSharedBounceExclusions,
+  projectBounceSources,
+  setSharedBounceExclusions,
+} from "@/core/projects/bounces";
 import type { BounceWithSource } from "@/core/projects/bounces";
-import { setExternalBounces } from "@/core/metadata/project-metadata";
+import { addExcludedSharedBounce, setExternalBounces } from "@/core/metadata/project-metadata";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import { showFailure } from "@/core/ui/toast";
 
@@ -144,14 +149,17 @@ export function Bounces(props: {
   // 列表 = 默认 Bounces 文件夹 + 外部来源（去重、带来源标记、含不可用占位）。
   useEffect(() => {
     setBounces(
-      collectBounces({
-        defaultFolder: resolveBouncesFolder(props.projectPath),
-        externalFolders: folders,
-        externalFiles: files,
-      }),
+      collectBounces(
+        projectBounceSources({
+          title: props.projectName,
+          folderPath: props.projectPath,
+          externalBounceFolders: folders,
+          externalBounceFiles: files,
+        }),
+      ),
     );
     setIsLoading(false);
-  }, [props.projectPath, folders, files, reloadToken]);
+  }, [props.projectPath, props.projectName, folders, files, reloadToken]);
 
   const handleTrash = async (bounce: BounceWithSource) => {
     const confirmed = await confirmAlert({
@@ -216,6 +224,19 @@ export function Bounces(props: {
     await showToast({ style: Toast.Style.Success, title: t.bounceRenamed, message: finalName });
   };
 
+  // 共享文件夹里配错的文件：标成不属于这个项目，退回 Unmatched Bounces。
+  const handleNotThisProject = async (bounce: BounceWithSource) => {
+    await addExcludedSharedBounce(props.projectId, bounce.name);
+    const exclusions = getSharedBounceExclusions();
+    setSharedBounceExclusions({
+      ...exclusions,
+      [props.projectName]: [...(exclusions[props.projectName] ?? []), bounce.name],
+    });
+    setReloadToken((n) => n + 1);
+    props.onChanged?.();
+    await showToast({ style: Toast.Style.Success, title: t.movedToUnmatched, message: bounce.name });
+  };
+
   const removeSource = async (sourcePath: string) => {
     const confirmed = await confirmAlert({
       icon: Icon.MinusCircle,
@@ -258,12 +279,17 @@ export function Bounces(props: {
 
   const groups: { key: string; title: string; subtitle: string; items: BounceWithSource[] }[] =
     groupBy === "source"
-      ? (["project", "external"] as const)
+      ? (["project", "shared", "external"] as const)
           .map((kind) => {
             const items = bySort(bounces.filter((b) => b.source === kind));
             return {
               key: kind,
-              title: kind === "project" ? t.sourceProjectFolder : t.sourceExternal,
+              title:
+                kind === "project"
+                  ? t.sourceProjectFolder
+                  : kind === "shared"
+                    ? t.sourceSharedFolder
+                    : t.sourceExternal,
               subtitle: String(items.length),
               items,
             };
@@ -325,6 +351,13 @@ export function Bounces(props: {
                             />
                           }
                         />
+                        {b.source === "shared" && (
+                          <Action
+                            title={t.notThisProject}
+                            icon={Icon.XMarkCircle}
+                            onAction={() => handleNotThisProject(b)}
+                          />
+                        )}
                       </ActionPanel.Section>
                     ) : (
                       <ActionPanel.Section>

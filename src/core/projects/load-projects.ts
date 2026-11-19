@@ -2,7 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { Cache } from "@raycast/api";
 import type { Project } from "./types";
-import { countBounces, resolveBouncesFolder } from "./bounces";
+import {
+  countBounces,
+  countBouncesWithSources,
+  resolveBouncesFolder,
+  setSharedBounceTitles,
+  sharedBounceFilesFor,
+} from "./bounces";
 import { daw } from "@/daws";
 import { LOG_PREFIX } from "@/core/log";
 
@@ -27,6 +33,13 @@ function cachedBouncesCount(folderPath: string): number {
   return count;
 }
 
+// 默认文件夹计数 + 共享文件夹里分给这个项目的。没有共享 bounce 时直接用缓存的计数。
+function projectBouncesCount(project: Pick<Project, "title" | "folderPath">): number {
+  const sharedFiles = sharedBounceFilesFor(project.title);
+  if (sharedFiles.length === 0) return cachedBouncesCount(project.folderPath);
+  return countBouncesWithSources({ defaultFolder: resolveBouncesFolder(project.folderPath), sharedFiles });
+}
+
 export function loadProjects(projectsRoot: string): Project[] {
   const projects: Project[] = [];
   const seen = new Set<string>();
@@ -39,7 +52,7 @@ export function loadProjects(projectsRoot: string): Project[] {
       const sets = daw.listSets(detected);
       if (sets.length === 0) continue;
 
-      // 两个条目换算出同一个 id（如 Logic 的 Song 文件夹和 Song.logicx 包）：只认第一个，否则元数据会混在一起。
+      // 两个条目换算出同一个 id（如同名的文件夹和工程包）：只认第一个，否则元数据会混在一起。
       if (seen.has(detected.id)) {
         console.warn(`${LOG_PREFIX} Skipped duplicate project: ${detected.folderPath}`);
         continue;
@@ -64,12 +77,21 @@ export function loadProjects(projectsRoot: string): Project[] {
         pinned: false,
         pinOrder: null,
         setsCount: sets.length,
-        bouncesCount: cachedBouncesCount(detected.folderPath),
+        bouncesCount: 0, // 等全部项目都读完再算：共享文件夹按名字分配，要先知道所有项目名
         externalBounceFolders: [],
         externalBounceFiles: [],
       });
     } catch {
       // 跳过无法读取的条目
+    }
+  }
+
+  setSharedBounceTitles(projects.map((project) => project.title));
+  for (const project of projects) {
+    try {
+      project.bouncesCount = projectBouncesCount(project);
+    } catch {
+      // 读不到就保持 0
     }
   }
 

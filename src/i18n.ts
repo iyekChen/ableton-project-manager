@@ -202,6 +202,30 @@ type TranslationKeys = {
   groupBySource: string;
   sourceProjectFolder: string;
   sourceExternal: string;
+  sourceSharedFolder: string;
+  unmatchedBounces: string;
+  searchUnmatchedBounces: string;
+  noUnmatchedBounces: string;
+  noUnmatchedBouncesHint: string;
+  assignToProject: string;
+  assignProjectField: string;
+  assignMatchField: string;
+  assignByAlias: string;
+  assignThisFileOnly: string;
+  aliasField: string;
+  aliasFieldInfo: string;
+  aliasEmpty: string;
+  aliasTaken: string;
+  aliasNotMatchingFile: string;
+  bounceAssigned: string;
+  bounceAliasAdded: string;
+  assignBounceFailed: string;
+  bounceAliasesField: string;
+  bounceAliasesInfo: string;
+  previousNamesField: string;
+  previousNamesInfo: string;
+  notThisProject: string;
+  movedToUnmatched: string;
   unavailable: string;
   renameBounce: string;
   bounceRenamed: string;
@@ -223,6 +247,53 @@ type TranslationKeys = {
   deleteRoleInUse: string;
   templateMissing: string;
   analyzing: string;
+  onboardingSharedTitle: string;
+  onboardingSharedMessage: string;
+  onboardingUnmatchedTitle: string;
+  onboardingUnmatchedMessage: string;
+  skip: string;
+  review: string;
+  exportData: string;
+  exportDataHint: string;
+  saveTo: string;
+  exportFolderRequired: string;
+  exportFolderMissing: string;
+  exportFolderNotDirectory: string;
+  exportingData: string;
+  dataExported: string;
+  exportFailed: string;
+  importData: string;
+  importFile: string;
+  importFileRequired: string;
+  replaceData: string;
+  importingData: string;
+  dataImported: string;
+  importNothingToChange: string;
+  importConfirmTitle: string;
+  importConfirmBody: string;
+  importConfirmBackup: string;
+  importChangeProjects: string;
+  importChangeOptions: string;
+  importChangeCollections: string;
+  importChangePins: string;
+  importResultRestored: string;
+  importResultKept: string;
+  importResultRematched: string;
+  importResultUnmatched: string;
+  importResultDropped: string;
+  importBackupSaved: string;
+  importFailed: string;
+  importBadFormat: string;
+  importBadVersion: string;
+  importOtherExtension: string;
+  importBadStructureAt: string;
+  corruptDataKind: string;
+  corruptDataMetadata: string;
+  corruptDataCategories: string;
+  corruptDataPins: string;
+  corruptDataOrders: string;
+  corruptDataRoles: string;
+  corruptDataDeleted: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -439,6 +510,32 @@ const translations: Record<Language, TranslationKeys> = {
     groupBySource: "Source",
     sourceProjectFolder: "Project Folder",
     sourceExternal: "External",
+    sourceSharedFolder: "Shared Folder",
+    unmatchedBounces: "Unmatched Bounces",
+    searchUnmatchedBounces: "Search Unmatched Bounces",
+    noUnmatchedBounces: "No Unmatched Bounces",
+    noUnmatchedBouncesHint: "Every bounce in the shared bounces folder belongs to a project.",
+    assignToProject: "Assign to Project",
+    assignProjectField: "Project",
+    assignMatchField: "Match",
+    assignByAlias: "All Files Starting With…",
+    assignThisFileOnly: "This File Only",
+    aliasField: "Starts With",
+    aliasFieldInfo:
+      "Bounces in the shared folder whose file name starts with this (followed by a space, -, _ or .) go to this project.",
+    aliasEmpty: "Enter a name",
+    aliasTaken: "Already used by {project}",
+    aliasNotMatchingFile: "This file doesn't start with it",
+    bounceAssigned: "Bounce Assigned",
+    bounceAliasAdded: "Alias Added",
+    assignBounceFailed: "Couldn't Assign Bounce",
+    bounceAliasesField: "Bounce Aliases",
+    bounceAliasesInfo:
+      "Separated by commas. Bounces in the shared folder that start with one of these belong to this project.",
+    previousNamesField: "Previous Names",
+    previousNamesInfo: "Bounces made before the project was renamed. Deselect a name to stop matching it.",
+    notThisProject: "Not This Project",
+    movedToUnmatched: "Moved to Unmatched Bounces",
     unavailable: "Unavailable",
     renameBounce: "Rename Bounce",
     bounceRenamed: "Bounce Renamed",
@@ -462,6 +559,56 @@ const translations: Record<Language, TranslationKeys> = {
     deleteRoleInUse: "{count} track(s) in your collections use this role. It will be cleared from them.",
     templateMissing: "Template not found — started empty",
     analyzing: "Analyzing",
+    onboardingSharedTitle: "Set Up a Shared Bounces Folder?",
+    onboardingSharedMessage:
+      "If you export bounces from all your projects into one folder, choose it in Preferences. Bounces whose names start with a project's name will show up with that project.",
+    onboardingUnmatchedTitle: "{count} Bounces Didn't Match a Project",
+    onboardingUnmatchedMessage:
+      "Assign each one to a project. You can open Unmatched Bounces anytime from a project's actions.",
+    skip: "Skip",
+    review: "Review",
+    exportData: "Export Data",
+    exportDataHint:
+      "Includes tags, collections, track numbers, roles and recently deleted projects. Notes and lyrics files are not included.",
+    saveTo: "Save To",
+    exportFolderRequired: "Choose a folder to save the file.",
+    exportFolderMissing: "This folder does not exist.",
+    exportFolderNotDirectory: "This is not a folder.",
+    exportingData: "Exporting Data",
+    dataExported: "Data Exported",
+    exportFailed: "Could Not Export Data",
+    importData: "Import Data",
+    importFile: "File",
+    importFileRequired: "Choose a file to import.",
+    replaceData: "Replace",
+    importingData: "Importing Data",
+    dataImported: "Data Imported",
+    importNothingToChange: "Nothing to change",
+    importConfirmTitle: "Replace current data?",
+    importConfirmBody: "This will change {changes}.",
+    importConfirmBackup: "Your current data will be backed up to {file} first.",
+    importChangeProjects: "{count} projects",
+    importChangeOptions: "{count} tag options",
+    importChangeCollections: "track numbers or roles in {count} collections",
+    importChangePins: "pinned collections",
+    importResultRestored: "{count} restored",
+    importResultKept: "{count} kept",
+    importResultRematched: "{count} matched by folder",
+    importResultUnmatched: "{count} unmatched",
+    importResultDropped: "{count} track numbers dropped",
+    importBackupSaved: "Backup: {file}",
+    importFailed: "Could Not Import Data",
+    importBadFormat: "This is not an exported data file.",
+    importBadVersion: "This file was made by a newer version of the extension.",
+    importOtherExtension: "This file was exported by {extension}.",
+    importBadStructureAt: "Invalid data: {detail}",
+    corruptDataKind: "Unreadable data: {kind}.",
+    corruptDataMetadata: "project tags",
+    corruptDataCategories: "categories",
+    corruptDataPins: "pinned collections",
+    corruptDataOrders: "track numbers",
+    corruptDataRoles: "roles",
+    corruptDataDeleted: "recently deleted projects",
   },
 };
 

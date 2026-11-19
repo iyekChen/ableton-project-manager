@@ -22,6 +22,13 @@
 			"required": true
 		},
 		{
+			"name": "sharedBouncesFolder",
+			"title": "Shared Bounces Folder",
+			"description": "One folder for bounces from all your projects. Files are matched to projects by name.",
+			"type": "directory",
+			"required": false
+		},
+		{
 			"name": "bouncesFolderName",
 			"title": "Bounces Subfolder",
 			"description": "The subfolder inside each project where bounces are saved (e.g. Bounces). Leave empty to look directly in each project folder.",
@@ -179,6 +186,35 @@
 				"genres",
 				"track roles",
 				"music production"
+			]
+		},
+		{
+			"name": "export-data",
+			"title": "Export Data",
+			"description": "Save your tags, collections and other extension data to a file.",
+			"mode": "view",
+			"subtitle": "Ableton Live",
+			"keywords": [
+				"export",
+				"backup",
+				"data",
+				"tags",
+				"collections"
+			]
+		},
+		{
+			"name": "import-data",
+			"title": "Import Data",
+			"description": "Restore extension data from an exported file.",
+			"mode": "view",
+			"subtitle": "Ableton Live",
+			"keywords": [
+				"import",
+				"restore",
+				"backup",
+				"data",
+				"tags",
+				"collections"
 			]
 		}
 	],

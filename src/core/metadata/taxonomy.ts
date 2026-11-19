@@ -27,7 +27,7 @@ export function slugify(name: string): string {
   return slug || name.trim().toLowerCase();
 }
 
-function parseOptions(value: unknown): TaxonomyOption[] {
+export function parseOptions(value: unknown): TaxonomyOption[] {
   return Array.isArray(value) ? (value as TaxonomyOption[]) : [];
 }
 

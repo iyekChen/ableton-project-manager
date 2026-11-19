@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  addPreviousBounceName,
   assertMetadataWritable,
   getProjectMetadata,
   renameProjectMetadata,
@@ -226,6 +227,8 @@ export function EditInfo({
 
       try {
         await renameProjectMetadata(project.id, trimmedName);
+        // 改名前用旧名字导出的 bounce 继续归这个项目；改名之后再用旧名字导出的不算。
+        await addPreviousBounceName(trimmedName, project.id, Date.now());
         // 合集里的轨号/角色也以项目 id 为键，一并迁移，否则改名后曲目会掉进 Unsorted、角色丢失。
         await renameProjectInAllOrders(project.id, trimmedName);
         await renameProjectInAllRoles(project.id, trimmedName);
