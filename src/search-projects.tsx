@@ -29,11 +29,8 @@ import {
   deleteProjectMetadata,
   getAllProjectMetadata,
   movePinnedProject,
-  replaceExternalBounceFiles,
-  setExternalBounces,
   setProjectPinned,
 } from "@/core/metadata/project-metadata";
-import { findMovedBounceFiles } from "@/core/projects/external-bounce-repair";
 import { removeProjectFromAllOrders } from "@/core/metadata/collection-order";
 import { removeProjectFromAllRoles } from "@/core/metadata/collection-roles";
 import { getTranslations } from "./i18n";
@@ -43,12 +40,10 @@ import { GroupBySubmenu, groupItems, useGroupOption } from "@/core/ui/grouping";
 import { Bounces } from "@/core/ui/bounces";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "@/core/metadata/taxonomies";
 import type { TaxonomyOption } from "@/core/metadata/taxonomy";
-import { displayDoc, missingDocFolder, readDocFile, setKnownProjectTitles, stripFrontmatter } from "@/core/docs/docs";
+import { displayDoc, missingDocFolder } from "@/core/docs/docs";
 import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
-import { archiveDeletedProject, assertDeletionWritable, restorePutBackProjects } from "@/core/fs/deleted-projects";
+import { archiveDeletedProject, assertDeletionWritable } from "@/core/fs/deleted-projects";
 import { showFailure } from "@/core/ui/toast";
-import { syncFinderChanges } from "@/core/fs/finder-sync";
-import { removedProjectIds } from "@/core/fs/removed-projects";
 import { CollectionList } from "@/core/ui/collections-view";
 import { CleanUpRemovedProjects } from "@/core/ui/clean-up-removed-projects";
 import { EditInfo } from "@/core/ui/components/project/edit-info";
@@ -56,23 +51,14 @@ import { EditNote } from "@/core/ui/components/project/edit-note";
 import { DuplicateProject } from "@/core/ui/components/project/duplicate-project";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
-import { loadProjects } from "@/core/projects/load-projects";
 import {
   readProjectListCache,
   sameFsFields,
   serializeProjectList,
   writeProjectListCache,
 } from "@/core/projects/list-cache";
-import {
-  countProjectBounces,
-  findLatestProjectBounce,
-  resolveSharedBouncesFolder,
-  setSharedBounceAliases,
-  setSharedBounceExclusions,
-  setSharedBouncePreviousNames,
-  unmatchedSharedBounces,
-  type PreviousBounceName,
-} from "@/core/projects/bounces";
+import { applyProjectMetadata, reloadProjectData } from "@/core/ui/reload-projects";
+import { findLatestProjectBounce, resolveSharedBouncesFolder, unmatchedSharedBounces } from "@/core/projects/bounces";
 import { UnmatchedBounces } from "@/core/ui/unmatched-bounces";
 import { viewPrefs } from "@/core/ui/view-prefs";
 import { daw, type DawSet, type ProjectFileMetadata } from "@/daws";
@@ -226,90 +212,17 @@ export default function Command() {
     });
   }, []);
 
-  const applyMetadata = useCallback(async () => {
-    let metadataStore = await getAllProjectMetadata();
-    // 手动登记的外部文件在 Finder 里改名或移动后，登记路径会失效：按大小和修改时间找回，再往下算。
-    const sharedFolder = resolveSharedBouncesFolder();
-    let repaired = false;
-    for (const project of baseProjectsRef.current) {
-      const metadata = metadataStore[project.id];
-      if (!metadata || metadata.externalBounceFiles.length === 0) continue;
-      const moves = findMovedBounceFiles(
-        metadata.externalBounceFiles,
-        metadata.externalBounceFingerprints ?? {},
-        sharedFolder,
-      );
-      if (moves.size === 0) continue;
-      await replaceExternalBounceFiles(project.id, moves);
-      repaired = true;
-    }
-    if (repaired) metadataStore = await getAllProjectMetadata();
-    // 这个提交之前登记的文件还没有指纹：补记一次，下次改名才找得回来。一个项目只写一次。
-    for (const project of baseProjectsRef.current) {
-      const metadata = metadataStore[project.id];
-      if (!metadata || metadata.externalBounceFiles.length === 0) continue;
-      const fingerprints = metadata.externalBounceFingerprints ?? {};
-      if (metadata.externalBounceFiles.every((file) => file in fingerprints)) continue;
-      await setExternalBounces(project.id, metadata.externalBounceFolders, metadata.externalBounceFiles);
-      metadataStore = await getAllProjectMetadata();
-    }
-    // 别名、改名前的名字、排除的文件都存在元数据里：先登记给共享文件夹的分配，再算各项目的 bounce 数。
-    const bounceAliases: Record<string, string[]> = {};
-    const previousNames: Record<string, PreviousBounceName[]> = {};
-    const exclusions: Record<string, string[]> = {};
-    for (const project of baseProjectsRef.current) {
-      const metadata = metadataStore[project.id];
-      const aliases = metadata?.bounceAliases ?? [];
-      if (aliases.length > 0) bounceAliases[project.title] = aliases;
-      const previous = metadata?.previousBounceNames ?? [];
-      if (previous.length > 0) previousNames[project.title] = previous;
-      const excluded = metadata?.excludedSharedBounces ?? [];
-      if (excluded.length > 0) exclusions[project.title] = excluded;
-    }
-    setSharedBounceAliases(bounceAliases);
-    setSharedBouncePreviousNames(previousNames);
-    setSharedBounceExclusions(exclusions);
-    const hasShared = resolveSharedBouncesFolder() !== null;
-    const updatedProjects = baseProjectsRef.current.map((project) => {
-      const metadata = metadataStore[project.id];
-      // 笔记和歌词都总是读：applyMetadata 只在挂载时创建一次，按 showDetail 判断会锁死首帧的值，切到 Detail 时内容为空。
-      const notes = stripFrontmatter(readDocFile(project, "notes"));
-      const lyrics = stripFrontmatter(readDocFile(project, "lyrics"));
-      const externalBounceFolders = metadata?.externalBounceFolders ?? [];
-      const externalBounceFiles = metadata?.externalBounceFiles ?? [];
-      // 无外部来源时复用 loadProjects 已算好的默认文件夹计数，省去重复扫描；
-      // 有外部来源才走聚合器（默认文件夹 + 外部来源，去重、排除不可用）。
-      const hasExternal = externalBounceFolders.length > 0 || externalBounceFiles.length > 0;
-      const bouncesCount =
-        hasExternal || hasShared
-          ? countProjectBounces({
-              title: project.title,
-              folderPath: project.folderPath,
-              externalBounceFolders,
-              externalBounceFiles,
-            })
-          : project.bouncesCount;
-      return {
-        ...project,
-        stageId: metadata?.stageId ?? null,
-        genreIds: metadata?.genreIds ?? [],
-        collectionIds: metadata?.collectionIds ?? [],
-        notes,
-        lyrics,
-        pinned: metadata?.pinned ?? false,
-        pinOrder: metadata?.pinOrder ?? null,
-        externalBounceFolders,
-        externalBounceFiles,
-        bouncesCount,
-      };
-    });
-    // 静默启动刷新：内容没变就保留原引用，不触发重渲染，也不重写缓存。
+  // 静默启动刷新：内容没变就保留原引用，不触发重渲染，也不重写缓存。
+  const commitProjects = useCallback((updated: Project[]) => {
     setProjects((prev) =>
-      silentStartupRef.current && serializeProjectList(updatedProjects) === serializeProjectList(prev)
-        ? prev
-        : updatedProjects,
+      silentStartupRef.current && serializeProjectList(updated) === serializeProjectList(prev) ? prev : updated,
     );
   }, []);
+
+  const applyMetadata = useCallback(async () => {
+    const updated = await applyProjectMetadata(baseProjectsRef.current);
+    commitProjects(updated);
+  }, [commitProjects]);
 
   // 读出每个项目最新 Set 的元数据：有缓存的立刻显示，其余在后台解析，读完一个显示一个。
   const refreshLatestSets = useCallback(async (list: Project[]) => {
@@ -363,62 +276,18 @@ export default function Command() {
 
   const runReload = useCallback(async (): Promise<string[]> => {
     try {
-      baseProjectsRef.current = loadProjects(PROJECTS_ROOT);
-      // 静默启动刷新：磁盘上的项目有变化才显示加载。
-      if (silentStartupRef.current && !sameFsFields(baseProjectsRef.current, projectsRef.current)) {
-        setIsLoading(true);
-      }
-      // 预先算好哪些项目会共用同一个笔记/歌词文件，读写时据此拦截。
-      setKnownProjectTitles(baseProjectsRef.current.map((p) => p.title));
-      // 先补做在 Finder 里做的改名/删除，再处理放回、套用元数据。
-      const { guardTripped, ambiguous, trashUnavailable, docRenameIssues } = await syncFinderChanges(
-        baseProjectsRef.current,
-        PROJECTS_ROOT,
-        trashingIds,
-      );
-      if (guardTripped) {
-        // 标题只说结论；原因和下一步放进 message，按 ⌘T 展开操作。
-        await showToast({
-          style: Toast.Style.Failure,
-          title: t.manyProjectsMissing,
-          message: t.manyProjectsMissingHint,
-          primaryAction: { title: t.openPreferences, onAction: () => void openExtensionPreferences() },
-          secondaryAction: { title: t.openProjectsFolder, onAction: () => void open(PROJECTS_ROOT) },
-        });
-      } else if (ambiguous > 0) {
-        await showToast({
-          style: Toast.Style.Failure,
-          title: t.ambiguousFinderChanges,
-          message: t.ambiguousFinderChangesHint,
-        });
-      } else if (trashUnavailable) {
-        await showToast({
-          style: Toast.Style.Failure,
-          title: t.trashNoAccess,
-          message: t.trashNoAccessHint,
-          primaryAction: {
-            title: t.openFullDiskAccess,
-            onAction: () => {
-              void open("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles");
-            },
-          },
-        });
-      } else if (docRenameIssues.length > 0) {
-        // 与扩展内改名一致：笔记 / 歌词没跟着迁移时如实告知。
-        await showToast({ style: Toast.Style.Failure, title: t.docRenameSkipped, message: docRenameIssues.join(", ") });
-      }
-      // 先还原从废纸篓放回的项目（标签/轨号/角色/文档），再套用元数据。
-      const { restored, docConflicts } = await restorePutBackProjects(baseProjectsRef.current);
-      await applyMetadata();
-      // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
-      void refreshLatestSets(baseProjectsRef.current);
-      if (docConflicts.length > 0) {
-        await showToast({ style: Toast.Style.Failure, title: t.restoreDocConflict, message: docConflicts.join(", ") });
-      } else if (restored.length > 0) {
-        await showToast({ style: Toast.Style.Success, title: t.projectsRestored, message: restored.join(", ") });
-      }
-      // 扫描「孤儿」数据：metadata 还在、但项目文件夹已不在根目录（根目录读不到时为 null，按无残留处理）。
-      const orphans = removedProjectIds(PROJECTS_ROOT, Object.keys(await getAllProjectMetadata())) ?? [];
+      const { orphans } = await reloadProjectData(PROJECTS_ROOT, trashingIds, {
+        onScanned: (base) => {
+          baseProjectsRef.current = base;
+          // 静默启动刷新：磁盘上的项目有变化才显示加载。
+          if (silentStartupRef.current && !sameFsFields(base, projectsRef.current)) setIsLoading(true);
+        },
+        onApplied: (updated, base) => {
+          commitProjects(updated);
+          // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
+          void refreshLatestSets(base);
+        },
+      });
       setOrphanIds(orphans);
       return orphans;
     } catch (error) {
@@ -431,7 +300,7 @@ export default function Command() {
       silentStartupRef.current = false;
     }
     return [] as string[];
-  }, [applyMetadata, refreshLatestSets]);
+  }, [commitProjects, refreshLatestSets]);
 
   // 同一时刻只跑一次：执行中再被触发（目录监听、返回刷新、保存回调）只记一笔，结束后补跑一次。
   // 避免两次 Finder 同步交错——后一次可能拿已被前一次清掉的空数据去覆盖删除记录。
