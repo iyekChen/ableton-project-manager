@@ -222,7 +222,13 @@ In Browse Collections, you can rename, pin, or delete collections. Deleting a co
 
 Energy helps you sequence a tracklist by comparing how dense, bright, and busy each track sounds next to the others in the collection. It isn't a rating of how good a track is.
 
-When you open a collection, the latest bounce of every track is analyzed in the background; the header shows progress until it finishes. Results are cached and reused until the file changes. Three features are measured on a mono mix-down of the whole file:
+What to know:
+
+- Energy is relative to the collection. The same track can score differently in another collection.
+- Only tracks in the Tracklist get a score. Unsorted tracks don't, and they don't affect anyone else's score.
+- Set all three weights to Off in Extension Preferences to hide energy entirely.
+
+**How it's measured.** When you open a collection, the latest bounce of every track is analyzed in the background; the header shows progress until it finishes. Results are cached and reused until the file changes. Three features are measured on a mono mix-down of the whole file:
 
 - **Density:** crest factor (peak ÷ RMS). A lower crest factor means a denser, more compressed sound, so it scores higher.
 - **Brightness:** the power-weighted spectral centroid. Brighter, more treble-heavy tracks score higher.
@@ -305,6 +311,15 @@ In Search Projects:
 | **Energy: Brightness**    | How much brightness (spectral centroid) affects the energy score.                                                                                                      |
 | **Energy: Movement**      | How much movement (spectral flux) affects the energy score.                                                                                                            |
 
+## 🚧 Known limitations
+
+- **Queue Collection in Player:** use a player that supports `.m3u` playlists, such as IINA, VLC, or Swinsian. QuickTime Player doesn't.
+- **Renaming files externally:** if you rename a note or lyrics `.md` file yourself, the extension can no longer find it.
+- **Moving custom folders:** if a custom notes or lyrics folder is renamed or moved, the extension shows a warning and won't write anything until you choose the folder again in Extension Preferences.
+- **Same-named projects across libraries:** projects are identified by folder name, so if you switch to a different Projects Folder that contains a project with the same name, it shows the same tags and collections.
+- **Changing note and lyrics folders:** if notes and lyrics start or stop sharing the same custom folder, their file names switch between `<Project Name>.md` and `<Project Name> @Notes.md` / `@Lyrics.md`. Existing files aren't renamed, so rename them yourself to keep them linked.
+- **Shared Bounces Folder:** only files directly inside the folder are read; subfolders aren't.
+
 ## 📦 Data & files
 
 ### What changes on disk
@@ -315,7 +330,11 @@ Project files change only when you ask: renaming a project in Edit Info, renamin
 
 The extension stores its own data in Raycast:
 
-- **LocalStorage:** stages, genres, roles, and collections; each project's tags, collections, pin, external bounce sources, and Shared Bounces Folder matching (bounce aliases, previous names, and files marked Not This Project); track numbers and roles; pinned collections; grouping choices in Browse Bounces and Search Bounces; the project list used to detect Finder changes; records of deleted projects; and cached Set metadata and bounce analysis.
+- **LocalStorage:**
+  - Your data: stages, genres, roles, and collections; each project's tags, collections, pin, external bounce sources, and Shared Bounces Folder matching (bounce aliases, previous names, and files marked Not This Project); track numbers and roles; pinned collections.
+  - Records: grouping choices in Browse Bounces and Search Bounces; the project list used to detect Finder changes; records of deleted projects.
+  - Caches: Set metadata and bounce analysis.
+
 - **Cache:** view mode, sort, and grouping choices in Search Projects; bounce counts; and the last project and bounce lists, so Search Projects and Search Bounces show your list right away while they check for changes.
 
 Raycast keeps this data per extension. Uninstalling the extension deletes it. Your projects, notes, and lyrics are ordinary files and aren't affected.
@@ -338,16 +357,9 @@ While Search Projects is open, it watches your Projects Folder and reloads when 
 - **Trash recovery:** moving a project to Trash keeps its tags, collections, track numbers, and roles for 30 days. Notes and lyrics stored in custom folders move into a `Deleted Projects/` subfolder. Put the folder back from the Trash within that time and everything is restored. Collections deleted in the meantime are skipped, and nothing overwrites data you've added since.
 - **New projects:** a new folder that happens to share a deleted project's name doesn't inherit its data.
 
-## 🚧 Known limitations
-
-- **Queue Collection in Player:** use a player that supports `.m3u` playlists, such as IINA, VLC, or Swinsian. QuickTime Player doesn't.
-- **Renaming files externally:** if you rename a note or lyrics `.md` file yourself, the extension can no longer find it.
-- **Moving custom folders:** if a custom notes or lyrics folder is renamed or moved, the extension shows a warning and won't write anything until you choose the folder again in Extension Preferences.
-- **Same-named projects across libraries:** projects are identified by folder name, so if you switch to a different Projects Folder that contains a project with the same name, it shows the same tags and collections.
-- **Changing note and lyrics folders:** if notes and lyrics start or stop sharing the same custom folder, their file names switch between `<Project Name>.md` and `<Project Name> @Notes.md` / `@Lyrics.md`. Existing files aren't renamed, so rename them yourself to keep them linked.
-- **Shared Bounces Folder:** only files directly inside the folder are read; subfolders aren't.
-
 ## 💻 For developers
+
+### Setup
 
 Requires Node.js 22+ and npm.
 
@@ -360,7 +372,7 @@ npm run dev        # Run the extension in Raycast development mode
 
 In development mode, Search Projects has an extra **Reset Onboarding (Dev)** action for testing the first-launch prompts.
 
-Checks and builds:
+### Scripts
 
 ```bash
 npm run lint       # ESLint + Prettier
@@ -369,24 +381,26 @@ npm test           # Run unit tests with Vitest
 npm run build      # Build the production extension
 ```
 
+### Project layout
+
+- `src/core/` holds everything that isn't specific to Ableton Live: projects, bounces, collections, notes, search, and storage.
+- `src/daws/ableton/` holds the Ableton-specific parts: reading `.als` files, the Sets view, and Live templates. They plug into the rest through the `DawAdapter` interface in `src/daws/types.ts`.
+- All UI text lives in `src/i18n.ts`.
+- `swift/` holds the audio player's source, and `scripts/` the script that builds it.
+- `test/` holds the Vitest unit tests.
+
+### Audio player
+
 The audio player binary (`assets/audio-player`) is committed, so you don't need to build it to run the extension. If you change [`swift/AudioPlayer.swift`](https://github.com/iyekChen/ableton-project-manager/blob/main/swift/AudioPlayer.swift), rebuild it and commit both the binary and `swift/AudioPlayer.swift.sha256`:
 
 ```bash
 npm run build:player   # Requires Xcode Command Line Tools (swiftc, lipo)
 ```
 
-CI runs lint and tests, checks that the player was rebuilt after the last change to its Swift source, then builds the player and the extension.
-
-### Project layout
-
-- `test/` holds the Vitest unit tests.
-- `src/core/` holds everything that isn't specific to Ableton Live: projects, bounces, collections, notes, search, and storage.
-- `src/daws/ableton/` holds the Ableton-specific parts: reading `.als` files, the Sets view, and Live templates. They plug into the rest through the `DawAdapter` interface in `src/daws/types.ts`.
-- All UI text lives in `src/i18n.ts`.
+[`scripts/build-audio-player.sh`](https://github.com/iyekChen/ableton-project-manager/blob/main/scripts/build-audio-player.sh) compiles a universal arm64 + x86_64 binary targeting macOS 11 and records the source hash that CI checks. CI runs lint and tests, checks that the player was rebuilt after the last change to its Swift source, then builds the player and the extension.
 
 ### How it works
 
 - **Live Sets:** `.als` files are gzipped XML. Each Set is streamed through gunzip and parsed with [`saxes`](https://github.com/lddubeau/saxes) to read tempo, time signature, and scale.
 - **Playback:** a small Swift binary built on AVFoundation plays bounces as a detached process, so playback survives view changes and closing the Raycast window. The extension controls it through command and status files in its support folder. The player stops on its own when Raycast quits.
 - **Analysis:** the same binary has an `analyze` mode that streams the file in chunks and computes RMS, peak, spectral centroid, and spectral flux using a 2048-point FFT, without loading the whole file into memory.
-- **Build:** [`scripts/build-audio-player.sh`](https://github.com/iyekChen/ableton-project-manager/blob/main/scripts/build-audio-player.sh) compiles a universal arm64 + x86_64 binary targeting macOS 11 and records the source hash that CI checks.
