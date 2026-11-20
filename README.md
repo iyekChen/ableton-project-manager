@@ -45,11 +45,11 @@ Most of the time you'll use Search Projects. To get it ready:
 
 - In Extension Preferences, set Bounces Subfolder to the subfolder inside each project where you save bounces (e.g. `Bounces`), or leave it empty if they're saved directly in each project folder.
 - If you also export bounces from all your projects into one folder, set it as the Shared Bounces Folder. Files there are matched to projects by name; see [Shared Bounces Folder](#shared-bounces-folder).
-- To include bounces stored anywhere else, select a project in Search Projects and use Manage External Bounce.
+- To include bounces stored anywhere else, select a project in Search Projects and use Manage External Bounce (⌘B).
 
 ### ③ Tag your projects
 
-- In Manage Tags, select a stage (Demo, Mix, Released…) or genre and use Assign to Projects to tag several projects at once. You can also give stages, genres, and roles search aliases there (e.g. `dnb` for Drum & Bass).
+- In Manage Tags, select a stage (Demo, Mix, Released…) or genre and use Assign to Projects to tag several projects at once; see [Tags](#-tags).
 - To tag a single project, use Edit Info in Search Projects.
 
 ### ④ Try it
@@ -85,13 +85,36 @@ There are two ways to listen: the built-in player plays a project's latest bounc
 
 ### Managing projects
 
-- **Edit Info** changes a project's name, stage, genres, and collections. To tag several projects at once, use Assign to Projects in Manage Tags; see [Quick start](#-quick-start). Renaming asks you to close the project in Live first, then renames its folder; tags, track numbers, roles, notes, and lyrics move with it.
+- **Edit Info** changes a project's name, stage, genres, and collections. To tag several projects at once, use Assign to Projects in Manage Tags; see [Tags](#-tags). Renaming asks you to close the project in Live first, then renames its folder; tags, track numbers, roles, notes, and lyrics move with it.
 - **Duplicate Project** copies the whole project folder under a new name (`Song copy` by default), including any bounces, notes, and lyrics saved inside it. Tags, collections, and pins aren't copied.
 - **Pin** keeps a project at the top of the list. Pinned projects can be reordered with Move Up and Move Down.
 - **Move to Trash** moves the whole project folder to the Trash. Its data is kept for 30 days in case you put it back; see [Project tracking](#project-tracking).
 - **Copy Latest Bounce** copies the audio file itself, so you can paste it into a message or another app. You can also copy the project's name or path, or open it in Finder.
 
 Other actions in Search Projects have their own chapters: [Collections](#-collections) (⌃↵), [Notes & lyrics](#-notes--lyrics), bounce sources in [Bounces](#-bounces) (⌘B), and [New Live Sets](#-new-live-sets).
+
+## 🔖 Tags
+
+Manage Tags edits the three lists you tag with. Use the dropdown next to the search bar to switch between them.
+
+| List  | What it's for                                                                          | Defaults                                                                               |
+| ----- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Stage | Where a project is in your workflow. A project has one stage at a time.                | Demo, Recording, Production, Mix, Master, Done, Released                               |
+| Genre | What kind of music it is. A project can have any number of genres.                     | House, Techno, Hip-Hop, Trap, Pop, R&B, Rock, Ambient, Experimental, Lo-Fi, Indie, Jazz |
+| Role  | A track's part in a collection, such as an intro. It's set per collection, not per project. | Intro, Skit, Interlude, Outro                                                      |
+
+### Editing the lists
+
+- **Create** (⌘N) adds an option. **Edit** (⌘E) changes its name, aliases, and, for stages, its color. Renaming keeps the option on every project and track that uses it. Two options in the same list can't share a name.
+- **Aliases** are other names to search by, separated by commas (e.g. `dnb` for Drum & Bass). See [Combined search](#combined-search).
+- Reorder with Move Up (⌘⌥↑) and Move Down (⌘⌥↓), or Move to Top (⌘⇧↑) and Move to Bottom (⌘⇧↓). The same order is used everywhere you pick a tag.
+- **Delete** (⌃X) asks first, telling you how many projects or tracks use the option, and then removes it from all of them.
+- **Reset to Defaults** restores the default list for the list you're viewing. Your custom names, colors, aliases, and order are lost, and projects or tracks using an option that's no longer in the list lose it.
+
+### Tagging projects
+
+- **Assign to Projects** (stages and genres only) shows every project, with the ones that already have the tag checked. Check projects to add the tag and uncheck them to remove it. Because a project has only one stage, checking a project that's in another stage moves it, and the form tells you how many will move.
+- To tag a single project, use Edit Info in Search Projects. To give a track a role, open Edit Info from inside a collection; see [Collections](#-collections).
 
 ## 🔍 Search
 
@@ -128,7 +151,7 @@ Things that are easy to miss:
 
 A project's bounces are collected from:
 
-- its Bounces Subfolder, or the project folder itself if the subfolder is empty;
+- its Bounces Subfolder, or the project folder itself if Bounces Subfolder isn't set;
 - the [Shared Bounces Folder](#shared-bounces-folder), for files whose names match the project;
 - external folders and files added with Manage External Bounce (⌘B in Search Projects). Sources that can't be reached (e.g. an unplugged drive) are kept and shown as unavailable until you remove them. If a linked file is renamed in place or moved into one of your bounce folders, it's re-linked automatically when there's a single match.
 
@@ -185,7 +208,7 @@ In Browse Collections, you can rename, pin, or delete collections. Deleting a co
 
 - **Tracklist** lists numbered tracks in order, with each track's role, number, duration, and energy. Its header shows the total duration. **Unsorted** lists the other tracks alphabetically.
 - Reorder with Swap Up and Swap Down, or Move to Top and Move to Bottom. Remove from Tracklist sends a track back to Unsorted and clears its role. If two tracks share a number, both are marked with a warning icon.
-- **Roles:** open Edit Info from inside a collection to give a track a role, such as Intro or Interlude. Edit the list of roles in Manage Tags.
+- **Roles:** open Edit Info from inside a collection to give a track a role, such as Intro or Interlude. Edit the list of roles in [Manage Tags](#-tags).
 - Use the dropdown to show only one stage or genre. The Detail view shows each track's note, stage, duration, role, BPM, key, time signature, and energy.
 - **Remove from Collection** removes a track from the collection, along with its number and role there. The project itself isn't affected.
 - Back to Search Projects (⌃↵) returns to your project list from anywhere in Browse Collections.
@@ -223,7 +246,7 @@ Each project can have a note and a lyrics file, saved as ordinary Markdown files
 
 ### Note templates
 
-A template is applied when a note or lyrics file is created, or when the existing file is empty. This covers Open Note, Open Lyrics, and the first save in Edit Note or Edit Lyrics.
+To use a template, set Notes Template or Lyrics Template in Extension Preferences to a `.md` file. A template is applied when a note or lyrics file is created, or when the existing file is empty. This covers Open Note, Open Lyrics, and the first save in Edit Note or Edit Lyrics.
 
 | Placeholder | Becomes                      | Default format |
 | ----------- | ---------------------------- | -------------- |
@@ -335,6 +358,8 @@ npm install
 npm run dev        # Run the extension in Raycast development mode
 ```
 
+In development mode, Search Projects has an extra **Reset Onboarding (Dev)** action for testing the first-launch prompts.
+
 Checks and builds:
 
 ```bash
@@ -352,16 +377,16 @@ npm run build:player   # Requires Xcode Command Line Tools (swiftc, lipo)
 
 CI runs lint and tests, checks that the player was rebuilt after the last change to its Swift source, then builds the player and the extension.
 
+### Project layout
+
+- `test/` holds the Vitest unit tests.
+- `src/core/` holds everything that isn't specific to Ableton Live: projects, bounces, collections, notes, search, and storage.
+- `src/daws/ableton/` holds the Ableton-specific parts: reading `.als` files, the Sets view, and Live templates. They plug into the rest through the `DawAdapter` interface in `src/daws/types.ts`.
+- All UI text lives in `src/i18n.ts`.
+
 ### How it works
 
 - **Live Sets:** `.als` files are gzipped XML. Each Set is streamed through gunzip and parsed with [`saxes`](https://github.com/lddubeau/saxes) to read tempo, time signature, and scale.
 - **Playback:** a small Swift binary built on AVFoundation plays bounces as a detached process, so playback survives view changes and closing the Raycast window. The extension controls it through command and status files in its support folder. The player stops on its own when Raycast quits.
 - **Analysis:** the same binary has an `analyze` mode that streams the file in chunks and computes RMS, peak, spectral centroid, and spectral flux using a 2048-point FFT, without loading the whole file into memory.
 - **Build:** [`scripts/build-audio-player.sh`](https://github.com/iyekChen/ableton-project-manager/blob/main/scripts/build-audio-player.sh) compiles a universal arm64 + x86_64 binary targeting macOS 11 and records the source hash that CI checks.
-
-### Project layout
-
-- `src/core/` holds everything that isn't specific to Ableton Live: projects, bounces, collections, notes, search, and storage.
-- `src/daws/ableton/` holds the Ableton-specific parts: reading `.als` files, the Sets view, and Live templates. They plug into the rest through the `DawAdapter` interface in `src/daws/types.ts`.
-- All UI text lives in `src/i18n.ts`.
-- In development mode, Search Projects has an extra **Reset Onboarding (Dev)** action for testing the first-launch prompts.
