@@ -309,7 +309,7 @@ const translations: Record<Language, TranslationKeys> = {
     advancedSearch: "Every word must match",
     advancedSearchHint:
       "Name, stage, genre, collection, created date, key, BPM and time sig.\ne.g. # rnb 2025 Am 120-128",
-    openReadme: "Open README",
+    openReadme: "Open Search Help",
     searchBounces: "Search Bounces",
     searchCollections: "Search Collections",
     searchTracks: "Search Tracks",
