@@ -8,6 +8,7 @@ import {
   List,
   LocalStorage,
   Toast,
+  openExtensionPreferences,
   showToast,
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -57,6 +58,8 @@ export function SearchBouncesView() {
   const [isLoading, setIsLoading] = useState(initialCache === undefined);
   // 指定项目、打开项目 Bounces 都要用完整项目列表。
   const [projects, setProjects] = useState<Project[]>([]);
+  // 读失败且没有缓存可显示时，用出错状态代替「没有 bounce」。
+  const [loadFailed, setLoadFailed] = useState(false);
   // 上次写进缓存的列表：打开时刚读出来的那份不重复写。
   const lastWrittenRef = useRef(initialCache);
   // 启动只跑一次：StrictMode 下 effect 会跑两次。
@@ -95,8 +98,10 @@ export function SearchBouncesView() {
       setProjects(loaded);
       // 内容没变就保留原来的引用，避免多余的重渲染和缓存写入。
       setItems((prev) => (serializeBounceList(prev) === serializeBounceList(next) ? prev : next));
+      setLoadFailed(false);
     } catch (error) {
       console.error(`${LOG_PREFIX} Failed to load bounces:`, error);
+      setLoadFailed(true);
       // 列表保留不动：读失败时旧列表比空列表有用。
       await showFailure(t.loadProjectsFailed, error, { message: t.loadProjectsFailedHint });
     } finally {
@@ -186,7 +191,26 @@ export function SearchBouncesView() {
       }}
       searchBarPlaceholder={t.searchBounces}
     >
-      {renderGroups.length === 0 ? (
+      {renderGroups.length === 0 && loadFailed ? (
+        <List.EmptyView
+          icon={{ source: Icon.ExclamationMark, tintColor: Color.Red }}
+          title={t.loadProjectsFailed}
+          description={t.loadProjectsFailedHint}
+          actions={
+            <ActionPanel>
+              <Action
+                title={t.retry}
+                icon={Icon.ArrowClockwise}
+                onAction={() => {
+                  setIsLoading(true);
+                  void reload();
+                }}
+              />
+              <Action title={t.openExtensionPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
+            </ActionPanel>
+          }
+        />
+      ) : renderGroups.length === 0 ? (
         <List.EmptyView icon="bounce.png" title={t.noBounces} />
       ) : (
         renderGroups.map((group) => (
