@@ -22,7 +22,7 @@
 - **[Keep notes and lyrics](#-notes--lyrics)** as Markdown files, in each project or in a folder such as an Obsidian vault.
 - **[Start new Live Sets](#-new-live-sets)** from your templates.
 
-See also: [Configuration](#-configuration) · [Data & files](#-data--files) · [Known limitations](#-known-limitations) · [For developers](#-for-developers)
+See also: [Configuration](#-configuration) · [Known limitations](#-known-limitations) · [Data & files](#-data--files) · [For developers](#-for-developers)
 
 ## 🚀 Quick start
 
@@ -236,10 +236,7 @@ What to know:
 
 Each feature is then scaled from 0 to 1 across the tracks in the collection's Tracklist: the lowest value becomes 0 and the highest becomes 1 (density is inverted). If every track has the same value, that feature counts as 0.5. The score is the weighted average of the three, using the Energy weights in Extension Preferences (Off = 0, Low = 0.5, Normal = 1, High = 2), and is shown as 1–5 dots colored from cool to warm.
 
-- Energy is relative to the collection. The same track can score differently in another collection.
-- Only tracks in the Tracklist get a score. Unsorted tracks don't, and they don't affect anyone else's score.
 - If a feature can't be measured (e.g. a silent bounce), the remaining weights are used. Tracks without a bounce show empty dots.
-- Set all three weights to Off in Extension Preferences to hide energy entirely.
 
 ## 📝 Notes & lyrics
 
@@ -334,7 +331,6 @@ The extension stores its own data in Raycast:
   - Your data: stages, genres, roles, and collections; each project's tags, collections, pin, external bounce sources, and Shared Bounces Folder matching (bounce aliases, previous names, and files marked Not This Project); track numbers and roles; pinned collections.
   - Records: grouping choices in Browse Bounces and Search Bounces; the project list used to detect Finder changes; records of deleted projects.
   - Caches: Set metadata and bounce analysis.
-
 - **Cache:** view mode, sort, and grouping choices in Search Projects; bounce counts; and the last project and bounce lists, so Search Projects and Search Bounces show your list right away while they check for changes.
 
 Raycast keeps this data per extension. Uninstalling the extension deletes it. Your projects, notes, and lyrics are ordinary files and aren't affected.
