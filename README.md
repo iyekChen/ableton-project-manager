@@ -95,7 +95,7 @@ Other actions in Search Projects have their own chapters: [Collections](#-collec
 
 ## 🔍 Search
 
-Search Projects matches what you type against each project's name, stage, genres, collections, and created year and month, as well as the key of its latest Set. To search by BPM or time signature, or to make every word count, use combined search. Use the dropdown next to the search bar to show only one stage, genre, or year.
+Search Projects matches what you type against each project's name, stage, genres, collections, and created year and month, as well as the key of its latest Set. To search by BPM or time signature, or to require every word to match, use combined search. Use the dropdown next to the search bar to show only one stage, genre, or year.
 
 ### Combined search
 
@@ -176,7 +176,7 @@ A collection is a group of projects, such as an EP, an album, or a set of collab
 ### Building a collection
 
 1. In Search Projects, use Browse Collections (⌃↵), then Create.
-2. Open the collection and use Add Projects…. You can also add a project to collections from its Edit Info.
+2. Open the collection and use Add Projects… to pick its tracks. You can also add a project to collections from its Edit Info.
 3. New tracks wait in Unsorted. Press Enter to Set Track Number…, or use Add to Tracklist to give a track the next free number.
 
 In Browse Collections, you can rename, pin, or delete collections. Deleting a collection doesn't delete its projects.
@@ -184,13 +184,16 @@ In Browse Collections, you can rename, pin, or delete collections. Deleting a co
 ### Working with the tracklist
 
 - **Tracklist** lists numbered tracks in order, with each track's role, number, duration, and energy. Its header shows the total duration. **Unsorted** lists the other tracks alphabetically.
-- Reorder with Swap Up and Swap Down, or Move to Top and Move to Bottom. If two tracks share a number, both are marked with a warning icon.
-- **Roles:** open Edit Info from inside a collection to give a track a role, such as Intro or Interlude. Edit the list of roles in Manage Tags. Remove from Tracklist also clears the track's role.
+- Reorder with Swap Up and Swap Down, or Move to Top and Move to Bottom. Remove from Tracklist sends a track back to Unsorted and clears its role. If two tracks share a number, both are marked with a warning icon.
+- **Roles:** open Edit Info from inside a collection to give a track a role, such as Intro or Interlude. Edit the list of roles in Manage Tags.
 - Use the dropdown to show only one stage or genre. The Detail view shows each track's note, stage, duration, role, BPM, key, time signature, and energy.
-- Play any track's latest bounce with ⌘↵, as in Search Projects.
-- **Queue Collection in Player** (⌘⇧↵) opens the latest bounce of every track in the Tracklist, in order, as an `.m3u` playlist in your default player. Unsorted tracks and tracks without a bounce are skipped, and the action is hidden while the Tracklist is empty. See [Known limitations](#-known-limitations) for player support.
 - **Remove from Collection** removes a track from the collection, along with its number and role there. The project itself isn't affected.
 - Back to Search Projects (⌃↵) returns to your project list from anywhere in Browse Collections.
+
+### Listening to a collection
+
+- Play any track's latest bounce with ⌘↵, as in [Playback](#playback).
+- **Queue Collection in Player** (⌘⇧↵) opens the latest bounce of every track in the Tracklist, in order, as an `.m3u` playlist in your default player. Unsorted tracks and tracks without a bounce are skipped, and the action is hidden while the Tracklist is empty. See [Known limitations](#-known-limitations) for player support.
 
 ### How energy is calculated
 
@@ -202,7 +205,7 @@ When you open a collection, the latest bounce of every track is analyzed in the 
 - **Brightness:** the power-weighted spectral centroid. Brighter, more treble-heavy tracks score higher.
 - **Movement:** spectral flux, how much the spectrum changes from one moment to the next. Busier tracks score higher. Flux is measured on a level-normalized spectrum, so loudness alone doesn't raise it.
 
-Each feature is then scaled from 0 to 1 across the tracks in the collection's Tracklist: the lowest value becomes 0 and the highest becomes 1 (density is inverted). If every track has the same value, that feature counts as 0.5. The score is the weighted average of the three, using Off = 0, Low = 0.5, Normal = 1, High = 2, and is shown as 1–5 dots colored from cool to warm.
+Each feature is then scaled from 0 to 1 across the tracks in the collection's Tracklist: the lowest value becomes 0 and the highest becomes 1 (density is inverted). If every track has the same value, that feature counts as 0.5. The score is the weighted average of the three, using the Energy weights in Extension Preferences (Off = 0, Low = 0.5, Normal = 1, High = 2), and is shown as 1–5 dots colored from cool to warm.
 
 - Energy is relative to the collection. The same track can score differently in another collection.
 - Only tracks in the Tracklist get a score. Unsorted tracks don't, and they don't affect anyone else's score.
