@@ -358,3 +358,14 @@ CI runs lint and tests, checks that the player was rebuilt after the last change
 - **Playback:** a small Swift binary built on AVFoundation plays bounces as a detached process, so playback survives view changes and closing the Raycast window. The extension controls it through command and status files in its support folder. The player stops on its own when Raycast quits.
 - **Analysis:** the same binary has an `analyze` mode that streams the file in chunks and computes RMS, peak, spectral centroid, and spectral flux using a 2048-point FFT, without loading the whole file into memory.
 - **Build:** [`scripts/build-audio-player.sh`](https://github.com/iyekChen/ableton-project-manager/blob/main/scripts/build-audio-player.sh) compiles a universal arm64 + x86_64 binary targeting macOS 11 and records the source hash that CI checks.
+
+### Project layout
+
+- `src/core/` holds everything that isn't specific to Ableton Live: projects, bounces, collections, notes, search, and storage.
+- `src/daws/ableton/` holds the Ableton-specific parts: reading `.als` files, the Sets view, and Live templates. They plug into the rest through the `DawAdapter` interface in `src/daws/types.ts`.
+- All UI text lives in `src/i18n.ts`.
+- In development mode, Search Projects has an extra **Reset Onboarding (Dev)** action for testing the first-launch prompts.
+
+## License
+
+[MIT](LICENSE)
