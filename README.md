@@ -365,7 +365,3 @@ CI runs lint and tests, checks that the player was rebuilt after the last change
 - `src/daws/ableton/` holds the Ableton-specific parts: reading `.als` files, the Sets view, and Live templates. They plug into the rest through the `DawAdapter` interface in `src/daws/types.ts`.
 - All UI text lives in `src/i18n.ts`.
 - In development mode, Search Projects has an extra **Reset Onboarding (Dev)** action for testing the first-launch prompts.
-
-## License
-
-[MIT](LICENSE)
