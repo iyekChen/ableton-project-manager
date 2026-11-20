@@ -254,9 +254,16 @@ tags:
 
 ## 🎹 New Live Sets
 
-In Search Projects, New Live Set (⌘N) opens Ableton Live, or brings it to the front if it's already running. New Live Set from Template (⌘⌥⌃N) lists the `.als` files in your Templates Folder, which defaults to `~/Music/Ableton/User Library/Templates`. Templates at the top level form one group, and each subfolder forms its own group; folders nested deeper aren't read.
+In Search Projects:
 
-Choosing a template opens it in Ableton Live. Saving asks for a new name, so the template itself stays unchanged. You can also rename a template or move it to the Trash from the list.
+- **New Live Set** (⌘N) launches Ableton Live, which opens a new Set from your Default Set. If Live is already running, it's brought to the front instead.
+- **New Live Set from Template** (⌘⌥⌃N) lists your templates. Choose one to open it in Ableton Live as a new Set: saving asks for a new name, so the template itself stays unchanged.
+
+### Templates
+
+- Templates are the `.als` files in your Templates Folder, which defaults to `~/Music/Ableton/User Library/Templates`.
+- Templates at the top level form one group, and each subfolder forms its own group. Folders nested deeper aren't read.
+- You can rename a template or move it to the Trash from the list.
 
 ## 🔧 Configuration
 
@@ -265,7 +272,7 @@ Choosing a template opens it in Ableton Live. Saving asks for a new name, so the
 | **Projects Folder**       | The folder containing your Ableton Live projects.                                                                                                                      |
 | **Shared Bounces Folder** | One folder for bounces from all your projects. Files are matched to projects by name; see [Shared Bounces Folder](#shared-bounces-folder).                             |
 | **Bounces Subfolder**     | The subfolder inside each project where bounces are saved (e.g. `Bounces`). Leave empty to look directly in each project folder.                                       |
-| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [New Live Sets](#-new-live-sets).                         |
+| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [New Live Sets](#templates).                         |
 | **Notes Folder**          | The folder where notes are saved as `.md` files (e.g. an Obsidian vault). Leave empty to save `Notes.md` in each project folder.                                       |
 | **Lyrics Folder**         | The folder where lyrics are saved as `.md` files. Leave empty to save `Lyrics.md` in each project folder.                                                              |
 | **Notes Template**        | Optional `.md` file used as the starting point for new notes; see [Note templates](#note-templates).                                                                   |
