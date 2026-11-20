@@ -122,7 +122,7 @@ Search Projects matches what you type against each project's name, stage, genres
 
 ### Combined search
 
-Start with `#` to combine filters; the space after it is optional (`# am` or `#am`). Every word must match, in any order, and the dropdown filter still applies. Typing `#` on its own shows a short reminder, with Open README to come back here.
+Start with `#` to combine filters; the space after it is optional (`# am` or `#am`). Every word must match, in any order, and the dropdown filter still applies. Typing `#` on its own shows a short reminder, with Open Search Help to come back here.
 
 | Field          | What to type                                                                                                               | Examples                                |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
