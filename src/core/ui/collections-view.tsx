@@ -644,11 +644,11 @@ function CollectionPanel({
     await showToast({ style: Toast.Style.Success, title: t.projectsAdded, message: String(ids.length) });
   }
 
-  // 按 Track Number 顺序（tracked 在前，unsorted 在后）把成员的 latest bounce 写成 .m3u，
+  // 按 Track Number 顺序把 Tracklist 成员的 latest bounce 写成 .m3u，Unsorted 不排。
   // 交系统默认 App 打开。不支持无播放列表的播放器（如 QuickTime Player）——见 README。
   async function queueCollection() {
     const entries: { title: string; path: string; duration: number }[] = [];
-    for (const p of [...tracked, ...unsorted]) {
+    for (const p of tracked) {
       const bounce = findLatestProjectBounce(p);
       if (bounce) {
         entries.push({ title: p.title, path: bounce, duration: infos[p.id]?.duration ?? -1 });
@@ -678,7 +678,7 @@ function CollectionPanel({
 
     await open(playlistPath);
 
-    const skipped = tracked.length + unsorted.length - entries.length;
+    const skipped = tracked.length - entries.length;
     await showToast({
       style: Toast.Style.Success,
       title: t.collectionQueued,
@@ -689,14 +689,15 @@ function CollectionPanel({
     });
   }
 
-  const renderQueueCollection = () => (
-    <Action
-      title={t.queueCollection}
-      icon={Icon.AppWindow}
-      shortcut={{ modifiers: ["cmd", "shift"], key: "return" }}
-      onAction={queueCollection}
-    />
-  );
+  const renderQueueCollection = () =>
+    tracked.length > 0 && (
+      <Action
+        title={t.queueCollection}
+        icon={Icon.AppWindow}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "return" }}
+        onAction={queueCollection}
+      />
+    );
 
   // 角色 pill（设了才显示，放在 accessories 最左）。
   const rolePill = (p: Project): List.Item.Accessory[] => {
