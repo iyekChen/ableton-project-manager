@@ -20,7 +20,7 @@
 - **[Listen to your bounces](#playback)** without digging through Finder.
 - **[Plan the tracklist](#-collections)** for an EP or album, give tracks roles, and compare each track's energy.
 - **[Keep notes and lyrics](#-notes--lyrics)** as Markdown files, in each project or in a folder such as an Obsidian vault.
-- **[Start new Live Sets](#-live-templates)** from your templates.
+- **[Start new Live Sets](#-new-live-sets)** from your templates.
 
 See also: [Configuration](#-configuration) · [Data & files](#-data--files) · [Known limitations](#-known-limitations) · [For developers](#-for-developers)
 
@@ -91,7 +91,7 @@ There are two ways to listen: the built-in player plays a project's latest bounc
 - **Move to Trash** moves the whole project folder to the Trash. Its data is kept for 30 days in case you put it back; see [Project tracking](#project-tracking).
 - **Copy Latest Bounce** copies the audio file itself, so you can paste it into a message or another app. You can also copy the project's name or path, or open it in Finder.
 
-Other actions in Search Projects have their own chapters: [Collections](#-collections) (⌃↵), [Notes & lyrics](#-notes--lyrics), bounce sources in [Bounces](#-bounces) (⌘B), and [Live templates](#-live-templates).
+Other actions in Search Projects have their own chapters: [Collections](#-collections) (⌃↵), [Notes & lyrics](#-notes--lyrics), bounce sources in [Bounces](#-bounces) (⌘B), and [New Live Sets](#-new-live-sets).
 
 ## 🔍 Search
 
@@ -252,9 +252,9 @@ tags:
 - Renaming a project in the extension or in Finder also renames its note and lyrics files.
 - Characters that are unsafe in file names or special in Obsidian (`/ \ : * ? " < > | # ^ [ ]`) are replaced with full-width look-alikes, so `Beat #3` becomes `Beat ＃3.md`. If two project names would still end up with the same file, the extension won't read or write it until you rename one of them.
 
-## 🎹 Live templates
+## 🎹 New Live Sets
 
-In Search Projects, New Live Set from Template (⌘⌥⌃N) lists the `.als` files in your Templates Folder, which defaults to `~/Music/Ableton/User Library/Templates`. Templates at the top level form one group, and each subfolder forms its own group; folders nested deeper aren't read. New Live Set (⌘N) just opens Ableton Live, or brings it to the front if it's already running.
+In Search Projects, New Live Set (⌘N) opens Ableton Live, or brings it to the front if it's already running. New Live Set from Template (⌘⌥⌃N) lists the `.als` files in your Templates Folder, which defaults to `~/Music/Ableton/User Library/Templates`. Templates at the top level form one group, and each subfolder forms its own group; folders nested deeper aren't read.
 
 Choosing a template opens it in Ableton Live. Saving asks for a new name, so the template itself stays unchanged. You can also rename a template or move it to the Trash from the list.
 
@@ -265,7 +265,7 @@ Choosing a template opens it in Ableton Live. Saving asks for a new name, so the
 | **Projects Folder**       | The folder containing your Ableton Live projects.                                                                                                                      |
 | **Shared Bounces Folder** | One folder for bounces from all your projects. Files are matched to projects by name; see [Shared Bounces Folder](#shared-bounces-folder).                             |
 | **Bounces Subfolder**     | The subfolder inside each project where bounces are saved (e.g. `Bounces`). Leave empty to look directly in each project folder.                                       |
-| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [Live templates](#-live-templates).                         |
+| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [New Live Sets](#-new-live-sets).                         |
 | **Notes Folder**          | The folder where notes are saved as `.md` files (e.g. an Obsidian vault). Leave empty to save `Notes.md` in each project folder.                                       |
 | **Lyrics Folder**         | The folder where lyrics are saved as `.md` files. Leave empty to save `Lyrics.md` in each project folder.                                                              |
 | **Notes Template**        | Optional `.md` file used as the starting point for new notes; see [Note templates](#note-templates).                                                                   |
