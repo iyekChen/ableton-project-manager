@@ -14,7 +14,7 @@
 
 ## ✨ What it does
 
-- **[Browse, tag, and open your projects](#-projects)**.
+- **[Browse, tag and open your projects](#-projects)**.
 - **[Find projects](#-search)** by name, tag, created date, key, BPM, and more.
 - **[Gather your bounces](#-bounces)** from project folders, a shared export folder, or anywhere else.
 - **[Listen to your bounces](#playback)** without digging through Finder.
@@ -31,7 +31,7 @@ See also: [Configuration](#-configuration) · [Data & files](#-data--files) · [
 | **Search Projects** | Browse, play, and organize your projects and collections          |
 | **Search Bounces**  | Find any bounce across all your projects                          |
 | **Manage Tags**     | Edit your stages, genres, and track roles, and tag projects       |
-| **Export Data**     | Back up your tags, collections, and other extension data to a file |
+| **Export Data**     | Back up your tags, collections, and other extension data to a file|
 | **Import Data**     | Restore that data from an exported file                           |
 
 Most of the time you'll use Search Projects. To get it ready:
@@ -83,7 +83,7 @@ There are two ways to listen: the built-in player plays a project's latest bounc
 
 ### Managing projects
 
-- **Edit Info** changes a project's name, stage, genres, and collections. To tag several projects at once, use Assign to Projects in Manage Tags; see [Quick start](#-tag-your-projects). Renaming asks you to close the project in Live first, then renames its folder; tags, track numbers, roles, notes, and lyrics move with it.
+To tag several projects at once, use Assign to Projects in Manage Tags; see [Quick start](#-quick-start). Renaming asks you to close the project in Live first, then renames its folder; tags, track numbers, roles, notes, and lyrics move with it.
 - **Duplicate Project** copies the whole project folder under a new name (`Song copy` by default). The copy starts without tags, collections, notes, or lyrics.
 - **Pin** keeps a project at the top of the list. Pinned projects can be reordered with Move Up and Move Down.
 - **Move to Trash** moves the whole project folder to the Trash. Its data is kept for 30 days in case you put it back; see [Project tracking](#project-tracking).
