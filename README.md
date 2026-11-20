@@ -60,16 +60,19 @@ Most of the time you'll use Search Projects. To get it ready:
 
 ## 📁 Projects
 
-Search Projects lists every project in your Projects Folder, with its stage and how many Sets and bounces it has. Pinned projects stay at the top. The rest can be grouped by created or modified date and sorted by date or name.
+Search Projects lists every project in your Projects Folder. Pinned projects stay at the top. The rest can be grouped by created or modified date and sorted by date or name.
 
 ### Opening Sets
 
 - **View Sets** (Enter) lists a project's Sets. Open one in Ableton Live, or rename, duplicate, or move it to the Trash. Renaming asks you to close the Set in Live first.
 - **Open Latest Set** (⌘O) opens the project's most recently modified Set.
 
-### Detail view
+### Overview and Detail
 
-Show Detail (⌘⇧T) adds a side panel with the project's note, stage, genres, collections, number of bounces and Sets, the latest Set's name, key, and BPM, and the created and modified dates. Show Lyrics (⌘⌥⇧T) switches the panel to the lyrics; see [Notes & lyrics](#-notes--lyrics).
+Search Projects has two views. Overview shows each project's stage and how many Sets and bounces it has. Detail adds a side panel with the project's note, its tags and collections, the latest Set's key and BPM, and its created and modified dates.
+
+- ⌘⇧T switches between Overview and Detail.
+- In Detail, ⌘⌥⇧T switches the panel between notes and lyrics; see [Notes & lyrics](#-notes--lyrics).
 
 ### Playback
 
@@ -79,15 +82,16 @@ There are two ways to listen: the built-in player plays a project's latest bounc
 - While something is playing, you can also use Stop Playback (⌘-), Backward and Forward (⌥← and ⌥→, 5 seconds), and Restart Track (⌘←).
 - Playback keeps going when you close the Raycast window, and stops when Raycast quits.
 - **Browse Bounces** (⌥↵) lists all of the project's bounces. Press Enter to preview any of them with Quick Look; see [Bounces](#-bounces).
-- **Copy Latest Bounce** copies the audio file itself, so you can paste it into a message or another app.
 
 ### Managing projects
 
 - **Edit Info** changes a project's name, stage, genres, and collections. To tag several projects at once, use Assign to Projects in Manage Tags; see [Quick start](#-quick-start). Renaming asks you to close the project in Live first, then renames its folder; tags, track numbers, roles, notes, and lyrics move with it.
-- **Duplicate Project** copies the whole project folder under a new name (`Song copy` by default). The copy starts without tags, collections, notes, or lyrics.
+- **Duplicate Project** copies the whole project folder under a new name (`Song copy` by default), including any bounces, notes, and lyrics saved inside it. Tags, collections, and pins aren't copied.
 - **Pin** keeps a project at the top of the list. Pinned projects can be reordered with Move Up and Move Down.
 - **Move to Trash** moves the whole project folder to the Trash. Its data is kept for 30 days in case you put it back; see [Project tracking](#project-tracking).
-- Open the project in Finder, or copy its name or path.
+- **Copy Latest Bounce** copies the audio file itself, so you can paste it into a message or another app. You can also copy the project's name or path, or open it in Finder.
+
+Other actions in Search Projects have their own chapters: [Collections](#-collections) (⌃↵), [Notes & lyrics](#-notes--lyrics), bounce sources in [Bounces](#-bounces) (⌘B), and [Live templates](#-live-templates).
 
 ## 🔍 Search
 
