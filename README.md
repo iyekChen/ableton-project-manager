@@ -214,7 +214,12 @@ Each feature is then scaled from 0 to 1 across the tracks in the collection's Tr
 
 ## 📝 Notes & lyrics
 
-Each project can have a note and a lyrics file. By default they're saved as `Notes.md` and `Lyrics.md` in the project folder; set a Notes Folder or Lyrics Folder to keep them elsewhere. In Search Projects, the Detail panel (⌘⇧T) shows the note, and ⌘⌥⇧T switches between notes and lyrics. Edit them in Raycast with Edit Note (⌘⌥N) and Edit Lyrics (⌘⌥L), or in your Markdown app with Open Note (⌘⇧N) and Open Lyrics (⌘⇧L). Changes made in other apps show up right away.
+Each project can have a note and a lyrics file, saved as ordinary Markdown files.
+
+- **Where they're saved:** `Notes.md` and `Lyrics.md` in the project folder by default. Set a Notes Folder or Lyrics Folder to keep them elsewhere, such as an Obsidian vault; see [File names](#file-names).
+- **Viewing:** in Search Projects' [Detail view](#overview-and-detail) (⌘⇧T), the side panel shows the note, and ⌘⌥⇧T switches it to the lyrics.
+- **Editing:** use Edit Note (⌘⌥N) and Edit Lyrics (⌘⌥L) to edit in Raycast, or Open Note (⌘⇧N) and Open Lyrics (⌘⇧L) to open the file in your Markdown app. These actions also work on tracks inside a collection.
+- **Editing elsewhere:** changes made in other apps show up right away. If a file changes in another app while you're editing it in Raycast, you're asked before your save replaces those changes.
 
 ### Note templates
 
