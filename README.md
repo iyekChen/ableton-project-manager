@@ -14,13 +14,13 @@
 
 ## ✨ What it does
 
-- **Browse, tag, and open your projects**; see [Projects](#-projects).
-- **Find projects** by name, tag, created date, key, BPM, and more; see [Search](#-search).
-- **Gather your bounces** from project folders, a shared export folder, or anywhere else; see [Bounces](#-bounces).
-- **Listen to your bounces** without digging through Finder; see [Playback](#playback).
-- **Plan the tracklist** for an EP or album, give tracks roles, and compare each track's energy; see [Collections](#-collections).
-- **Keep notes and lyrics** as Markdown files, in each project or in a folder such as an Obsidian vault; see [Notes & lyrics](#-notes--lyrics).
-- **Start new Live Sets**, blank or from your templates; see [Live templates](#-live-templates).
+- **[Browse, tag, and open your projects](#-projects)**.
+- **[Find projects](#-search)** by name, tag, created date, key, BPM, and more.
+- **[Gather your bounces](#-bounces)** from project folders, a shared export folder, or anywhere else.
+- **[Listen to your bounces](#playback)** without digging through Finder.
+- **[Plan the tracklist](#-collections)** for an EP or album, give tracks roles, and compare each track's energy.
+- **[Keep notes and lyrics](#-notes--lyrics)** as Markdown files, in each project or in a folder such as an Obsidian vault.
+- **[Start new Live Sets](#-live-templates)** from your templates.
 
 See also: [Configuration](#-configuration) · [Data & files](#-data--files) · [Known limitations](#-known-limitations) · [For developers](#-for-developers)
 
@@ -49,8 +49,12 @@ Most of the time you'll use Search Projects. To get it ready:
 
 ### ③ Tag your projects
 
-- In Manage Tags, select a stage or genre and use Assign to Projects to tag several projects at once. You can also give stages, genres, and roles search aliases there (e.g. `dnb` for Drum & Bass).
+- In Manage Tags, select a stage (Demo, Mix, Released…) or genre and use Assign to Projects to tag several projects at once. You can also give stages, genres, and roles search aliases there (e.g. `dnb` for Drum & Bass).
 - To tag a single project, use Edit Info in Search Projects.
+
+### ④ Try it
+
+- Select a project in Search Projects: Enter shows its Sets, ⌘O opens the latest one, and ⌘↵ plays its latest bounce. Press ⌘K to see every other action.
 
 **You're all set.** Everything below covers each feature in detail, for when you want to dig deeper.
 
@@ -232,8 +236,6 @@ tags:
 ## 🎹 Live templates
 
 In Search Projects, New Live Set from Template (⌘⌥⌃N) lists the `.als` files in your Templates Folder, which defaults to `~/Music/Ableton/User Library/Templates`. Templates at the top level form one group, and each subfolder forms its own group; folders nested deeper aren't read. New Live Set (⌘N) just opens Ableton Live, or brings it to the front if it's already running.
-
-New Live Set from Template (⌘⌥⌃N in Search Projects) lists the `.als` files in your Templates Folder, which defaults to `~/Music/Ableton/User Library/Templates`. Templates at the top level form one group, and each subfolder forms its own group; folders nested deeper aren't read.
 
 Choosing a template opens it in Ableton Live. Saving asks for a new name, so the template itself stays unchanged. You can also rename a template or move it to the Trash from the list.
 
