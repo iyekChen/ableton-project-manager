@@ -344,7 +344,7 @@ Raycast keeps this data per extension. Uninstalling the extension deletes it, so
 ### Export & import
 
 - **Export Data** saves your tags and tag lists, collections, pins, track numbers, roles, bounce sources and aliases, and recently deleted projects to a `.json` file in a folder you choose. Extension preferences, notes, and lyrics aren't included.
-- **Import Data** replaces the data of every project that existed at export time with what's in the file, so changes you've made to those projects since the export are undone. Projects added since then keep their data.
+- **Import Data** replaces the data of every project that existed at export time with what's in the file, so changes you've made to those projects since the export are undone. Projects added since then keep their data. If a newer project's track number collides with one from the file, that project moves to Unsorted. Projects renamed since the export are matched by their folder.
 - If any of your current data would change, Import Data first shows what will change and saves a backup of your current data next to the imported file.
 - Files exported by a different extension can't be imported.
 
