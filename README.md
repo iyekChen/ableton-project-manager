@@ -26,13 +26,13 @@ See also: [Configuration](#-configuration) · [Known limitations](#-known-limita
 
 ## 🚀 Quick start
 
-| Command             | Use it to                                                         |
-| ------------------- | ----------------------------------------------------------------- |
-| **Search Projects** | Browse, play, and organize your projects and collections          |
-| **Search Bounces**  | Find any bounce across all your projects                          |
-| **Manage Tags**     | Edit your stages, genres, and track roles, and tag projects       |
-| **Export Data**     | Back up your tags, collections, and other extension data to a file|
-| **Import Data**     | Restore that data from an exported file                           |
+| Command             | Use it to                                                          |
+| ------------------- | ------------------------------------------------------------------ |
+| **Search Projects** | Browse, play, and organize your projects and collections           |
+| **Search Bounces**  | Find any bounce across all your projects                           |
+| **Manage Tags**     | Edit your stages, genres, and track roles, and tag projects        |
+| **Export Data**     | Back up your tags, collections, and other extension data to a file |
+| **Import Data**     | Restore that data from an exported file                            |
 
 Most of the time you'll use Search Projects. To get it ready:
 
@@ -97,11 +97,11 @@ Other actions in Search Projects have their own chapters: [Collections](#-collec
 
 Manage Tags edits the three lists you tag with. Use the dropdown next to the search bar to switch between them.
 
-| List  | What it's for                                                                          | Defaults                                                                               |
-| ----- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Stage | Where a project is in your workflow. A project has one stage at a time.                | Demo, Recording, Production, Mix, Master, Done, Released                               |
-| Genre | What kind of music it is. A project can have any number of genres.                     | House, Techno, Hip-Hop, Trap, Pop, R&B, Rock, Ambient, Experimental, Lo-Fi, Indie, Jazz |
-| Role  | A track's part in a collection, such as an intro. It's set per collection, not per project. | Intro, Skit, Interlude, Outro                                                      |
+| List  | What it's for                                                                               | Defaults                                                                                |
+| ----- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Stage | Where a project is in your workflow. A project has one stage at a time.                     | Demo, Recording, Production, Mix, Master, Done, Released                                |
+| Genre | What kind of music it is. A project can have any number of genres.                          | House, Techno, Hip-Hop, Trap, Pop, R&B, Rock, Ambient, Experimental, Lo-Fi, Indie, Jazz |
+| Role  | A track's part in a collection, such as an intro. It's set per collection, not per project. | Intro, Skit, Interlude, Outro                                                           |
 
 ### Editing the lists
 
@@ -124,15 +124,15 @@ Search Projects matches what you type against each project's name, stage, genres
 
 Start with `#` to combine filters; the space after it is optional (`# am` or `#am`). Every word must match, in any order, and the dropdown filter still applies. Typing `#` on its own shows a short reminder, with Open README to come back here.
 
-| Field          | What to type                                                                                                                | Examples                                |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| Name           | Any part of the project name                                                                                                | `# demo`                                |
-| Stage, genre   | The name or one of its aliases                                                                                              | `# mix`, `# rnb`, `# hiphop`            |
-| Collection     | Any part of the collection name                                                                                             | `# collab`, `# album`                   |
-| Created date   | A year, or an English month name or abbreviation                                                                            | `# 2025`, `# jun`                       |
+| Field          | What to type                                                                                                               | Examples                                |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Name           | Any part of the project name                                                                                               | `# demo`                                |
+| Stage, genre   | The name or one of its aliases                                                                                             | `# mix`, `# rnb`, `# hiphop`            |
+| Collection     | Any part of the collection name                                                                                            | `# collab`, `# album`                   |
+| Created date   | A year, or an English month name or abbreviation                                                                           | `# 2025`, `# jun`                       |
 | Key            | Root and scale with no space: `m`, `min`, or `minor`; `maj` or `major`; or another scale name. Write ♯ as `#` and ♭ as `b` | `# am`, `# c#m`, `# ebmaj`, `# ddorian` |
-| BPM            | A tempo, with or without `bpm`, or a range                                                                                  | `# 120`, `# 90-100`                     |
-| Time signature | Numerator and denominator                                                                                                   | `# 6/8`                                 |
+| BPM            | A tempo, with or without `bpm`, or a range                                                                                 | `# 120`, `# 90-100`                     |
+| Time signature | Numerator and denominator                                                                                                  | `# 6/8`                                 |
 
 For example, `# rnb 2025 am 120-128` finds R&B projects created in 2025, in A minor, at 120–128 BPM.
 
@@ -298,7 +298,7 @@ In Search Projects:
 | **Projects Folder**       | The folder containing your Ableton Live projects.                                                                                                                      |
 | **Shared Bounces Folder** | One folder for bounces from all your projects. Files are matched to projects by name; see [Shared Bounces Folder](#shared-bounces-folder).                             |
 | **Bounces Subfolder**     | The subfolder inside each project where bounces are saved (e.g. `Bounces`). Leave empty to look directly in each project folder.                                       |
-| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [New Live Sets](#templates).                         |
+| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [New Live Sets](#templates).                               |
 | **Notes Folder**          | The folder where notes are saved as `.md` files (e.g. an Obsidian vault). Leave empty to save `Notes.md` in each project folder.                                       |
 | **Lyrics Folder**         | The folder where lyrics are saved as `.md` files. Leave empty to save `Lyrics.md` in each project folder.                                                              |
 | **Notes Template**        | Optional `.md` file used as the starting point for new notes; see [Note templates](#note-templates).                                                                   |
