@@ -26,13 +26,13 @@
 
 ## 🚀 快速上手
 
-| 命令 | 用途 |
-| --- | --- |
-| **Search Projects** | 浏览、播放和整理你的项目与合集 |
-| **Search Bounces** | 在所有项目中查找任意 bounce |
-| **Manage Tags** | 编辑阶段、风格和曲目角色，并给项目打标签 |
-| **Export Data** | 把标签、合集等扩展数据备份到文件 |
-| **Import Data** | 从导出的文件恢复这些数据 |
+| 命令                | 用途                                     |
+| ------------------- | ---------------------------------------- |
+| **Search Projects** | 浏览、播放和整理你的项目与合集           |
+| **Search Bounces**  | 在所有项目中查找任意 bounce              |
+| **Manage Tags**     | 编辑阶段、风格和曲目角色，并给项目打标签 |
+| **Export Data**     | 把标签、合集等扩展数据备份到文件         |
+| **Import Data**     | 从导出的文件恢复这些数据                 |
 
 大部分时间你会用 Search Projects。准备工作如下：
 
@@ -97,11 +97,11 @@ Search Projects 中的其他操作在各自的章节介绍：[合集](#-合集)�
 
 Manage Tags 用来编辑三份标签列表，用搜索栏旁的下拉框在它们之间切换。
 
-| 列表 | 用途 | 默认值 |
-| --- | --- | --- |
-| Stage（阶段） | 项目处在工作流程的哪个阶段。一个项目同时只有一个阶段。 | Demo, Recording, Production, Mix, Master, Done, Released |
-| Genre（风格） | 音乐风格。一个项目可以有任意多个风格。 | House, Techno, Hip-Hop, Trap, Pop, R&B, Rock, Ambient, Experimental, Lo-Fi, Indie, Jazz |
-| Role（角色） | 曲目在合集中的角色，例如前奏。按合集设置，而不是按项目。 | Intro, Skit, Interlude, Outro |
+| 列表          | 用途                                                     | 默认值                                                                                  |
+| ------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Stage（阶段） | 项目处在工作流程的哪个阶段。一个项目同时只有一个阶段。   | Demo, Recording, Production, Mix, Master, Done, Released                                |
+| Genre（风格） | 音乐风格。一个项目可以有任意多个风格。                   | House, Techno, Hip-Hop, Trap, Pop, R&B, Rock, Ambient, Experimental, Lo-Fi, Indie, Jazz |
+| Role（角色）  | 曲目在合集中的角色，例如前奏。按合集设置，而不是按项目。 | Intro, Skit, Interlude, Outro                                                           |
 
 ### 编辑列表
 
@@ -124,15 +124,15 @@ Search Projects 会把你输入的内容与每个项目的名称、阶段、风�
 
 以 `#` 开头即可组合多个条件，后面的空格可有可无（`# am` 或 `#am`）。每个词都必须匹配，顺序不限，下拉框的筛选同样生效。只输入 `#` 会显示一段简短提示，并提供 Open README 回到这里。
 
-| 字段 | 输入方式 | 示例 |
-| --- | --- | --- |
-| 名称 | 项目名称的任意部分 | `# demo` |
-| 阶段、风格 | 名称或任一别名 | `# mix`, `# rnb`, `# hiphop` |
-| 合集 | 合集名称的任意部分 | `# collab`, `# album` |
-| 创建日期 | 年份，或英文月份全称或缩写 | `# 2025`, `# jun` |
-| 调性 | 根音加音阶，中间不加空格：`m`、`min` 或 `minor`；`maj` 或 `major`；或其他音阶名。♯ 写作 `#`，♭ 写作 `b` | `# am`, `# c#m`, `# ebmaj`, `# ddorian` |
-| BPM | 速度值，可带 `bpm`，也可以是范围 | `# 120`, `# 90-100` |
-| 拍号 | 分子和分母 | `# 6/8` |
+| 字段       | 输入方式                                                                                                | 示例                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| 名称       | 项目名称的任意部分                                                                                      | `# demo`                                |
+| 阶段、风格 | 名称或任一别名                                                                                          | `# mix`, `# rnb`, `# hiphop`            |
+| 合集       | 合集名称的任意部分                                                                                      | `# collab`, `# album`                   |
+| 创建日期   | 年份，或英文月份全称或缩写                                                                              | `# 2025`, `# jun`                       |
+| 调性       | 根音加音阶，中间不加空格：`m`、`min` 或 `minor`；`maj` 或 `major`；或其他音阶名。♯ 写作 `#`，♭ 写作 `b` | `# am`, `# c#m`, `# ebmaj`, `# ddorian` |
+| BPM        | 速度值，可带 `bpm`，也可以是范围                                                                        | `# 120`, `# 90-100`                     |
+| 拍号       | 分子和分母                                                                                              | `# 6/8`                                 |
 
 例如，`# rnb 2025 am 120-128` 会找到 2025 年创建、A 小调、120–128 BPM 的 R&B 项目。
 
@@ -252,11 +252,11 @@ Energy（能量）通过比较每首曲目和合集中其他曲目在密度、�
 
 要使用模板，在 Extension Preferences 中把 Notes Template 或 Lyrics Template 设为一个 `.md` 文件。新建笔记或歌词文件时，或者现有文件为空时，会套用模板。包括 Open Note、Open Lyrics，以及 Edit Note 或 Edit Lyrics 的第一次保存。
 
-| 占位符 | 替换为 | 默认格式 |
-| --- | --- | --- |
-| `{{title}}` | 项目名称 | — |
-| `{{date}}` | 文件创建的日期 | `YYYY-MM-DD` |
-| `{{time}}` | 文件创建的时间 | `HH:mm` |
+| 占位符      | 替换为         | 默认格式     |
+| ----------- | -------------- | ------------ |
+| `{{title}}` | 项目名称       | —            |
+| `{{date}}`  | 文件创建的日期 | `YYYY-MM-DD` |
+| `{{time}}`  | 文件创建的时间 | `HH:mm`      |
 
 和 Obsidian 一样，`{{date}}` 和 `{{time}}` 支持自定义格式：`{{date:YYYY/MM/DD}}`、`{{date:MMMM D, YYYY}}`、`{{time:HH.mm}}`。支持的格式符有 `YYYY` `YY` `MMMM` `MMM` `MM` `M` `DD` `D` `dddd` `ddd` `HH` `mm`；`[方括号]` 中的文字原样保留。
 
@@ -294,20 +294,20 @@ tags:
 
 ## 🔧 设置
 
-| 设置项 | 说明 |
-| --- | --- |
-| **Projects Folder** | 存放 Ableton Live 项目的文件夹。 |
+| 设置项                    | 说明                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Projects Folder**       | 存放 Ableton Live 项目的文件夹。                                                                             |
 | **Shared Bounces Folder** | 存放所有项目 bounce 的统一文件夹。文件按名称匹配到项目；见 [Shared Bounces Folder](#shared-bounces-folder)。 |
-| **Bounces Subfolder** | 每个项目中存放 bounce 的子文件夹（例如 `Bounces`）。留空则直接在项目文件夹中查找。 |
-| **Templates Folder** | 存放 Live 模板的文件夹。留空则使用 `~/Music/Ableton/User Library/Templates`；见[模板](#模板)。 |
-| **Notes Folder** | 以 `.md` 文件保存笔记的文件夹（例如 Obsidian 仓库）。留空则在每个项目文件夹中保存 `Notes.md`。 |
-| **Lyrics Folder** | 以 `.md` 文件保存歌词的文件夹。留空则在每个项目文件夹中保存 `Lyrics.md`。 |
-| **Notes Template** | 可选，作为新笔记初始内容的 `.md` 文件；见[笔记模板](#笔记模板)。 |
-| **Lyrics Template** | 可选，作为新歌词初始内容的 `.md` 文件；见[笔记模板](#笔记模板)。 |
-| **Strict Line Breaks** | 关闭：保留单个换行。开启：遵循标准 Markdown 换行规则（行尾两个空格或空一行）。只影响预览，不会改动你的文件。 |
-| **Energy: Density** | 密度（波峰因数）对能量分数的影响程度；见 [Energy 怎么算](#energy-怎么算)。只有三个权重之间的比例有意义。 |
-| **Energy: Brightness** | 明亮度（频谱质心）对能量分数的影响程度。 |
-| **Energy: Movement** | 活跃度（频谱通量）对能量分数的影响程度。 |
+| **Bounces Subfolder**     | 每个项目中存放 bounce 的子文件夹（例如 `Bounces`）。留空则直接在项目文件夹中查找。                           |
+| **Templates Folder**      | 存放 Live 模板的文件夹。留空则使用 `~/Music/Ableton/User Library/Templates`；见[模板](#模板)。               |
+| **Notes Folder**          | 以 `.md` 文件保存笔记的文件夹（例如 Obsidian 仓库）。留空则在每个项目文件夹中保存 `Notes.md`。               |
+| **Lyrics Folder**         | 以 `.md` 文件保存歌词的文件夹。留空则在每个项目文件夹中保存 `Lyrics.md`。                                    |
+| **Notes Template**        | 可选，作为新笔记初始内容的 `.md` 文件；见[笔记模板](#笔记模板)。                                             |
+| **Lyrics Template**       | 可选，作为新歌词初始内容的 `.md` 文件；见[笔记模板](#笔记模板)。                                             |
+| **Strict Line Breaks**    | 关闭：保留单个换行。开启：遵循标准 Markdown 换行规则（行尾两个空格或空一行）。只影响预览，不会改动你的文件。 |
+| **Energy: Density**       | 密度（波峰因数）对能量分数的影响程度；见 [Energy 怎么算](#energy-怎么算)。只有三个权重之间的比例有意义。     |
+| **Energy: Brightness**    | 明亮度（频谱质心）对能量分数的影响程度。                                                                     |
+| **Energy: Movement**      | 活跃度（频谱通量）对能量分数的影响程度。                                                                     |
 
 ## 🚧 已知限制
 
