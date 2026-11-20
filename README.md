@@ -95,7 +95,7 @@ Other actions in Search Projects have their own chapters: [Collections](#-collec
 
 ## 🔍 Search
 
-Search Projects matches what you type against each project's name, stage, genres, collections, and created year and month, as well as the key of its latest Set. Use the dropdown next to the search bar to show only one stage, genre, or year.
+Search Projects matches what you type against each project's name, stage, genres, collections, and created year and month, as well as the key of its latest Set. To search by BPM or time signature, or to make every word count, use combined search. Use the dropdown next to the search bar to show only one stage, genre, or year.
 
 ### Combined search
 
@@ -120,8 +120,7 @@ Things that are easy to miss:
 - **Short numbers are tempos.** Numbers with up to three digits are always read as BPM, so `# album 01` looks for a tempo of 1 instead of a collection called Album 01. Search by the words in the name instead.
 - **Half and double tempo count.** `# 140` also finds projects at 70 and 280 BPM, and tempos are rounded, so 139.6 counts as 140. A range includes both ends and can be written either way round (`100-90`).
 - **Keys and time signatures match whole.** `# cm` finds C minor only, not C major. A root on its own (`a`, `eb`) isn't a key search, and `# a minor` is read as two separate words. Both spellings of a black key work: `c#m` and `dbm` find the same projects. `6/8` doesn't match `6/4`.
-- **They come from the latest Set.** Key, BPM, and time signature are read from each project's most recently modified Set in the background, then cached. Until a project's Set has been read, it doesn't match these words.
-- **Without `#`, search is fuzzy.** It still covers names, tags, collections, created dates, and keys, but not BPM or time signature.
+- **Key, BPM, and time signature come from the latest Set.** They're read from each project's most recently modified Set in the background, then cached. Until a project's Set has been read, it doesn't match these words.
 
 ## 🎧 Bounces
 
