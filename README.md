@@ -130,9 +130,26 @@ A project's bounces are collected from:
 
 - its Bounces Subfolder, or the project folder itself if the subfolder is empty;
 - the [Shared Bounces Folder](#shared-bounces-folder), for files whose names match the project;
-- external folders and files added with Manage External Bounce. Sources that can't be reached (e.g. an unplugged drive) are kept and shown as unavailable until you remove them. If a linked file is renamed in place or moved into one of your bounce folders, it's re-linked automatically when there's a single match.
+- external folders and files added with Manage External Bounce (⌘B in Search Projects). Sources that can't be reached (e.g. an unplugged drive) are kept and shown as unavailable until you remove them. If a linked file is renamed in place or moved into one of your bounce folders, it's re-linked automatically when there's a single match.
 
-A file reached through more than one source counts once. The most recently modified audio file (WAV, AIFF, MP3, M4A, or FLAC) is the latest bounce: it's the one that's played, copied, queued, and used for energy analysis. Browse Bounces (⌥↵) lists all of a project's bounces.
+A file reached through more than one source counts once. The most recently modified audio file (WAV, AIFF, MP3, M4A, or FLAC) is the latest bounce: it's the one that's played, copied, queued, and used for energy analysis.
+
+### Browse Bounces
+
+Browse Bounces (⌥↵ in Search Projects) lists all of a project's bounces, grouped by source.
+
+- Press Enter to preview a bounce with Quick Look, or ⌘O to open it in its default app.
+- Rename a bounce (its extension stays the same), copy the file itself, show it in Finder, or move it to the Trash.
+- **Not This Project** sends a file from the Shared Bounces Folder back to [Unmatched Bounces](#unmatched-bounces) when it was matched to the wrong project.
+- For an unavailable external source, **Remove External Source** removes it from the project. The file itself isn't deleted.
+
+### Search Bounces
+
+The Search Bounces command lists the bounces of every project in one place. A file that belongs to several projects appears once, next to all of their names.
+
+- Search by file name or project name. Type `unmatched` to find files that don't belong to any project; they're marked with an orange question mark.
+- Press Enter to preview a bounce with Quick Look. Browse Project Bounces (⌥↵) opens the bounces of the project the file belongs to, and Assign to Project gives an unmatched file to a project.
+- Bounces are grouped by created date. Group by Source to see whether each file comes from a project folder, the shared folder, an external source, or is unmatched.
 
 ### Shared Bounces Folder
 
@@ -140,7 +157,6 @@ A file reached through more than one source counts once. The most recently modif
 - If a file matches more than one project, the longest name wins: `Demo Package v2.wav` belongs to `Demo Package`, not `Demo`.
 - **Bounce Aliases:** in Manage External Bounce, add other names a project's files start with (e.g. `SC` for `Summer Children`). An alias can't be another project's name or alias. This field only appears when a Shared Bounces Folder is set.
 - **Renamed projects:** after a rename, the old name keeps matching only files created before the rename, so a new project with that name doesn't take them. Deselect a name under Previous Names in Manage External Bounce to stop matching it.
-- **Not This Project:** in Browse Bounces, sends a wrongly matched file back to Unmatched Bounces.
 
 Assigning bounces never moves or renames your files.
 
@@ -152,14 +168,6 @@ Use Assign to Project to give a file to a project:
 
 - **All Files Starting With…:** adds the beginning of the file name as a bounce alias, so this file and future ones go to that project.
 - **This File Only:** adds just this file as an external bounce.
-
-### Search Bounces
-
-The Search Bounces command lists the bounces of every project in one place. A file that belongs to several projects appears once, next to all of their names.
-
-- Search by file name or project name. Type `unmatched` to find files that don't belong to any project; they're marked with an orange question mark.
-- Press Enter to preview a bounce with Quick Look. Browse Project Bounces (⌥↵) opens the bounces of the project the file belongs to, and Assign to Project gives an unmatched file to a project.
-- Bounces are grouped by created date. Group by Source to see whether each file comes from a project folder, the shared folder, an external source, or is unmatched.
 
 ## 💿 Collections
 
@@ -180,7 +188,7 @@ In Browse Collections, you can rename, pin, or delete collections. Deleting a co
 - **Roles:** open Edit Info from inside a collection to give a track a role, such as Intro or Interlude. Edit the list of roles in Manage Tags. Remove from Tracklist also clears the track's role.
 - Use the dropdown to show only one stage or genre. The Detail view shows each track's note, stage, duration, role, BPM, key, time signature, and energy.
 - Play any track's latest bounce with ⌘↵, as in Search Projects.
-- **Queue Collection in Player** (⌘⇧↵) opens the latest bounce of every track as an `.m3u` playlist in your default player: the Tracklist first, then Unsorted. Tracks without a bounce are skipped. See [Known limitations](#-known-limitations) for player support.
+- **Queue Collection in Player** (⌘⇧↵) opens the latest bounce of every track in the Tracklist, in order, as an `.m3u` playlist in your default player. Unsorted tracks and tracks without a bounce are skipped, and the action is hidden while the Tracklist is empty. See [Known limitations](#-known-limitations) for player support.
 - **Remove from Collection** removes a track from the collection, along with its number and role there. The project itself isn't affected.
 - Back to Search Projects (⌃↵) returns to your project list from anywhere in Browse Collections.
 
