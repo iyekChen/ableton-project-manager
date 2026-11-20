@@ -14,7 +14,7 @@
 
 ## ✨ What it does
 
-- **[Browse, tag and open your projects](#-projects)**.
+- **[Browse and open your projects](#-projects)**, and **[tag them](#-tags)** by stage and genre.
 - **[Find projects](#-search)** by name, tag, created date, key, BPM, and more.
 - **[Gather your bounces](#-bounces)** from project folders, a shared export folder, or anywhere else.
 - **[Listen to your bounces](#playback)** without digging through Finder.
