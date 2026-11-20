@@ -39,13 +39,13 @@ Most of the time you'll use Search Projects. To get it ready:
 ### ① Set your Projects Folder
 
 - Open Search Projects. On first launch, Raycast asks you to select the folder containing your Ableton Live projects.
-- Each folder directly inside it that contains at least one `.als` file counts as a project. Folders nested deeper aren't found.
+- Each folder directly inside it that contains at least one `.als` file counts as a project. Folders nested deeper aren't found, so choose the folder that directly contains your project folders.
 
 ### ② Tell it where your bounces are
 
 - In Extension Preferences, set Bounces Subfolder to the subfolder inside each project where you save bounces (e.g. `Bounces`), or leave it empty if they're saved directly in each project folder.
-- If you also export bounces from all your projects into one folder, set it as the Shared Bounces Folder. Files there are matched to projects by name; see [Shared Bounces Folder](#shared-bounces-folder).
-- To include bounces stored anywhere else, select a project in Search Projects and use Manage External Bounce (⌘B).
+- Optional: if you also export bounces from all your projects into one folder, set it as the Shared Bounces Folder. Files there are matched to projects by name, and the next time you open Search Projects, it offers to review any that don't match; see [Shared Bounces Folder](#shared-bounces-folder).
+- Optional: to include bounces stored anywhere else, select a project in Search Projects and use Manage External Bounce (⌘B).
 
 ### ③ Tag your projects
 
@@ -81,7 +81,7 @@ There are two ways to listen: the built-in player plays a project's latest bounc
 - **Play Latest Bounce** (⌘↵) plays the project's latest bounce. Press it again to pause or resume.
 - While something is playing, you can also use Stop Playback (⌘-), Backward and Forward (⌥← and ⌥→, 5 seconds), and Restart Track (⌘←).
 - Playback keeps going when you close the Raycast window, and stops when Raycast quits.
-- **Browse Bounces** (⌥↵) lists all of the project's bounces. Press Enter to preview any of them with Quick Look; see [Bounces](#-bounces).
+- **Browse Bounces** (⌥↵) lists all of the project's bounces. Press Enter to preview any of them with Quick Look; see [Browse Bounces](#browse-bounces).
 
 ### Managing projects
 
@@ -143,7 +143,7 @@ Things that are easy to miss:
 - **Short numbers are tempos.** Numbers with up to three digits are always read as BPM, so `# album 01` looks for a tempo of 1 instead of a collection called Album 01. Search by the words in the name instead.
 - **Half and double tempo count.** `# 140` also finds projects at 70 and 280 BPM, and tempos are rounded, so 139.6 counts as 140. A range includes both ends and can be written either way round (`100-90`).
 - **Keys and time signatures match whole.** `# cm` finds C minor only, not C major. A root on its own (`a`, `eb`) isn't a key search, and `# a minor` is read as two separate words. Both spellings of a black key work: `c#m` and `dbm` find the same projects. `6/8` doesn't match `6/4`.
-- **Key, BPM, and time signature come from the latest Set.** They're read from each project's most recently modified Set in the background, then cached. Until a project's Set has been read, it doesn't match these words.
+- **Key, BPM, and time signature come from the latest Set.** They're read from each project's most recently modified Set in the background, then cached. Until a project's Set has been read, it doesn't match these words. The key comes from the Set's key and scale in Live, not from the audio, so a Set without a scale has no key.
 
 ## 🎧 Bounces
 
@@ -155,7 +155,7 @@ A project's bounces are collected from:
 - the [Shared Bounces Folder](#shared-bounces-folder), for files whose names match the project;
 - external folders and files added with Manage External Bounce (⌘B in Search Projects). Sources that can't be reached (e.g. an unplugged drive) are kept and shown as unavailable until you remove them. If a linked file is renamed in place or moved into one of your bounce folders, it's re-linked automatically when there's a single match.
 
-A file reached through more than one source counts once. The most recently modified audio file (WAV, AIFF, MP3, M4A, or FLAC) is the latest bounce: it's the one that's played, copied, queued, and used for energy analysis.
+Only audio files directly inside each folder are read; subfolders aren't. A file reached through more than one source counts once. The most recently modified audio file (WAV, AIFF, MP3, M4A, or FLAC) is the latest bounce: it's the one that's played, copied, queued, and used for energy analysis.
 
 ### Browse Bounces
 
@@ -177,6 +177,7 @@ The Search Bounces command lists the bounces of every project in one place. A fi
 ### Shared Bounces Folder
 
 - A file belongs to a project when its name starts with the project name, followed by a space, `-`, `_`, `.`, or nothing else. `Song.wav`, `Song v2.wav`, and `Song-master.wav` all belong to `Song`; `Songbird.wav` doesn't. Case doesn't matter.
+- Live names a new project's folder `<Name> Project`, so `Song.wav` doesn't match a project called `Song Project`. Rename the project, or add `Song` as a bounce alias (see below).
 - If a file matches more than one project, the longest name wins: `Demo Package v2.wav` belongs to `Demo Package`, not `Demo`.
 - **Bounce Aliases:** in Manage External Bounce, add other names a project's files start with (e.g. `SC` for `Summer Children`). An alias can't be another project's name or alias. This field only appears when a Shared Bounces Folder is set.
 - **Renamed projects:** after a rename, the old name keeps matching only files created before the rename, so a new project with that name doesn't take them. Deselect a name under Previous Names in Manage External Bounce to stop matching it.
@@ -298,7 +299,7 @@ In Search Projects:
 | **Projects Folder**       | The folder containing your Ableton Live projects.                                                                                                                      |
 | **Shared Bounces Folder** | One folder for bounces from all your projects. Files are matched to projects by name; see [Shared Bounces Folder](#shared-bounces-folder).                             |
 | **Bounces Subfolder**     | The subfolder inside each project where bounces are saved (e.g. `Bounces`). Leave empty to look directly in each project folder.                                       |
-| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [New Live Sets](#templates).                               |
+| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [Templates](#templates).                               |
 | **Notes Folder**          | The folder where notes are saved as `.md` files (e.g. an Obsidian vault). Leave empty to save `Notes.md` in each project folder.                                       |
 | **Lyrics Folder**         | The folder where lyrics are saved as `.md` files. Leave empty to save `Lyrics.md` in each project folder.                                                              |
 | **Notes Template**        | Optional `.md` file used as the starting point for new notes; see [Note templates](#note-templates).                                                                   |
@@ -313,15 +314,20 @@ In Search Projects:
 - **Queue Collection in Player:** use a player that supports `.m3u` playlists, such as IINA, VLC, or Swinsian. QuickTime Player doesn't.
 - **Renaming files externally:** if you rename a note or lyrics `.md` file yourself, the extension can no longer find it.
 - **Moving custom folders:** if a custom notes or lyrics folder is renamed or moved, the extension shows a warning and won't write anything until you choose the folder again in Extension Preferences.
-- **Same-named projects across libraries:** projects are identified by folder name, so if you switch to a different Projects Folder that contains a project with the same name, it shows the same tags and collections.
+- **Same-named projects across libraries:** extension data is stored by project folder name, so if you switch to a different Projects Folder that contains a project with the same name, it shows the same tags and collections.
 - **Changing note and lyrics folders:** if notes and lyrics start or stop sharing the same custom folder, their file names switch between `<Project Name>.md` and `<Project Name> @Notes.md` / `@Lyrics.md`. Existing files aren't renamed, so rename them yourself to keep them linked.
-- **Shared Bounces Folder:** only files directly inside the folder are read; subfolders aren't.
 
 ## 📦 Data & files
 
 ### What changes on disk
 
-Project files change only when you ask: renaming a project in Edit Info, renaming or duplicating a Set, renaming a bounce, duplicating a project, renaming a template, or moving something to Trash. Renaming a project or Set asks you to close it in Ableton Live first. Notes and lyrics are written only when you edit or open them, and are renamed or archived along with their project as described below.
+The extension changes project files only when you ask:
+
+- renaming a project (in Edit Info), a Set, a bounce, or a template;
+- duplicating a project or a Set;
+- moving something to the Trash.
+
+Renaming a project or Set asks you to close it in Ableton Live first. Notes and lyrics are written only when you edit them, or when you use Open Note or Open Lyrics before the file exists. They're renamed or archived along with their project, as described in [Project tracking](#project-tracking).
 
 ### Storage
 
@@ -333,21 +339,21 @@ The extension stores its own data in Raycast:
   - Caches: Set metadata and bounce analysis.
 - **Cache:** view mode, sort, and grouping choices in Search Projects; bounce counts; and the last project and bounce lists, so Search Projects and Search Bounces show your list right away while they check for changes.
 
-Raycast keeps this data per extension. Uninstalling the extension deletes it. Your projects, notes, and lyrics are ordinary files and aren't affected.
+Raycast keeps this data per extension. Uninstalling the extension deletes it, so run Export Data first if you might reinstall. Your projects, notes, and lyrics are ordinary files and aren't affected.
 
 ### Export & import
 
 - **Export Data** saves your tags and tag lists, collections, pins, track numbers, roles, bounce sources and aliases, and recently deleted projects to a `.json` file in a folder you choose. Extension preferences, notes, and lyrics aren't included.
-- **Import Data** restores every project that existed at export time to the file's state, and keeps projects added since then. If a newer project's track number collides with one from the file, that project moves to Unsorted. Projects renamed since the export are matched by their folder.
+- **Import Data** replaces the data of every project that existed at export time with what's in the file, so changes you've made to those projects since the export are undone. Projects added since then keep their data.
 - If any of your current data would change, Import Data first shows what will change and saves a backup of your current data next to the imported file.
-- A file can only be imported by the extension that exported it.
+- Files exported by a different extension can't be imported.
 
 ### Project tracking
 
 While Search Projects is open, it watches your Projects Folder and reloads when projects are added, renamed, removed, or put back. Changes made while it was closed are applied the next time you open it.
 
-- **Renames:** a project renamed in Finder is recognized by its folder's creation time and file system ID (inode), so its tags, track numbers, roles, and notes move with it. Duplicating a folder and deleting the original is not mistaken for a rename.
-- **Deletions:** if Raycast has Full Disk Access and the folder is found in the Trash, its data is archived and cleared, just like Move to Trash. Without Full Disk Access, nothing is cleared automatically. A toast lets you open the Full Disk Access settings, and Clean Up Leftovers (in the Action Panel when there is something to clean up) clears data for projects you removed.
+- **Renames:** a project renamed in Finder is recognized by its folder's creation time and file system ID (inode), so its tags, track numbers, roles, notes, and lyrics move with it. Duplicating a folder and deleting the original is not mistaken for a rename.
+- **Deletions:** if Raycast has Full Disk Access and the folder is found in the Trash, its data is set aside for 30 days, just like Move to Trash. Without Full Disk Access, nothing is cleared automatically. A toast lets you open the Full Disk Access settings, and Clean Up Leftovers (in the Action Panel when there is something to clean up) clears data for projects you removed.
 - **Missing drive:** if every project disappears, or more than half of them (and more than three) disappear at once, nothing is changed. A toast suggests checking the drive or the Projects Folder setting.
 - **Separate folders:** each Projects Folder keeps its own project list, so switching folders doesn't look like mass deletion.
 - **Trash recovery:** moving a project to Trash keeps its tags, collections, track numbers, and roles for 30 days. Notes and lyrics stored in custom folders move into a `Deleted Projects/` subfolder. Put the folder back from the Trash within that time and everything is restored. Collections deleted in the meantime are skipped, and nothing overwrites data you've added since.
@@ -357,7 +363,7 @@ While Search Projects is open, it watches your Projects Folder and reloads when 
 
 ### Setup
 
-Requires Node.js 22+ and npm.
+Requires macOS, [Raycast](https://raycast.com), Node.js 22+, and npm.
 
 ```bash
 git clone https://github.com/iyekChen/ableton-project-manager.git
@@ -366,22 +372,28 @@ npm install
 npm run dev        # Run the extension in Raycast development mode
 ```
 
+On first launch, Search Projects asks for a Projects Folder. Use a test folder rather than your real library, since actions like rename and Move to Trash change files on disk.
+
 In development mode, Search Projects has an extra **Reset Onboarding (Dev)** action for testing the first-launch prompts.
 
 ### Scripts
 
 ```bash
-npm run lint       # ESLint + Prettier
-npm run fix-lint   # Auto-fix lint and formatting issues
-npm test           # Run unit tests with Vitest
-npm run build      # Build the production extension
+npm run lint          # ESLint + Prettier
+npm run fix-lint      # Auto-fix lint and formatting issues
+npm test              # Run unit tests with Vitest
+npm run test:watch    # Re-run tests on every change
+npm run build         # Build the production extension
 ```
+
+Before opening a PR, run lint, tests, and build. CI runs the same steps on macOS with Node 22, installing with `npm ci`, plus the audio player check below.
 
 ### Project layout
 
+- `src/*.tsx` are the command entry points, one per command. Manage Tags is `manage-categories.tsx`.
 - `src/core/` holds everything that isn't specific to Ableton Live: projects, bounces, collections, notes, search, and storage.
 - `src/daws/ableton/` holds the Ableton-specific parts: reading `.als` files, the Sets view, and Live templates. They plug into the rest through the `DawAdapter` interface in `src/daws/types.ts`.
-- All UI text lives in `src/i18n.ts`.
+- Most UI text lives in `src/i18n.ts`. Ableton-specific wording is in `src/daws/labels.ts` and `src/daws/ableton/strings.ts`, and command and preference titles are in `package.json`.
 - `swift/` holds the audio player's source, and `scripts/` the script that builds it.
 - `test/` holds the Vitest unit tests.
 
@@ -393,7 +405,7 @@ The audio player binary (`assets/audio-player`) is committed, so you don't need 
 npm run build:player   # Requires Xcode Command Line Tools (swiftc, lipo)
 ```
 
-[`scripts/build-audio-player.sh`](https://github.com/iyekChen/ableton-project-manager/blob/main/scripts/build-audio-player.sh) compiles a universal arm64 + x86_64 binary targeting macOS 11 and records the source hash that CI checks. CI runs lint and tests, checks that the player was rebuilt after the last change to its Swift source, then builds the player and the extension.
+[`scripts/build-audio-player.sh`](https://github.com/iyekChen/ableton-project-manager/blob/main/scripts/build-audio-player.sh) compiles a universal arm64 + x86_64 binary targeting macOS 11 and records the source hash that CI checks. CI fails if `swift/AudioPlayer.swift.sha256` doesn't match the Swift source, then checks that the player still compiles. It doesn't check the committed binary, so make sure `assets/audio-player` is part of your commit.
 
 ### How it works
 
