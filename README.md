@@ -83,7 +83,7 @@ There are two ways to listen: the built-in player plays a project's latest bounc
 
 ### Managing projects
 
-To tag several projects at once, use Assign to Projects in Manage Tags; see [Quick start](#-quick-start). Renaming asks you to close the project in Live first, then renames its folder; tags, track numbers, roles, notes, and lyrics move with it.
+- **Edit Info** changes a project's name, stage, genres, and collections. To tag several projects at once, use Assign to Projects in Manage Tags; see [Quick start](#-quick-start). Renaming asks you to close the project in Live first, then renames its folder; tags, track numbers, roles, notes, and lyrics move with it.
 - **Duplicate Project** copies the whole project folder under a new name (`Song copy` by default). The copy starts without tags, collections, notes, or lyrics.
 - **Pin** keeps a project at the top of the list. Pinned projects can be reordered with Move Up and Move Down.
 - **Move to Trash** moves the whole project folder to the Trash. Its data is kept for 30 days in case you put it back; see [Project tracking](#project-tracking).
