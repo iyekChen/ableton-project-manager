@@ -6,12 +6,12 @@ import {
   Icon,
   Keyboard,
   List,
-  LocalStorage,
   Toast,
   openExtensionPreferences,
   showToast,
 } from "@raycast/api";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocalStorage } from "@raycast/utils";
 import { getSettings } from "@/settings";
 import { getTranslations } from "@/i18n";
 import { LOG_PREFIX } from "@/core/log";
@@ -44,7 +44,8 @@ const t = getTranslations(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 
 const SEARCH_BOUNCES_SORT_STORAGE_KEY = "search-bounces-sort-option";
-const SEARCH_BOUNCES_GROUP_STORAGE_KEY = "search-bounces-group-option";
+// useLocalStorage 存的是 JSON，和旧键里的纯字符串不兼容，所以换一个键名。
+const SEARCH_BOUNCES_GROUP_STORAGE_KEY = "search-bounces-group-by";
 
 const INITIAL_ITEM_COUNT = 15;
 const FILL_DELAY_MS = 0;
@@ -66,18 +67,14 @@ export function SearchBouncesView() {
   const startupDoneRef = useRef(false);
   const [showAll, setShowAll] = useState(false);
   const [sortBy, setSortBy] = useSortOption(SEARCH_BOUNCES_SORT_STORAGE_KEY, BOUNCES_SORT_OPTIONS, "created-desc");
-  const [groupBy, setGroupByState] = useState<BounceGroup>("created");
-
-  // 读取持久化的分组选择（含 "source"）。
-  useEffect(() => {
-    void LocalStorage.getItem<string>(SEARCH_BOUNCES_GROUP_STORAGE_KEY).then((stored) => {
-      if (stored && isBounceGroup(stored)) setGroupByState(stored);
-    });
-  }, []);
-
+  // 持久化的分组选择（含 "source"）；存的值不认识时用默认。
+  const { value: storedGroupBy, setValue: setStoredGroupBy } = useLocalStorage<string>(
+    SEARCH_BOUNCES_GROUP_STORAGE_KEY,
+    "created",
+  );
+  const groupBy: BounceGroup = storedGroupBy && isBounceGroup(storedGroupBy) ? storedGroupBy : "created";
   const setGroupBy = (next: BounceGroup) => {
-    setGroupByState(next);
-    void LocalStorage.setItem(SEARCH_BOUNCES_GROUP_STORAGE_KEY, next);
+    void setStoredGroupBy(next);
   };
 
   const reload = useCallback(async () => {

@@ -141,6 +141,7 @@ export function ManageExternalBounces({
           id="aliases"
           title={t.bounceAliasesField}
           info={t.bounceAliasesInfo}
+          placeholder={t.bounceAliasesPlaceholder}
           value={aliasText}
           error={aliasError}
           onChange={(value) => {

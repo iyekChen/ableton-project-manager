@@ -79,7 +79,6 @@ export default function ExportData() {
 
   return (
     <Form
-      navigationTitle={t.exportData}
       actions={
         <ActionPanel>
           <Action.SubmitForm title={t.exportData} icon={Icon.Download} onSubmit={handleSubmit} />
