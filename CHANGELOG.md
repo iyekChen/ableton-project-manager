@@ -1,5 +1,24 @@
 # Ableton Project Manager Changelog
 
+## [Shortcuts, Navigation, and Polish] - {PR_MERGE_DATE}
+
+More keyboard shortcuts, clearer labels when you move between views, and a list that no longer flickers when it opens.
+
+### ✨ New
+
+- **Manage External Bounce** (⌘B): Add or remove external bounce sources from Browse Bounces without going back to Search Projects
+- **Show Overview / Show Detail** (⌘⇧T) and **Show Notes / Show Lyrics** (⌘⌥⇧T) in Tracklist: Toggle the detail panel and switch between notes and lyrics from the keyboard, the same as in Search Projects. Both now sit in a View section
+
+### 💎 Improvements
+
+- **Browse Bounces**: The back button now says Back to Search Projects or Back to Search Bounces, depending on where you opened it from
+- **Browse Bounces**: The search bar placeholder now says Search Project Bounces, so it's clear what it searches
+- **Group By**: Browse Bounces and Search Bounces no longer show the default grouping for a moment before switching to the one you picked
+
+### 🐞 Fixes
+
+- **README**: Fixed links that didn't work on the Store page, and made section titles match the action names
+
 ## [Search Bounces, Shared Bounces Folder, and Data Export & Import] - 2026-11-21
 
 Two new commands: Search Bounces finds any bounce across all your projects, and Export Data / Import Data back up your tags and collections. You can now also keep bounces from every project in one Shared Bounces Folder, and start with `#` in Search Projects to combine filters, like `# rnb 2025 am 120-128`.
