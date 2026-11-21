@@ -17,20 +17,17 @@ import {
   Alert,
   confirmAlert,
   openExtensionPreferences,
-  type Application,
 } from "@raycast/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import fs from "node:fs";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
+import { usePlaybackToast } from "@/core/ui/projects/use-playback-toast";
+import { useCurrentSets } from "@/core/ui/projects/use-current-sets";
+import { ONBOARDING_ASKED_KEY, ONBOARDING_UNMATCHED_KEY, useOnboarding } from "@/core/ui/projects/use-onboarding";
 import { refreshDocFile, useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { getSettings } from "@/settings";
-import {
-  deleteProjectMetadata,
-  getAllProjectMetadata,
-  movePinnedProject,
-  setProjectPinned,
-} from "@/core/metadata/project-metadata";
+import { deleteProjectMetadata, movePinnedProject, setProjectPinned } from "@/core/metadata/project-metadata";
 import { removeProjectFromAllOrders } from "@/core/metadata/collection-order";
 import { removeProjectFromAllRoles } from "@/core/metadata/collection-roles";
 import { strings } from "@/strings";
@@ -49,8 +46,6 @@ import { GroupBySubmenu } from "@/core/ui/actions/group-by-submenu";
 import { useGroupOption } from "@/core/ui/hooks/use-group-option";
 import { groupItems } from "@/core/ui/shared/grouping";
 import { Bounces, UnmatchedBounces } from "@/core/ui/bounces";
-import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "@/core/metadata/taxonomies";
-import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import { displayDoc, missingDocFolder } from "@/core/docs/docs";
 import { docPlaceholder } from "@/core/docs/doc-actions";
 import { archiveDeletedProject, assertDeletionWritable } from "@/core/fs/deleted-projects";
@@ -68,21 +63,18 @@ import {
   writeProjectListCache,
 } from "@/core/projects/list-cache";
 import { applyProjectMetadata, reloadProjectData } from "@/core/ui/shared/reload-projects";
-import { findLatestProjectBounce, resolveSharedBouncesFolder, unmatchedSharedBounces } from "@/core/projects/bounces";
-import { daw, type DawSet, type ProjectFileMetadata } from "@/daws";
-import {
-  cachedSetMetadata,
-  loadPersistentProjectFileCache,
-  parseSetMetadata,
-} from "@/core/projects/project-file-cache";
+import { findLatestProjectBounce, resolveSharedBouncesFolder } from "@/core/projects/bounces";
+import { daw } from "@/daws";
 import { SetsView, projectFilesInfo } from "@/daws/ui";
 import { labels } from "@/daws/labels";
 import { projectIcon } from "@/daws/icons";
-import { openWithDaw, resolveDawApp } from "@/core/daw-app";
+import { openWithDaw } from "@/core/daw-app";
+import { useDawApp } from "@/core/ui/hooks/use-daw-app";
+import { useTaxonomies } from "@/core/ui/projects/use-taxonomies";
 import { LOG_PREFIX } from "@/core/log";
 import { optionKeywords } from "@/core/ui/shared/search-keywords";
 import { findCurrentSet } from "@/core/projects/current-set";
-import { formatDate, formatTime } from "@/core/ui/shared/format";
+import { formatDate } from "@/core/ui/shared/format";
 import { itemLimit, limitGroups } from "@/core/ui/shared/progressive-list";
 import { useProgressiveList } from "@/core/ui/hooks/use-progressive-list";
 import {
@@ -101,18 +93,9 @@ const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
 const GROUP_STORAGE_KEY = "project-group-option";
 const VIEW_MODE_STORAGE_KEY = "view-mode:projects";
-// 首次使用引导：问过共享文件夹没有；上次弹「未匹配」提示时用的共享文件夹路径。
-const ONBOARDING_ASKED_KEY = "onboarding:shared-bounces-asked";
-const ONBOARDING_UNMATCHED_KEY = "onboarding:unmatched-shown-for";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:projects";
 const PLAYER_PATH = ensureAudioPlayerBinary();
-// 同时解析的 Set 数，和 View Sets 一样。
-const METADATA_CONCURRENCY = 3;
-// 要读的 Set 少于这个数时不弹进度提示（如在 DAW 里刚存了一个 Set），免得一闪而过。
-const SET_PROGRESS_MIN = 5;
 
-// 每个项目的 current Set 和它的元数据；还没读完时 metadata 为 null。
-type CurrentSetInfo = { set: DawSet; metadata: ProjectFileMetadata | null };
 // 正在由扩展执行 Move to Trash 的项目：已归档，目录监听触发的重载不要再当成 Finder 删除处理。
 const trashingIds = new Set<string>();
 
@@ -127,9 +110,7 @@ const PROJECT_SORT_OPTIONS: SortOption[] = [
 
 export function ProjectsView() {
   const { push } = useNavigation();
-  const [stageOptions, setStageOptions] = useState<TaxonomyOption[]>([]);
-  const [genreOptions, setGenreOptions] = useState<TaxonomyOption[]>([]);
-  const [collectionOptions, setCollectionOptions] = useState<TaxonomyOption[]>([]);
+  const { stageOptions, genreOptions, collectionOptions, reloadCollections } = useTaxonomies();
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
@@ -152,11 +133,7 @@ export function ProjectsView() {
     detailDocKey: DETAIL_DOC_STORAGE_KEY,
     defaultMode: "detail",
   });
-  const [dawApp, setDawApp] = useState<Application | null>(null);
-  const [currentSets, setCurrentSets] = useState<Record<string, CurrentSetInfo>>({});
-  const [readingSets, setReadingSets] = useState(false);
-  // 每次读取编号：新一轮开始后，旧一轮的结果不再写入。
-  const currentSetsRunRef = useRef(0);
+  const dawApp = useDawApp();
   const baseProjectsRef = useRef<Project[]>([]);
   // 每次渲染都更新：load() 的闭包里拿不到最新的 projects state。
   const projectsRef = useRef<Project[]>(projects);
@@ -168,8 +145,6 @@ export function ProjectsView() {
   );
   // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
   const leftoverToastShownRef = useRef(false);
-  // 首次使用引导每次打开最多弹一个。
-  const onboardingShownRef = useRef(false);
 
   // 外部编辑器改了笔记 / 歌词：只重读那一份，详情面板马上跟着变。
   useDocWatcher(PROJECTS_ROOT, (file) => setProjects((prev) => refreshDocFile(prev, file)));
@@ -179,21 +154,13 @@ export function ProjectsView() {
       playerPath: PLAYER_PATH,
     });
 
-  // 找到 DAW 应用，用于新建项目（启动它）和图标：偏好设置里选了版本就用那个版本。
-  useEffect(() => {
-    void resolveDawApp().then(setDawApp);
-  }, []);
-
-  // 常驻 Toast：只在播放时显示，title=曲名，message=进度；暂停或停止时隐藏。
-  const toastRef = useRef<Toast | null>(null);
-  const toastBusyRef = useRef(false);
-  const toastActiveRef = useRef(false);
-
-  useEffect(() => {
-    void stageTaxonomy.get().then(setStageOptions);
-    void genreTaxonomy.get().then(setGenreOptions);
-    void collectionTaxonomy.get().then(setCollectionOptions);
-  }, []);
+  const { isPlaybackToastActive } = usePlaybackToast(projects, {
+    playbackStatus,
+    playingId,
+    positionSeconds,
+    durationSeconds,
+  });
+  const { currentSets, readingSets, refreshCurrentSets } = useCurrentSets({ isPlaybackToastActive });
 
   // 静默启动刷新：内容没变就保留原引用，不触发重渲染，也不重写缓存。
   const commitProjects = useCallback((updated: Project[]) => {
@@ -206,56 +173,6 @@ export function ProjectsView() {
     const updated = await applyProjectMetadata(baseProjectsRef.current);
     commitProjects(updated);
   }, [commitProjects]);
-
-  // 读出每个项目 current Set 的元数据：有缓存的立刻显示，其余在后台解析，读完一个显示一个。
-  const refreshCurrentSets = useCallback(async (list: Project[]) => {
-    const run = ++currentSetsRunRef.current;
-    await loadPersistentProjectFileCache();
-    if (run !== currentSetsRunRef.current) return;
-
-    const initial: Record<string, CurrentSetInfo> = {};
-    const missing: [string, DawSet][] = [];
-    for (const project of list) {
-      const set = findCurrentSet(daw.listSets(project));
-      if (!set) continue;
-      const cached = cachedSetMetadata(set);
-      initial[project.id] = { set, metadata: cached };
-      if (!cached) missing.push([project.id, set]);
-    }
-    setCurrentSets(initial);
-    setReadingSets(missing.length > 0);
-    if (missing.length === 0) return;
-
-    // 正在播放时不弹，免得盖住播放提示。
-    const toast =
-      missing.length >= SET_PROGRESS_MIN && !toastActiveRef.current
-        ? await showToast({ style: Toast.Style.Animated, title: labels.readingSets, message: `0 / ${missing.length}` })
-        : null;
-
-    let done = 0;
-    let nextIndex = 0;
-    async function worker() {
-      while (run === currentSetsRunRef.current) {
-        const index = nextIndex++;
-        if (index >= missing.length) return;
-        const [id, set] = missing[index];
-        try {
-          const metadata = await parseSetMetadata(set);
-          if (run !== currentSetsRunRef.current) return;
-          // 期间项目的 current Set 换了（又存了一个）就不写，等下一轮。
-          setCurrentSets((prev) => (prev[id]?.set.path === set.path ? { ...prev, [id]: { set, metadata } } : prev));
-        } catch (error) {
-          console.error(`${LOG_PREFIX} Failed to load set metadata: ${set.path}`, error);
-        }
-        done++;
-        if (toast) toast.message = `${done} / ${missing.length}`;
-      }
-    }
-    await Promise.all(Array.from({ length: Math.min(METADATA_CONCURRENCY, missing.length) }, () => worker()));
-
-    void toast?.hide();
-    if (run === currentSetsRunRef.current) setReadingSets(false);
-  }, []);
 
   const runReload = useCallback(async (): Promise<string[]> => {
     try {
@@ -310,42 +227,7 @@ export function ProjectsView() {
     return promise;
   }, [runReload]);
 
-  // 首次使用引导：没设共享文件夹时问一次；换了共享文件夹时，有未匹配的 bounce 就提示一次。
-  const runOnboarding = useCallback(async () => {
-    if (onboardingShownRef.current) return;
-    const folder = resolveSharedBouncesFolder();
-    if (folder === null) {
-      if ((await LocalStorage.getItem(ONBOARDING_ASKED_KEY)) === "true") return;
-      onboardingShownRef.current = true;
-      await confirmAlert({
-        title: strings.onboardingSharedTitle,
-        message: strings.onboardingSharedMessage,
-        primaryAction: { title: strings.openPreferences, onAction: () => void openExtensionPreferences() },
-        dismissAction: { title: strings.skip },
-      });
-      await LocalStorage.setItem(ONBOARDING_ASKED_KEY, "true");
-      return;
-    }
-
-    if ((await LocalStorage.getItem(ONBOARDING_UNMATCHED_KEY)) === folder) return;
-    // 先记下这个文件夹：没有未匹配的也算判断过，换文件夹前不再重复检查。
-    await LocalStorage.setItem(ONBOARDING_UNMATCHED_KEY, folder);
-    const metadataStore = await getAllProjectMetadata();
-    const claimed = Object.values(metadataStore).flatMap((metadata) => metadata.externalBounceFiles);
-    const count = unmatchedSharedBounces(claimed).length;
-    if (count === 0) return;
-    onboardingShownRef.current = true;
-    await confirmAlert({
-      title: strings.onboardingUnmatchedTitle.replace("{count}", String(count)),
-      message: strings.onboardingUnmatchedMessage,
-      primaryAction: {
-        title: strings.review,
-        onAction: () =>
-          push(<UnmatchedBounces projects={projectsRef.current} onChanged={() => void reloadProjects()} />),
-      },
-      dismissAction: { title: strings.skip },
-    });
-  }, [push, reloadProjects]);
+  const { runOnboarding } = useOnboarding({ getProjects: () => projectsRef.current, reloadProjects });
 
   // 启动只加载一遍：依赖里的 push 每次渲染都是新函数，会让这个 effect 重跑。
   const startupDoneRef = useRef(false);
@@ -400,38 +282,6 @@ export function ProjectsView() {
       watcher?.close();
     };
   }, [reloadProjects]);
-
-  // 根据播放状态维护常驻 Toast。
-  useEffect(() => {
-    const playingProject = projects.find((p) => p.id === playingId);
-    const name = playingProject?.title ?? "";
-    const isActive = playingId !== null && (playbackStatus === "Starting" || playbackStatus === "Playing");
-    toastActiveRef.current = isActive;
-
-    if (isActive) {
-      // 标题放歌名（主文字色），说明放进度（次要文字色）；动作名已经写了 Play Latest Bounce，这里不重复。
-      // 还不知道歌名时（如刚从后台恢复、列表未载入）退回 "Playing Latest Bounce"。
-      const title = name || strings.playingLatestBounce;
-      const message = durationSeconds > 0 ? `${formatTime(positionSeconds)} / ${formatTime(durationSeconds)}` : "";
-      if (toastRef.current) {
-        toastRef.current.title = title;
-        toastRef.current.message = message;
-      } else if (!toastBusyRef.current) {
-        toastBusyRef.current = true;
-        void showToast({ style: Toast.Style.Animated, title, message }).then((toast) => {
-          toastBusyRef.current = false;
-          if (!toastActiveRef.current) {
-            void toast.hide();
-            return;
-          }
-          toastRef.current = toast;
-        });
-      }
-    } else if (toastRef.current) {
-      void toastRef.current.hide();
-      toastRef.current = null;
-    }
-  }, [playbackStatus, playingId, projects, positionSeconds, durationSeconds]);
 
   const playProjectBounce = useCallback(
     (project: Project) => {
@@ -697,7 +547,7 @@ export function ProjectsView() {
                 onPop={() => {
                   // 在合集里改过的名字、标签、成员，以及新建/改名的合集，返回时一并刷新。
                   void reloadProjects();
-                  void collectionTaxonomy.get().then(setCollectionOptions);
+                  reloadCollections();
                 }}
               />
               <Action
