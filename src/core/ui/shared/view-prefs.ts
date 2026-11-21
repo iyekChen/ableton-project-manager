@@ -4,6 +4,11 @@ import { Cache } from "@raycast/api";
 // Cache 超出容量时可能被 Raycast 清掉，此时回落默认值，不会出错。
 export const viewPrefs = new Cache();
 
+/** 清掉所有视图偏好（开发用）。 */
+export function clearViewPrefs(): void {
+  viewPrefs.clear();
+}
+
 /** 读一个记住的选项；没存过、或值已不合法（如选项被移除）时返回 fallback。 */
 export function readCachedChoice<T extends string>(
   key: string,

@@ -94,6 +94,11 @@ export function readBounceListCache(projectsRoot: string): BounceListItem[] | un
   return parseBounceList(cache.get(cacheKey(projectsRoot)));
 }
 
+/** 清掉整个 bounce 列表缓存（开发用）。 */
+export function clearBounceListCache(): void {
+  cache.clear();
+}
+
 /** 写缓存失败时静默忽略：缓存只是加速，不能影响列表显示。 */
 export function writeBounceListCache(projectsRoot: string, items: BounceListItem[]): void {
   try {

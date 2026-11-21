@@ -62,6 +62,11 @@ export function readProjectListCache(projectsRoot: string): Project[] | undefine
   return parseProjectList(cache.get(cacheKey(projectsRoot)));
 }
 
+/** 清掉整个列表缓存（开发用）。 */
+export function clearProjectListCache(): void {
+  cache.clear();
+}
+
 /** 写缓存失败时静默忽略：缓存只是加速，不能影响列表显示。 */
 export function writeProjectListCache(projectsRoot: string, projects: Project[]): void {
   try {

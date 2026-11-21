@@ -7,7 +7,6 @@ import {
   Icon,
   Keyboard,
   List,
-  LocalStorage,
   environment,
   open,
   showToast,
@@ -23,7 +22,8 @@ import fs from "node:fs";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
 import { usePlaybackToast } from "@/core/ui/projects/use-playback-toast";
 import { useCurrentSets } from "@/core/ui/projects/use-current-sets";
-import { ONBOARDING_ASKED_KEY, ONBOARDING_UNMATCHED_KEY, useOnboarding } from "@/core/ui/projects/use-onboarding";
+import { useOnboarding } from "@/core/ui/projects/use-onboarding";
+import { resetToFirstRun } from "@/core/ui/projects/reset-to-first-run";
 import { refreshDocFile, useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { getSettings } from "@/settings";
@@ -684,12 +684,11 @@ export function ProjectsView() {
             {environment.isDevelopment && (
               <ActionPanel.Section>
                 <Action
-                  title="Reset Onboarding (Dev)"
+                  title="Reset to First Run (Dev)"
                   icon={Icon.ArrowCounterClockwise}
                   onAction={async () => {
-                    await LocalStorage.removeItem(ONBOARDING_ASKED_KEY);
-                    await LocalStorage.removeItem(ONBOARDING_UNMATCHED_KEY);
-                    await showToast({ style: Toast.Style.Success, title: "Onboarding Reset" });
+                    await resetToFirstRun();
+                    await reloadProjects();
                   }}
                 />
               </ActionPanel.Section>

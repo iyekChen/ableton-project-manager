@@ -82,6 +82,17 @@ function schedulePersistAudioAnalysisCache() {
   }, 200);
 }
 
+/** 清掉音频分析缓存（开发用）：内存、待写入的持久化、LocalStorage 里的都清掉。 */
+export async function clearAudioAnalysisCache(): Promise<void> {
+  audioAnalysisCache.clear();
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = undefined;
+  }
+  persistentCacheLoaded = null;
+  await LocalStorage.removeItem(AUDIO_ANALYSIS_STORAGE_KEY);
+}
+
 export function cacheAudioAnalysis(filePath: string, signature: string, analysis: AudioAnalysis) {
   audioAnalysisCache.delete(filePath);
   audioAnalysisCache.set(filePath, { signature, analysis });

@@ -14,6 +14,11 @@ import { LOG_PREFIX } from "@/core/log";
 
 const bounceCountCache = new Cache({ namespace: "bounce-count-cache" });
 
+/** 清掉整个 bounce 计数缓存（开发用）。 */
+export function clearBounceCountCache(): void {
+  bounceCountCache.clear();
+}
+
 // 用 Bounces 文件夹的 mtime 做 key 缓存计数：只有增删 Bounce 才会改 mtime，
 // 一失效即重新扫描，结果始终正确，重复打开时省去再次 readdir。
 function cachedBouncesCount(folderPath: string): number {

@@ -39,6 +39,18 @@ function evictOldest() {
   }
 }
 
+/** 清掉 Set 元数据缓存（开发用）：内存、待写入的持久化、LocalStorage 里的都清掉。 */
+export async function clearPersistentProjectFileCache(): Promise<void> {
+  cache.clear();
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = undefined;
+  }
+  // 复位后下次读到的就是空缓存，不会把刚删掉的那份又读回来。
+  persistentCacheLoaded = null;
+  await LocalStorage.removeItem(STORAGE_KEY);
+}
+
 export async function loadPersistentProjectFileCache() {
   if (!persistentCacheLoaded) {
     persistentCacheLoaded = (async () => {
