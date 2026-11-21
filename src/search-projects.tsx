@@ -784,6 +784,7 @@ export default function Command() {
                       projectPath={item.folderPath}
                       externalFolders={item.externalBounceFolders}
                       externalFiles={item.externalBounceFiles}
+                      backTitle={t.backToProjects}
                       onChanged={reloadProjects}
                     />,
                     () => void reloadProjects(),

@@ -258,6 +258,7 @@ export function SearchBouncesView() {
                               projectPath={b.owners[0].folderPath}
                               externalFolders={b.owners[0].externalBounceFolders}
                               externalFiles={b.owners[0].externalBounceFiles}
+                              backTitle={t.backToSearchBounces}
                               onChanged={() => void reload()}
                             />
                           }

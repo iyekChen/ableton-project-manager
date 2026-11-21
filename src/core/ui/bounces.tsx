@@ -123,6 +123,8 @@ export function Bounces(props: {
   projectPath: string;
   externalFolders: string[];
   externalFiles: string[];
+  // 返回按钮的文字由入口决定：同一个视图能从 Search Projects 和 Search Bounces 进来。
+  backTitle: string;
   onChanged?: () => void;
 }) {
   const { pop } = useNavigation();
@@ -307,7 +309,7 @@ export function Bounces(props: {
     <List
       isLoading={isLoading}
       navigationTitle={`${t.browseBounces} — ${props.projectName}`}
-      searchBarPlaceholder={t.searchBounces}
+      searchBarPlaceholder={t.searchProjectBounces}
     >
       {groups.length === 0 ? (
         <List.EmptyView icon={Icon.Waveform} title={t.noBounces} />
@@ -399,7 +401,7 @@ export function Bounces(props: {
                     </ActionPanel.Section>
                     <ActionPanel.Section title={t.sectionNavigate}>
                       <Action
-                        title={t.backToProjects}
+                        title={props.backTitle}
                         icon={Icon.Compass}
                         shortcut={{ modifiers: ["opt"], key: "return" }}
                         onAction={pop}

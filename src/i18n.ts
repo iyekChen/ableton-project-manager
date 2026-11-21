@@ -7,6 +7,7 @@ type TranslationKeys = {
   advancedSearchHint: string;
   openReadme: string;
   searchBounces: string;
+  searchProjectBounces: string;
   searchCollections: string;
   searchTracks: string;
   searchStages: string;
@@ -31,6 +32,7 @@ type TranslationKeys = {
   openInDefaultApp: string;
   browseCollections: string;
   backToProjects: string;
+  backToSearchBounces: string;
   open: string;
   tracklist: string;
   unsorted: string;
@@ -319,6 +321,7 @@ const translations: Record<Language, TranslationKeys> = {
       "Name, stage, genre, collection, created date, key, BPM and time sig.\ne.g. # rnb 2025 Am 120-128",
     openReadme: "Open Search Help",
     searchBounces: "Search Bounces",
+    searchProjectBounces: "Search Project Bounces",
     searchCollections: "Search Collections",
     searchTracks: "Search Tracks",
     searchStages: "Search Stages",
@@ -343,6 +346,7 @@ const translations: Record<Language, TranslationKeys> = {
     openInDefaultApp: "Open in Default App",
     browseCollections: "Browse Collections",
     backToProjects: "Back to Search Projects",
+    backToSearchBounces: "Back to Search Bounces",
     open: "Open",
     tracklist: "Tracklist",
     unsorted: "Unsorted",
