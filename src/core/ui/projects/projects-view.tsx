@@ -1,14 +1,11 @@
 import {
   ActionPanel,
   Action,
-  Clipboard,
   closeMainWindow,
-  Color,
   Icon,
   Keyboard,
   List,
   environment,
-  open,
   showToast,
   Toast,
   trash,
@@ -25,6 +22,7 @@ import { useOnboarding } from "@/core/ui/projects/use-onboarding";
 import { useProjectList } from "@/core/ui/projects/use-project-list";
 import { resetToFirstRun } from "@/core/ui/projects/reset-to-first-run";
 import { useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
+import { useMissingDocFolders } from "@/core/ui/hooks/use-missing-doc-folders";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { getSettings } from "@/settings";
 import { deleteProjectMetadata, movePinnedProject, setProjectPinned } from "@/core/metadata/project-metadata";
@@ -33,9 +31,7 @@ import { removeProjectFromAllRoles } from "@/core/metadata/collection-roles";
 import { strings } from "@/strings";
 import { PlayToggleAction } from "@/core/ui/actions/play-toggle";
 import { PlaybackControlsSection } from "@/core/ui/actions/playback-controls";
-import { DocActions } from "@/core/ui/actions/doc-actions";
 import { CopyProjectSection } from "@/core/ui/actions/copy-project-section";
-import { OpenProjectInFinderAction } from "@/core/ui/actions/open-project-in-finder";
 import { ViewToggleSection } from "@/core/ui/actions/view-toggle";
 import { SortBySubmenu } from "@/core/ui/actions/sort-by-submenu";
 import { useSortOption } from "@/core/ui/hooks/use-sort-option";
@@ -45,28 +41,30 @@ import type { SortOption } from "@/core/ui/shared/sorting";
 import { GroupBySubmenu } from "@/core/ui/actions/group-by-submenu";
 import { useGroupOption } from "@/core/ui/hooks/use-group-option";
 import { groupItems } from "@/core/ui/shared/grouping";
-import { Bounces, UnmatchedBounces } from "@/core/ui/bounces";
-import { displayDoc, missingDocFolder } from "@/core/docs/docs";
-import { docPlaceholder } from "@/core/docs/doc-actions";
+import { Bounces } from "@/core/ui/bounces";
 import { archiveDeletedProject, assertDeletionWritable } from "@/core/fs/deleted-projects";
 import { showFailure } from "@/core/ui/shared/toast";
+import { copyLatestBounce, playProjectBounce } from "@/core/ui/shared/bounce-actions";
 import { CollectionList } from "@/core/ui/collections";
 import { CleanUpRemovedProjects } from "@/core/ui/cleanup";
-import { EditInfo } from "@/core/ui/components/edit-info";
-import { DuplicateProject } from "@/core/ui/projects/duplicate-project";
-import { ManageExternalBounces } from "@/core/ui/components/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
-import { findLatestProjectBounce, resolveSharedBouncesFolder } from "@/core/projects/bounces";
 import { daw } from "@/daws";
 import { SetsView, projectFilesInfo } from "@/daws/ui";
 import { labels } from "@/daws/labels";
 import { projectIcon } from "@/daws/icons";
+import { ProjectDetail } from "@/core/ui/projects/project-detail";
+import { projectAccessories } from "@/core/ui/projects/project-accessories";
+import {
+  ProjectDangerSection,
+  ProjectDetailsSection,
+  ProjectFileSection,
+  ProjectPinSection,
+} from "@/core/ui/projects/project-actions";
 import { openWithDaw } from "@/core/daw-app";
 import { useDawApp } from "@/core/ui/hooks/use-daw-app";
 import { useTaxonomies } from "@/core/ui/projects/use-taxonomies";
 import { optionKeywords } from "@/core/ui/shared/search-keywords";
 import { findCurrentSet } from "@/core/projects/current-set";
-import { formatDate } from "@/core/ui/shared/format";
 import { itemLimit, limitGroups } from "@/core/ui/shared/progressive-list";
 import { useProgressiveList } from "@/core/ui/hooks/use-progressive-list";
 import {
@@ -175,35 +173,6 @@ export function ProjectsView() {
   // 外部编辑器改了笔记 / 歌词：只重读那一份，详情面板马上跟着变。
   useDocWatcher(PROJECTS_ROOT, refreshDoc);
 
-  const playProjectBounce = useCallback(
-    (project: Project) => {
-      const latestBouncePath = findLatestProjectBounce(project);
-      if (!latestBouncePath) {
-        void showToast({ style: Toast.Style.Failure, title: strings.noBounces });
-        return;
-      }
-      play(project.id, latestBouncePath, {
-        onError: (message) => {
-          void showFailure(strings.playbackFailed, message);
-        },
-      });
-    },
-    [play],
-  );
-  const copyLatestBounce = useCallback(async (project: Project) => {
-    const latestBouncePath = findLatestProjectBounce(project);
-    if (!latestBouncePath) {
-      await showToast({ style: Toast.Style.Failure, title: strings.noBounces });
-      return;
-    }
-    await Clipboard.copy({ file: latestBouncePath });
-    await showToast({
-      style: Toast.Style.Success,
-      title: strings.bounceCopied,
-      message: latestBouncePath.split("/").pop() ?? "",
-    });
-  }, []);
-
   // 和打开 Set 的其他入口一样：打开后关掉 Raycast 窗口。
   const openCurrentSet = useCallback(async (project: Project) => {
     const sets = daw.listSets(project);
@@ -282,29 +251,12 @@ export function ProjectsView() {
     name: project.title,
   }));
 
-  // 每次渲染只查一次：笔记 / 歌词文件夹是否存在。占位文字按这个结果生成，不再逐项 existsSync。
-  const missingDocFolders: Record<"notes" | "lyrics", string | null> = {
-    notes: missingDocFolder("notes"),
-    lyrics: missingDocFolder("lyrics"),
-  };
+  // 笔记 / 歌词文件夹是否失效：只在打开时查一次，渲染路径不碰磁盘。
+  const missingDocFolders = useMissingDocFolders();
 
   const renderProject = (item: Project) => {
     const stage = stageOptions.find((option) => option.id === item.stageId);
-    const genreNames = tagNames(item.genreIds, genreOptions);
-    const collectionNames = tagNames(item.collectionIds, collectionOptions);
-    const current = currentSets[item.id];
-    const currentBpm = current?.metadata?.bpm ?? null;
     const files = projectFiles.get(item.id) ?? null;
-    const filesAccessories = files
-      ? [
-          { text: String(files.count), tooltip: `${files.count} ${files.labels.projectFiles}` },
-          { icon: "package.png", tooltip: `${files.count} ${files.labels.projectFiles}` },
-        ]
-      : [];
-    const stagePill = stage ? [{ tag: { value: stage.name, color: stage.color ?? Color.SecondaryText } }] : [];
-    const detailBody = !showDetail ? "" : detailDoc === "notes" ? item.notes : item.lyrics;
-    const detailPlaceholder = docPlaceholder(detailDoc, item.title, missingDocFolders[detailDoc]);
-
     const isThisPlaying = playingId === item.id;
 
     return (
@@ -313,78 +265,18 @@ export function ProjectsView() {
         icon={projectIcon(item.kind)}
         title={item.title}
         keywords={[...searchTerms(item), ...keyWordsOf(item)]}
-        accessories={
-          showDetail
-            ? []
-            : [
-                ...stagePill,
-                ...(files
-                  ? filesAccessories
-                  : [
-                      { text: String(item.setsCount), tooltip: `${item.setsCount} ${labels.sets}` },
-                      { icon: Icon.Document, tooltip: `${item.setsCount} ${labels.sets}` },
-                    ]),
-                { text: String(item.bouncesCount), tooltip: `${item.bouncesCount} Bounces` },
-                { icon: Icon.Waveform, tooltip: `${item.bouncesCount} Bounces` },
-              ]
-        }
+        accessories={showDetail ? [] : projectAccessories({ project: item, stage, files, setsLabel: labels.sets })}
         detail={
           showDetail ? (
-            <List.Item.Detail
-              markdown={detailBody.trim() ? displayDoc(detailBody) : detailPlaceholder}
-              metadata={
-                <List.Item.Detail.Metadata>
-                  {stage ? (
-                    <List.Item.Detail.Metadata.TagList title="Stage">
-                      <List.Item.Detail.Metadata.TagList.Item
-                        text={stage.name}
-                        color={stage.color ?? Color.SecondaryText}
-                      />
-                    </List.Item.Detail.Metadata.TagList>
-                  ) : (
-                    <List.Item.Detail.Metadata.Label title="Stage" text="" />
-                  )}
-                  {genreNames.length > 0 ? (
-                    <List.Item.Detail.Metadata.TagList title="Genre">
-                      {genreNames.map((genreName) => (
-                        <List.Item.Detail.Metadata.TagList.Item key={genreName} text={genreName} />
-                      ))}
-                    </List.Item.Detail.Metadata.TagList>
-                  ) : (
-                    <List.Item.Detail.Metadata.Label title="Genre" text="" />
-                  )}
-                  {collectionNames.length > 0 ? (
-                    <List.Item.Detail.Metadata.TagList title="Collection">
-                      {collectionNames.map((collectionName) => (
-                        <List.Item.Detail.Metadata.TagList.Item key={collectionName} text={collectionName} />
-                      ))}
-                    </List.Item.Detail.Metadata.TagList>
-                  ) : (
-                    <List.Item.Detail.Metadata.Label title="Collection" text="" />
-                  )}
-                  <List.Item.Detail.Metadata.Separator />
-                  <List.Item.Detail.Metadata.Label title="Bounces" text={String(item.bouncesCount)} />
-                  {files ? (
-                    <List.Item.Detail.Metadata.Label title={files.labels.projectFiles} text={String(files.count)} />
-                  ) : (
-                    <List.Item.Detail.Metadata.Label title={labels.sets} text={String(item.setsCount)} />
-                  )}
-                  <List.Item.Detail.Metadata.Separator />
-                  {files ? (
-                    <List.Item.Detail.Metadata.Label
-                      title={files.labels.latestProjectFile}
-                      text={current ? files.latestName(current.set.path) : ""}
-                    />
-                  ) : (
-                    <List.Item.Detail.Metadata.Label title={labels.currentSet} text={current?.set.name ?? ""} />
-                  )}
-                  <List.Item.Detail.Metadata.Label title="Key" text={current?.metadata?.key ?? ""} />
-                  <List.Item.Detail.Metadata.Label title="BPM" text={currentBpm === null ? "" : String(currentBpm)} />
-                  <List.Item.Detail.Metadata.Separator />
-                  <List.Item.Detail.Metadata.Label title="Created" text={formatDate(item.createdAt)} />
-                  <List.Item.Detail.Metadata.Label title="Modified" text={formatDate(item.modifiedAt)} />
-                </List.Item.Detail.Metadata>
-              }
+            <ProjectDetail
+              project={item}
+              detailDoc={detailDoc}
+              missingDocFolder={missingDocFolders[detailDoc]}
+              stage={stage}
+              genreNames={tagNames(item.genreIds, genreOptions)}
+              collectionNames={tagNames(item.collectionIds, collectionOptions)}
+              files={files}
+              current={currentSets[item.id]}
             />
           ) : undefined
         }
@@ -401,7 +293,7 @@ export function ProjectsView() {
                 isThisPlaying={isThisPlaying}
                 playbackStatus={playbackStatus}
                 shortcut={{ modifiers: ["cmd"], key: "return" }}
-                onPlay={() => playProjectBounce(item)}
+                onPlay={() => playProjectBounce(item, play)}
                 onPause={pause}
                 onResume={resume}
               />
@@ -457,95 +349,19 @@ export function ProjectsView() {
               onRestart={restart}
               onResume={resume}
             />
-            <ActionPanel.Section title={strings.sectionDetails}>
-              <Action.Push
-                title={strings.editInfo}
-                icon={Icon.Pencil}
-                shortcut={Keyboard.Shortcut.Common.Edit}
-                target={<EditInfo project={item} onSaved={reloadProjects} />}
-              />
-              <DocActions project={item} onNoteSaved={reloadProjects} onLyricsSaved={reloadProjects} />
-            </ActionPanel.Section>
-            <ActionPanel.Section title={strings.sectionFile}>
-              <OpenProjectInFinderAction kind={item.kind} folderPath={item.folderPath} />
-              <Action
-                title={labels.newProjectFile}
-                icon={Icon.NewDocument}
-                shortcut={Keyboard.Shortcut.Common.New}
-                onAction={async () => {
-                  if (!dawApp) {
-                    await showToast({ style: Toast.Style.Failure, title: labels.newProjectFileFailed });
-                    return;
-                  }
-                  try {
-                    await open(dawApp.path);
-                  } catch (error) {
-                    await showFailure(labels.newProjectFileFailed, error);
-                  }
-                }}
-              />
-              {daw.extraNewAction && (
-                <Action.Push
-                  title={daw.extraNewAction.title}
-                  icon={daw.extraNewAction.icon}
-                  shortcut={daw.extraNewAction.shortcut}
-                  target={<daw.extraNewAction.component />}
-                />
-              )}
-              <Action.Push
-                title={strings.duplicateProject}
-                icon={Icon.Duplicate}
-                shortcut={Keyboard.Shortcut.Common.Duplicate}
-                target={<DuplicateProject project={item} onDuplicated={reloadProjects} />}
-              />
-              <Action.Push
-                title={strings.manageExternalBounce}
-                icon={Icon.Link}
-                shortcut={{ modifiers: ["cmd"], key: "b" }}
-                target={
-                  <ManageExternalBounces
-                    projectId={item.id}
-                    projectTitle={item.title}
-                    externalFolders={item.externalBounceFolders}
-                    externalFiles={item.externalBounceFiles}
-                    onSaved={reloadProjects}
-                  />
-                }
-              />
-              {resolveSharedBouncesFolder() !== null && (
-                <Action.Push
-                  title={strings.unmatchedBounces}
-                  icon={Icon.QuestionMarkCircle}
-                  shortcut={{ modifiers: ["cmd", "shift"], key: "b" }}
-                  target={<UnmatchedBounces projects={projects} onChanged={() => void reloadProjects()} />}
-                />
-              )}
-            </ActionPanel.Section>
+            <ProjectDetailsSection project={item} onSaved={reloadProjects} />
+            <ProjectFileSection
+              project={item}
+              dawApp={dawApp}
+              projects={projects}
+              onChanged={() => void reloadProjects()}
+            />
             <CopyProjectSection project={item} onCopyLatestBounce={() => copyLatestBounce(item)} />
-            <ActionPanel.Section title={strings.sectionPin}>
-              <Action
-                title={item.pinned ? strings.unpinProject : strings.pinProject}
-                icon={item.pinned ? Icon.TackDisabled : Icon.Tack}
-                shortcut={Keyboard.Shortcut.Common.Pin}
-                onAction={() => handlePinToggle(item)}
-              />
-              {item.pinned && (
-                <>
-                  <Action
-                    title={strings.moveUp}
-                    icon={Icon.ArrowUp}
-                    shortcut={Keyboard.Shortcut.Common.MoveUp}
-                    onAction={() => handleMovePinnedProject(item, "up")}
-                  />
-                  <Action
-                    title={strings.moveDown}
-                    icon={Icon.ArrowDown}
-                    shortcut={Keyboard.Shortcut.Common.MoveDown}
-                    onAction={() => handleMovePinnedProject(item, "down")}
-                  />
-                </>
-              )}
-            </ActionPanel.Section>
+            <ProjectPinSection
+              project={item}
+              onPinToggle={() => handlePinToggle(item)}
+              onMovePinned={(direction) => handleMovePinnedProject(item, direction)}
+            />
             <ViewToggleSection
               showDetail={showDetail}
               detailDoc={detailDoc}
@@ -556,23 +372,11 @@ export function ProjectsView() {
               <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
             </ActionPanel.Section>
-            <ActionPanel.Section title={strings.sectionDangerZone}>
-              {orphanIds.length > 0 && (
-                <Action.Push
-                  title={strings.cleanUpLeftovers}
-                  icon={Icon.Eraser}
-                  target={<CleanUpRemovedProjects />}
-                  onPop={() => void reloadProjects()}
-                />
-              )}
-              <Action
-                title={strings.moveToTrash}
-                icon={Icon.Trash}
-                style={Action.Style.Destructive}
-                shortcut={Keyboard.Shortcut.Common.Remove}
-                onAction={() => handleTrashProject(item)}
-              />
-            </ActionPanel.Section>
+            <ProjectDangerSection
+              hasOrphans={orphanIds.length > 0}
+              onChanged={() => void reloadProjects()}
+              onTrash={() => handleTrashProject(item)}
+            />
             {environment.isDevelopment && (
               <ActionPanel.Section>
                 <Action

@@ -60,3 +60,8 @@ export class Cache {
     this.data.clear();
   }
 }
+
+// Icon / Color 在真实 API 里是字符串枚举。测试只比较值，用 Proxy 让任意成员都取到自己的名字，
+// 免得每加一个图标就要在这里补一行。
+export const Icon = new Proxy({}, { get: (_target, key) => String(key) }) as Record<string, string>;
+export const Color = new Proxy({}, { get: (_target, key) => String(key) }) as Record<string, string>;

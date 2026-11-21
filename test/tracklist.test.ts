@@ -11,6 +11,7 @@ import {
   sameName,
   splitTracklist,
   totalDuration,
+  trackInfoSignature,
 } from "../src/core/ui/collections/tracklist";
 import type { Project } from "../src/core/projects/types";
 import type { TrackInfo } from "../src/core/projects/track-info";
@@ -246,5 +247,49 @@ describe("analyzedCount", () => {
 
   it("空列表返回 0", () => {
     expect(analyzedCount([], {})).toBe(0);
+  });
+});
+
+describe("trackInfoSignature", () => {
+  it("内容相同但数组引用不同时签名相同", () => {
+    expect(trackInfoSignature([project("A"), project("B")])).toBe(trackInfoSignature([project("A"), project("B")]));
+  });
+
+  it("改了 title 签名就变", () => {
+    expect(trackInfoSignature([project("A", { title: "A2" })])).not.toBe(trackInfoSignature([project("A")]));
+  });
+
+  it("改了 folderPath 签名就变", () => {
+    expect(trackInfoSignature([project("A", { folderPath: "/other/A" })])).not.toBe(
+      trackInfoSignature([project("A")]),
+    );
+  });
+
+  it("改了 kind 签名就变", () => {
+    expect(trackInfoSignature([project("A", { kind: "package" })])).not.toBe(trackInfoSignature([project("A")]));
+  });
+
+  it("改了 externalBounceFolders 签名就变", () => {
+    expect(trackInfoSignature([project("A", { externalBounceFolders: ["/ext"] })])).not.toBe(
+      trackInfoSignature([project("A")]),
+    );
+  });
+
+  it("改了 externalBounceFiles 签名就变", () => {
+    expect(trackInfoSignature([project("A", { externalBounceFiles: ["/ext/a.wav"] })])).not.toBe(
+      trackInfoSignature([project("A")]),
+    );
+  });
+
+  it("成员增减签名就变", () => {
+    expect(trackInfoSignature([project("A"), project("B")])).not.toBe(trackInfoSignature([project("A")]));
+  });
+
+  it("只改笔记、歌词、标签时签名不变", () => {
+    const before = trackInfoSignature([project("A")]);
+    const after = trackInfoSignature([
+      project("A", { notes: "新笔记", lyrics: "新歌词", stageId: "s1", genreIds: ["g1"], collectionIds: ["c1"] }),
+    ]);
+    expect(after).toBe(before);
   });
 });

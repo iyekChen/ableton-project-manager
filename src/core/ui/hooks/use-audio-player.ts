@@ -20,6 +20,9 @@ interface PlaybackCallbacks {
   onError?: (message: string) => void;
 }
 
+/** 播放一个 bounce 的函数签名（useAudioPlayer 返回的 play）。 */
+export type PlayBounce = (id: string, audioPath: string, callbacks?: PlaybackCallbacks) => void;
+
 // ---- 全局单例：整个扩展共享同一个播放器 ----
 // 所有视图（Search Projects / Collection 等）通过本模块共享播放状态与进程，
 // 保证同一时间只有一个 bounce 在播：切视图不打断，也不会重叠出声。

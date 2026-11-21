@@ -97,3 +97,26 @@ export function energyLevelOf(
 export function analyzedCount(members: Project[], infos: Record<string, TrackInfo>): number {
   return members.filter((p) => p.id in infos).length;
 }
+
+/** 曲目分析的输入签名：只取 loadTrackInfo 从 Project 里读的 5 个字段。
+ *  - title：匹配 Shared Bounces Folder 里的文件
+ *  - folderPath：bounce 默认文件夹
+ *  - kind：listSets 用它区分包和文件夹
+ *  - externalBounceFolders / externalBounceFiles：外部来源
+ *  磁盘上的变化（新导出的 bounce、新保存的 Set、文件被改）不进签名：
+ *  loadTrackInfo 自己按 mtime + size 判断缓存是否还有效，签名只负责「要不要重新问一遍」。
+ *  笔记、歌词、标签、Stage 都不影响分析结果，不进签名。 */
+export function trackInfoSignature(members: Project[]): string {
+  return members
+    .map((p) => {
+      const fields = [
+        p.title,
+        p.folderPath,
+        p.kind,
+        p.externalBounceFolders.join("\u0000"),
+        p.externalBounceFiles.join("\u0000"),
+      ];
+      return fields.join("\u0001");
+    })
+    .join("\u0002");
+}
