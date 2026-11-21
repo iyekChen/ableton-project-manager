@@ -93,7 +93,7 @@ export type DawLabels = {
 };
 
 /**
- * 项目里「工程文件」这一层的信息：如 Logic 文件夹形态的项目里有一个或多个 .logicx，每个里面再有 Alternative。
+ * 项目里「工程文件」这一层的信息：有的 DAW 一个项目文件夹里可以有多个工程文件，每个工程文件里再有多个 Set。
  * 每个仓库在 src/daws/ui.ts 里提供 projectFilesInfo；没有这一层时返回 null，Search Projects 按 Set 显示。
  */
 export type ProjectFilesInfo = {
