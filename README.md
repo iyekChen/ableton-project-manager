@@ -184,7 +184,7 @@ The Search Bounces command lists the bounces of every project in one place. A fi
 
 Assigning bounces never moves or renames your files.
 
-### Unmatched bounces
+### Unmatched Bounces
 
 When a Shared Bounces Folder is set, files in it that don't belong to any project are listed in Unmatched Bounces (⌘⇧B in Search Projects) and marked in [Search Bounces](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#search-bounces). The first time you open Search Projects after setting or changing the folder, the extension offers to review any unmatched files it finds.
 
