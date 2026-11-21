@@ -36,6 +36,7 @@ import { groupItems } from "@/core/ui/shared/grouping";
 import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
 import { showFailure } from "@/core/ui/shared/toast";
+import { ShowInFinderAction } from "@/core/ui/actions/show-in-finder";
 import { LOG_PREFIX } from "@/core/log";
 import { setsViewStrings } from "./strings";
 
@@ -302,11 +303,7 @@ export function SetsView({ project }: { project: Project }) {
                       icon={abletonApp ? { fileIcon: abletonApp.path } : Icon.Document}
                       target={set.path}
                     />
-                    <Action.ShowInFinder
-                      path={set.path}
-                      title={strings.showInFinder}
-                      shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-                    />
+                    <ShowInFinderAction path={set.path} />
                     <Action.Push
                       title={setsViewStrings.renameSet}
                       icon={Icon.Pencil}
