@@ -6,26 +6,25 @@ import { useState } from "react";
 import { CorruptDataError, exportData } from "@/core/data/data-transfer";
 import { loadProjects } from "@/core/projects/load-projects";
 import { showFailure } from "@/core/ui/toast";
-import { getTranslations } from "@/i18n";
+import { strings } from "@/strings";
 import { getSettings } from "@/settings";
 
 const settings = getSettings();
-const t = getTranslations(settings.language);
 
 function corruptKindName(kind: CorruptDataError["kind"]): string {
   switch (kind) {
     case "metadata":
-      return t.corruptDataMetadata;
+      return strings.corruptDataMetadata;
     case "categories":
-      return t.corruptDataCategories;
+      return strings.corruptDataCategories;
     case "pins":
-      return t.corruptDataPins;
+      return strings.corruptDataPins;
     case "orders":
-      return t.corruptDataOrders;
+      return strings.corruptDataOrders;
     case "roles":
-      return t.corruptDataRoles;
+      return strings.corruptDataRoles;
     case "deleted":
-      return t.corruptDataDeleted;
+      return strings.corruptDataDeleted;
   }
 }
 
@@ -35,11 +34,11 @@ export default function ExportData() {
 
   function validateFolder(value: string[]): string | undefined {
     const target = value[0];
-    if (!target) return t.exportFolderRequired;
+    if (!target) return strings.exportFolderRequired;
     try {
-      if (!fs.statSync(target).isDirectory()) return t.exportFolderNotDirectory;
+      if (!fs.statSync(target).isDirectory()) return strings.exportFolderNotDirectory;
     } catch {
-      return t.exportFolderMissing;
+      return strings.exportFolderMissing;
     }
     return undefined;
   }
@@ -51,43 +50,43 @@ export default function ExportData() {
       return;
     }
 
-    const toast = await showToast({ style: Toast.Style.Animated, title: t.exportingData });
+    const toast = await showToast({ style: Toast.Style.Animated, title: strings.exportingData });
     try {
       const projects = settings.projectsFolder ? loadProjects(settings.projectsFolder) : [];
       const file = await exportData(folder[0], projects);
       toast.style = Toast.Style.Success;
-      toast.title = t.dataExported;
+      toast.title = strings.dataExported;
       toast.message = path.basename(file);
       toast.primaryAction = {
-        title: t.showInFinder,
+        title: strings.showInFinder,
         onAction: () => {
           void showInFinder(file);
         },
       };
     } catch (error) {
       if (error instanceof CorruptDataError) {
-        await showFailure(t.exportFailed, error, { message: corruptKindMessage(error) });
+        await showFailure(strings.exportFailed, error, { message: corruptKindMessage(error) });
         return;
       }
-      await showFailure(t.exportFailed, error);
+      await showFailure(strings.exportFailed, error);
     }
   }
 
   function corruptKindMessage(error: CorruptDataError): string {
-    return t.corruptDataKind.replace("{kind}", corruptKindName(error.kind));
+    return strings.corruptDataKind.replace("{kind}", corruptKindName(error.kind));
   }
 
   return (
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.exportData} icon={Icon.Download} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.exportData} icon={Icon.Download} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
       <Form.FilePicker
         id="folder"
-        title={t.saveTo}
+        title={strings.saveTo}
         value={folder}
         error={folderError}
         onChange={(value) => {
@@ -100,7 +99,7 @@ export default function ExportData() {
         storeValue
         defaultValue={[path.join(os.homedir(), "Documents")]}
       />
-      <Form.Description text={t.exportDataHint} />
+      <Form.Description text={strings.exportDataHint} />
     </Form>
   );
 }

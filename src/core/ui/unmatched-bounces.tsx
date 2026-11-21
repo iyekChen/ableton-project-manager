@@ -22,11 +22,7 @@ import {
 import type { Project } from "@/core/projects/types";
 import { showFailure } from "@/core/ui/toast";
 import { projectIcon } from "@/daws/icons";
-import { getTranslations } from "@/i18n";
-import { getSettings } from "@/settings";
-
-const settings = getSettings();
-const t = getTranslations(settings.language);
+import { strings } from "@/strings";
 
 export type Assignment = { file: string } | { alias: string };
 
@@ -51,8 +47,12 @@ export function UnmatchedBounces({ projects, onChanged }: { projects: Project[];
   }
 
   return (
-    <List navigationTitle={t.unmatchedBounces} searchBarPlaceholder={t.searchUnmatchedBounces}>
-      <List.EmptyView icon="bounce.png" title={t.noUnmatchedBounces} description={t.noUnmatchedBouncesHint} />
+    <List navigationTitle={strings.unmatchedBounces} searchBarPlaceholder={strings.searchUnmatchedBounces}>
+      <List.EmptyView
+        icon="bounce.png"
+        title={strings.noUnmatchedBounces}
+        description={strings.noUnmatchedBouncesHint}
+      />
       {bounces.map((bounce) => (
         <List.Item
           key={bounce.path}
@@ -64,21 +64,21 @@ export function UnmatchedBounces({ projects, onChanged }: { projects: Project[];
             <ActionPanel>
               <ActionPanel.Section>
                 <Action.Push
-                  title={t.assignToProject}
+                  title={strings.assignToProject}
                   icon={Icon.Link}
                   target={<AssignBounce bounce={bounce} projects={sortedProjects} onAssigned={handleAssigned} />}
                 />
                 <Action.ToggleQuickLook shortcut={{ modifiers: ["cmd"], key: "y" }} />
                 <Action.ShowInFinder
                   path={bounce.path}
-                  title={t.showInFinder}
+                  title={strings.showInFinder}
                   shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                 />
               </ActionPanel.Section>
-              <ActionPanel.Section title={t.sectionCopy}>
+              <ActionPanel.Section title={strings.sectionCopy}>
                 <Action.CopyToClipboard
                   content={bounce.path}
-                  title={t.copyBouncePath}
+                  title={strings.copyBouncePath}
                   icon={Icon.CopyClipboard}
                   shortcut={Keyboard.Shortcut.Common.CopyPath}
                 />
@@ -110,11 +110,11 @@ export function AssignBounce({
     const project = projects.find((p) => p.id === id);
     if (!project) return undefined;
     const problem = checkBounceAlias(value, project.title, getSharedBounceTitles(), getSharedBounceAliases());
-    if (problem === "empty") return t.aliasEmpty;
-    if (problem) return t.aliasTaken.replace("{project}", problem.taken);
+    if (problem === "empty") return strings.aliasEmpty;
+    if (problem) return strings.aliasTaken.replace("{project}", problem.taken);
     // 别名要能认出这个文件，否则加了它这个文件还是没归属。
-    if (!bounceMatchesTitle(bounce.name, value.trim())) return t.aliasNotMatchingFile;
-    if (!canAssignSharedBounceAlias(bounce, project.title, value)) return t.aliasNotAssigningFile;
+    if (!bounceMatchesTitle(bounce.name, value.trim())) return strings.aliasNotMatchingFile;
+    if (!canAssignSharedBounceAlias(bounce, project.title, value)) return strings.aliasNotAssigningFile;
     return undefined;
   }
 
@@ -133,7 +133,7 @@ export function AssignBounce({
       if (mode === "file") {
         await addExternalBounceFile(project.id, bounce.path);
         await clearExclusion(project);
-        await showToast({ style: Toast.Style.Success, title: t.bounceAssigned, message: project.title });
+        await showToast({ style: Toast.Style.Success, title: strings.bounceAssigned, message: project.title });
         onAssigned(project.title, { file: bounce.path });
       } else {
         const error = validateAlias(alias, project.id);
@@ -147,30 +147,30 @@ export function AssignBounce({
         await clearExclusion(project);
         await showToast({
           style: Toast.Style.Success,
-          title: t.bounceAliasAdded,
+          title: strings.bounceAliasAdded,
           message: `${value} → ${project.title}`,
         });
         onAssigned(project.title, { alias: value });
       }
       pop();
     } catch (error) {
-      await showFailure(t.assignBounceFailed, error);
+      await showFailure(strings.assignBounceFailed, error);
     }
   }
 
   return (
     <Form
-      navigationTitle={`${t.assignToProject} — ${bounce.name}`}
+      navigationTitle={`${strings.assignToProject} — ${bounce.name}`}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.assignToProject} icon={Icon.Check} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.assignToProject} icon={Icon.Check} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
       <Form.Description text={bounce.name} />
       <Form.Dropdown
         id="project"
-        title={t.assignProjectField}
+        title={strings.assignProjectField}
         value={projectId}
         onChange={(id) => {
           setProjectId(id);
@@ -188,18 +188,18 @@ export function AssignBounce({
       </Form.Dropdown>
       <Form.Dropdown
         id="mode"
-        title={t.assignMatchField}
+        title={strings.assignMatchField}
         value={mode}
         onChange={(value) => setMode(value === "file" ? "file" : "alias")}
       >
-        <Form.Dropdown.Item value="alias" title={t.assignByAlias} />
-        <Form.Dropdown.Item value="file" title={t.assignThisFileOnly} />
+        <Form.Dropdown.Item value="alias" title={strings.assignByAlias} />
+        <Form.Dropdown.Item value="file" title={strings.assignThisFileOnly} />
       </Form.Dropdown>
       {mode === "alias" && (
         <Form.TextField
           id="alias"
-          title={t.aliasField}
-          info={t.aliasFieldInfo}
+          title={strings.aliasField}
+          info={strings.aliasFieldInfo}
           placeholder={guessAliasFromFileName(bounce.name)}
           value={alias}
           error={aliasError}

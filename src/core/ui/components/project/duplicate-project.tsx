@@ -3,13 +3,10 @@ import { useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import { docNameTakenBy } from "@/core/docs/docs";
-import { getSettings } from "@/settings";
-import { getTranslations } from "@/i18n";
+import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
 import { daw, type ProjectKind } from "@/daws";
 import { copyErrorAction } from "@/core/ui/toast";
-
-const t = getTranslations(getSettings().language);
 
 // 与 Finder 一致的副本命名：Song copy、Song copy 2、Song copy 3…
 function uniqueCopyName(dir: string, title: string, kind: ProjectKind): string {
@@ -29,26 +26,26 @@ export function DuplicateProject({ project, onDuplicated }: { project: Project; 
   async function handleSubmit() {
     const trimmed = name.trim();
     if (trimmed === "" || trimmed.includes("/") || trimmed.includes(":")) {
-      await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+      await showToast({ style: Toast.Style.Failure, title: strings.invalidName });
       return;
     }
 
     const target = path.join(parent, daw.entryNameFor(trimmed, project.kind));
     if (fs.existsSync(target)) {
-      await showToast({ style: Toast.Style.Failure, title: t.nameExists });
+      await showToast({ style: Toast.Style.Failure, title: strings.nameExists });
       return;
     }
 
     // 新项目与包括原项目在内的任何项目都不能共用笔记文件（如 Song?A 复制成 Song？A）。
     const docTakenBy = docNameTakenBy(trimmed, "");
     if (docTakenBy.length > 0) {
-      await showToast({ style: Toast.Style.Failure, title: t.docNameTaken, message: docTakenBy.join(", ") });
+      await showToast({ style: Toast.Style.Failure, title: strings.docNameTaken, message: docTakenBy.join(", ") });
       return;
     }
 
     // 先关掉表单，复制在后台进行（项目可能有好几 GB）。
     pop();
-    const toast = await showToast({ style: Toast.Style.Animated, title: t.duplicatingProject, message: trimmed });
+    const toast = await showToast({ style: Toast.Style.Animated, title: strings.duplicatingProject, message: trimmed });
 
     try {
       // 符号链接按链接本身复制（与 Finder 一致）；保留修改时间，副本在"修改时间"排序里与原项目相邻。
@@ -59,7 +56,7 @@ export function DuplicateProject({ project, onDuplicated }: { project: Project; 
         preserveTimestamps: true,
       });
       toast.style = Toast.Style.Success;
-      toast.title = t.projectDuplicated;
+      toast.title = strings.projectDuplicated;
       onDuplicated();
     } catch (error) {
       // 复制失败时清理半成品；但 EEXIST 说明目标在复制前就已被别的进程创建（不是本次产物），绝不能删。
@@ -68,7 +65,7 @@ export function DuplicateProject({ project, onDuplicated }: { project: Project; 
         await fs.promises.rm(target, { recursive: true, force: true }).catch(() => undefined);
       }
       toast.style = Toast.Style.Failure;
-      toast.title = code === "ERR_FS_CP_EEXIST" ? t.nameExists : t.duplicateFailed;
+      toast.title = code === "ERR_FS_CP_EEXIST" ? strings.nameExists : strings.duplicateFailed;
       toast.message = error instanceof Error ? error.message : String(error);
       toast.primaryAction = copyErrorAction(toast.title, error);
     }
@@ -76,14 +73,14 @@ export function DuplicateProject({ project, onDuplicated }: { project: Project; 
 
   return (
     <Form
-      navigationTitle={`${t.duplicateProject} — ${project.title}`}
+      navigationTitle={`${strings.duplicateProject} — ${project.title}`}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.duplicateProject} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.duplicateProject} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
+      <Form.TextField id="name" title={strings.name} value={name} onChange={setName} />
     </Form>
   );
 }

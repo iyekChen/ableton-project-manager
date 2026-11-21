@@ -29,13 +29,11 @@ import type { Project } from "@/core/projects/types";
 import { showFailure } from "@/core/ui/toast";
 import { optionKeywords } from "@/core/ui/search-keywords";
 import { getSettings } from "./settings";
-import { getTranslations } from "./i18n";
-import { getDawLabels } from "@/daws/labels";
+import { strings } from "@/strings";
+import { labels } from "@/daws/labels";
 import { projectIcon } from "@/daws/icons";
 
 const settings = getSettings();
-const t = getTranslations(settings.language);
-const labels = getDawLabels(settings.language);
 
 type CategoryKind = "stage" | "genre" | "role";
 // 能直接打在项目上的分类。Role 只在合集里生效，不能脱离合集指定。
@@ -43,16 +41,16 @@ type ProjectTagKind = Exclude<CategoryKind, "role">;
 
 // 搜索栏占位文字跟着下拉框切换。
 const SEARCH_PLACEHOLDERS: Record<CategoryKind, string> = {
-  stage: t.searchStages,
-  genre: t.searchGenres,
-  role: t.searchRoles,
+  stage: strings.searchStages,
+  genre: strings.searchGenres,
+  role: strings.searchRoles,
 };
 
 // 别名输入框的示例跟着分类走。
 const ALIAS_PLACEHOLDERS: Record<CategoryKind, string> = {
-  stage: t.stageAliasesPlaceholder,
-  genre: t.genreAliasesPlaceholder,
-  role: t.roleAliasesPlaceholder,
+  stage: strings.stageAliasesPlaceholder,
+  genre: strings.genreAliasesPlaceholder,
+  role: strings.roleAliasesPlaceholder,
 };
 
 const TAXONOMIES: Record<CategoryKind, Taxonomy> = {
@@ -118,12 +116,12 @@ function CategoryForm(props: {
       actions={
         <ActionPanel>
           <Action.SubmitForm
-            title={t.save}
+            title={strings.save}
             onSubmit={async () => {
               const trimmed = name.trim();
               const finalName = trimmed === "" ? (props.currentName ?? "") : trimmed;
               if (finalName === "") {
-                await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+                await showToast({ style: Toast.Style.Failure, title: strings.invalidName });
                 return;
               }
               await props.onSubmit(finalName, parseAliases(aliases), props.showColor ? color : undefined);
@@ -133,17 +131,17 @@ function CategoryForm(props: {
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={t.name} placeholder={props.currentName} value={name} onChange={setName} />
+      <Form.TextField id="name" title={strings.name} placeholder={props.currentName} value={name} onChange={setName} />
       <Form.TextField
         id="aliases"
-        title={t.aliases}
-        info={t.aliasesInfo}
+        title={strings.aliases}
+        info={strings.aliasesInfo}
         placeholder={props.aliasesPlaceholder}
         value={aliases}
         onChange={setAliases}
       />
       {props.showColor && (
-        <Form.Dropdown id="color" title={t.color} value={color} onChange={(value) => setColor(value as Color)}>
+        <Form.Dropdown id="color" title={strings.color} value={color} onChange={(value) => setColor(value as Color)}>
           {COLOR_CHOICES.map((choice) => (
             <Form.Dropdown.Item
               key={choice.value}
@@ -194,7 +192,7 @@ function AssignProjectsForm({ kind, option }: { kind: ProjectTagKind; option: Ta
     const added = selected.filter((id) => !initial.includes(id)).length;
     const removed = initial.filter((id) => !selected.includes(id)).length;
     if (added === 0 && removed === 0) {
-      await showToast({ style: Toast.Style.Success, title: t.noChanges });
+      await showToast({ style: Toast.Style.Success, title: strings.noChanges });
       pop();
       return;
     }
@@ -203,31 +201,31 @@ function AssignProjectsForm({ kind, option }: { kind: ProjectTagKind; option: Ta
       if (kind === "stage") await setStageMembers(option.id, selected, candidates);
       else await setGenreMembers(option.id, selected, candidates);
     } catch (error) {
-      await showFailure(t.saveFailed, error);
+      await showFailure(strings.saveFailed, error);
       return;
     }
-    await showToast({ style: Toast.Style.Success, title: t.tagsAssigned, message: `+${added} · −${removed}` });
+    await showToast({ style: Toast.Style.Success, title: strings.tagsAssigned, message: `+${added} · −${removed}` });
     pop();
   }
 
   const hint =
     movingStage > 0
-      ? `${t.assignFormHint}\n\n${t.assignStageMoveHint.replace("{count}", String(movingStage))}`
-      : t.assignFormHint;
+      ? `${strings.assignFormHint}\n\n${strings.assignStageMoveHint.replace("{count}", String(movingStage))}`
+      : strings.assignFormHint;
 
   return (
     <Form
       isLoading={isLoading}
-      navigationTitle={`${t.assignToProjects} — ${option.name}`}
+      navigationTitle={`${strings.assignToProjects} — ${option.name}`}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.save} icon={Icon.Check} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.save} icon={Icon.Check} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
       {!isLoading && projects.length === 0 && <Form.Description text={labels.noProjectsFound} />}
       {projects.length > 0 && (
-        <Form.TagPicker id="projects" title={t.projects} value={selected} onChange={setSelected}>
+        <Form.TagPicker id="projects" title={strings.projects} value={selected} onChange={setSelected}>
           {projects.map((p) => (
             <Form.TagPicker.Item key={p.id} value={p.id} title={p.title} icon={projectIcon(p.kind)} />
           ))}
@@ -265,21 +263,21 @@ export default function Command() {
     };
 
     if (options.some((o) => o.id === option.id)) {
-      await showToast({ style: Toast.Style.Failure, title: t.tagNameExists });
+      await showToast({ style: Toast.Style.Failure, title: strings.tagNameExists });
       return;
     }
 
     const next = [...options, option];
     await TAXONOMIES[kind].save(next);
     setOptions(next);
-    await showToast({ style: Toast.Style.Success, title: t.created });
+    await showToast({ style: Toast.Style.Success, title: strings.created });
   }
 
   async function editOption(id: string, name: string, aliases: string[], color?: Color) {
     // 不许改成另一个选项的名字：Role 按名字存，重名会把两边的曲目合在一起。
     const key = name.trim().toLowerCase();
     if (options.some((o) => o.id !== id && o.name.trim().toLowerCase() === key)) {
-      await showToast({ style: Toast.Style.Failure, title: t.tagNameExists });
+      await showToast({ style: Toast.Style.Failure, title: strings.tagNameExists });
       return;
     }
     const existing = options.find((o) => o.id === id);
@@ -294,26 +292,26 @@ export default function Command() {
     if (kind === "role" && existing && existing.name !== name) {
       await renameRoleEverywhere(existing.name, name);
     }
-    await showToast({ style: Toast.Style.Success, title: t.infoUpdated });
+    await showToast({ style: Toast.Style.Success, title: strings.infoUpdated });
   }
 
   // 删除前告诉用户有多少项目 / 曲目在用，免得以为只是删掉一个空选项。
   async function usageMessage(option: TaxonomyOption): Promise<string | undefined> {
     if (kind === "role") {
       const count = await countRoleUsage(option.name);
-      return count > 0 ? t.deleteRoleInUse.replace("{count}", String(count)) : undefined;
+      return count > 0 ? strings.deleteRoleInUse.replace("{count}", String(count)) : undefined;
     }
     const store = await getAllProjectMetadata();
     const count = loadProjectsSafely().filter((p) => hasTag(store[p.id], kind, option.id)).length;
-    return count > 0 ? t.deleteTagInUse.replace("{count}", String(count)) : undefined;
+    return count > 0 ? strings.deleteTagInUse.replace("{count}", String(count)) : undefined;
   }
 
   async function deleteOption(option: TaxonomyOption) {
     const confirmed = await confirmAlert({
       icon: { source: Icon.Trash, tintColor: Color.Red },
-      title: `${t.delete} “${option.name}”?`,
+      title: `${strings.delete} “${option.name}”?`,
       message: await usageMessage(option),
-      primaryAction: { title: t.delete, style: Alert.ActionStyle.Destructive },
+      primaryAction: { title: strings.delete, style: Alert.ActionStyle.Destructive },
     });
 
     if (!confirmed) {
@@ -330,16 +328,16 @@ export default function Command() {
     } else if (kind === "genre") {
       await removeGenreEverywhere(option.id);
     }
-    await showToast({ style: Toast.Style.Success, title: t.deleted });
+    await showToast({ style: Toast.Style.Success, title: strings.deleted });
   }
 
   // 恢复默认：写回默认种子，并清掉项目上指向已不存在选项的引用（Role 按名字，Stage/Genre 按 id）。
   async function resetOptions() {
     const confirmed = await confirmAlert({
       icon: { source: Icon.ArrowCounterClockwise, tintColor: Color.Red },
-      title: `${t.resetToDefaults}?`,
-      message: t.resetToDefaultsHint,
-      primaryAction: { title: t.resetToDefaults, style: Alert.ActionStyle.Destructive },
+      title: `${strings.resetToDefaults}?`,
+      message: strings.resetToDefaultsHint,
+      primaryAction: { title: strings.resetToDefaults, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
 
@@ -356,7 +354,7 @@ export default function Command() {
         else await removeGenreEverywhere(old.id);
       }
     }
-    await showToast({ style: Toast.Style.Success, title: t.resetToDefaults });
+    await showToast({ style: Toast.Style.Success, title: strings.resetToDefaults });
   }
 
   // 重新排序并把 order 写成 1..N 持久化。
@@ -371,16 +369,18 @@ export default function Command() {
 
   const createAction = (
     <Action.Push
-      title={t.create}
+      title={strings.create}
       icon={Icon.Plus}
       shortcut={Keyboard.Shortcut.Common.New}
-      target={<CategoryForm title={t.create} aliasesPlaceholder={ALIAS_PLACEHOLDERS[kind]} onSubmit={createOption} />}
+      target={
+        <CategoryForm title={strings.create} aliasesPlaceholder={ALIAS_PLACEHOLDERS[kind]} onSubmit={createOption} />
+      }
     />
   );
 
   const resetAction = (
     <Action
-      title={t.resetToDefaults}
+      title={strings.resetToDefaults}
       icon={Icon.ArrowCounterClockwise}
       style={Action.Style.Destructive}
       onAction={resetOptions}
@@ -390,7 +390,7 @@ export default function Command() {
   const assignAction = (option: TaxonomyOption) =>
     kind === "role" ? null : (
       <Action.Push
-        title={t.assignToProjects}
+        title={strings.assignToProjects}
         icon={Icon.Folder}
         target={<AssignProjectsForm kind={kind} option={option} />}
       />
@@ -401,15 +401,15 @@ export default function Command() {
       isLoading={isLoading}
       searchBarPlaceholder={SEARCH_PLACEHOLDERS[kind]}
       searchBarAccessory={
-        <List.Dropdown tooltip={t.tag} value={kind} onChange={(value) => setKind(value as CategoryKind)}>
-          <List.Dropdown.Item title={t.stage} value="stage" />
-          <List.Dropdown.Item title={t.genre} value="genre" />
-          <List.Dropdown.Item title={t.role} value="role" />
+        <List.Dropdown tooltip={strings.tag} value={kind} onChange={(value) => setKind(value as CategoryKind)}>
+          <List.Dropdown.Item title={strings.stage} value="stage" />
+          <List.Dropdown.Item title={strings.genre} value="genre" />
+          <List.Dropdown.Item title={strings.role} value="role" />
         </List.Dropdown>
       }
     >
       <List.EmptyView
-        title={t.noCategories}
+        title={strings.noCategories}
         icon={Icon.Tag}
         actions={
           <ActionPanel>
@@ -429,12 +429,12 @@ export default function Command() {
           actions={
             <ActionPanel>
               <Action.Push
-                title={t.edit}
+                title={strings.edit}
                 icon={Icon.Pencil}
                 shortcut={Keyboard.Shortcut.Common.Edit}
                 target={
                   <CategoryForm
-                    title={t.edit}
+                    title={strings.edit}
                     currentName={option.name}
                     currentAliases={option.aliases}
                     aliasesPlaceholder={ALIAS_PLACEHOLDERS[kind]}
@@ -449,7 +449,7 @@ export default function Command() {
               <ActionPanel.Section>
                 {index > 0 && (
                   <Action
-                    title={t.moveToTop}
+                    title={strings.moveToTop}
                     icon={Icon.ArrowUpCircle}
                     shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
                     onAction={() => reorder(index, 0)}
@@ -457,7 +457,7 @@ export default function Command() {
                 )}
                 {index > 0 && (
                   <Action
-                    title={t.moveUp}
+                    title={strings.moveUp}
                     icon={Icon.ArrowUp}
                     shortcut={Keyboard.Shortcut.Common.MoveUp}
                     onAction={() => reorder(index, index - 1)}
@@ -465,7 +465,7 @@ export default function Command() {
                 )}
                 {index < options.length - 1 && (
                   <Action
-                    title={t.moveDown}
+                    title={strings.moveDown}
                     icon={Icon.ArrowDown}
                     shortcut={Keyboard.Shortcut.Common.MoveDown}
                     onAction={() => reorder(index, index + 1)}
@@ -473,7 +473,7 @@ export default function Command() {
                 )}
                 {index < options.length - 1 && (
                   <Action
-                    title={t.moveToBottom}
+                    title={strings.moveToBottom}
                     icon={Icon.ArrowDownCircle}
                     shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
                     onAction={() => reorder(index, options.length - 1)}
@@ -481,7 +481,7 @@ export default function Command() {
                 )}
               </ActionPanel.Section>
               <Action
-                title={t.delete}
+                title={strings.delete}
                 icon={Icon.Trash}
                 style={Action.Style.Destructive}
                 shortcut={Keyboard.Shortcut.Common.Remove}

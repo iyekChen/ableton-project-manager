@@ -75,7 +75,7 @@ export function bpmMatches(bpm: number | null, word: string): boolean | undefine
 }
 
 /**
- * 拍号的搜索词：3/4、6/8 这种写法要和最新 Set 的拍号整个对上（6/8 不算 6/4，开头的 0 不算数）。
+ * 拍号的搜索词：3/4、6/8 这种写法要和current Set 的拍号整个对上（6/8 不算 6/4，开头的 0 不算数）。
  * 不是这种写法时返回 undefined，交给文字比较；没有拍号的项目不算命中。
  */
 export function timeSignatureMatches(timeSignature: string | null, word: string): boolean | undefined {

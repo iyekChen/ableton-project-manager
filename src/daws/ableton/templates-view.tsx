@@ -18,17 +18,11 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { getSettings } from "@/settings";
-import { getTranslations } from "@/i18n";
-import { getDawLabels, getTemplateLabels } from "@/daws/labels";
+import { strings } from "@/strings";
+import { labels, templateLabels } from "@/daws/labels";
 import { openWithDaw } from "@/core/daw-app";
 import { showFailure } from "@/core/ui/toast";
 import { defaultTemplatesFolder, isTemplate, listTemplates, type Template, type TemplateGroup } from "./templates";
-
-const settings = getSettings();
-const t = getTranslations(settings.language);
-const labels = getDawLabels(settings.language);
-const templateLabels = getTemplateLabels(settings.language);
 
 function templatesFolderPreference(): string | undefined {
   return getPreferenceValues<Preferences>().templatesFolder || undefined;
@@ -61,18 +55,18 @@ export function TemplatesView() {
 
   async function handleTrash(template: Template) {
     const confirmed = await confirmAlert({
-      title: t.moveToTrash,
+      title: strings.moveToTrash,
       icon: Icon.Trash,
       message: `${templateLabels.templateTrashHint}\n${template.name}`,
-      primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
+      primaryAction: { title: strings.moveToTrash, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
     try {
       await trash(template.path);
       reload();
-      await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: template.name });
+      await showToast({ style: Toast.Style.Success, title: strings.movedToTrash, message: template.name });
     } catch (error) {
-      await showFailure(t.trashFailed, error);
+      await showFailure(strings.trashFailed, error);
     }
   }
 
@@ -88,15 +82,15 @@ export function TemplatesView() {
             icon={Icon.NewDocument}
             onAction={() => handleCreate(template)}
           />
-          <Action.ShowInFinder path={template.path} title={t.showInFinder} />
+          <Action.ShowInFinder path={template.path} title={strings.showInFinder} />
           <Action.Push
-            title={t.rename}
+            title={strings.rename}
             icon={Icon.Pencil}
             shortcut={Keyboard.Shortcut.Common.Edit}
             target={<RenameTemplate template={template} onRenamed={reload} />}
           />
           <Action
-            title={t.moveToTrash}
+            title={strings.moveToTrash}
             icon={Icon.Trash}
             style={Action.Style.Destructive}
             shortcut={Keyboard.Shortcut.Common.Remove}
@@ -120,7 +114,7 @@ export function TemplatesView() {
           description={templateLabels.noTemplatesHint.replace("{folder}", TEMPLATES_FOLDER)}
           actions={
             <ActionPanel>
-              <Action title={t.openPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
+              <Action title={strings.openPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
             </ActionPanel>
           }
         />
@@ -142,7 +136,7 @@ function RenameTemplate({ template, onRenamed }: { template: Template; onRenamed
   async function handleSubmit() {
     const trimmed = name.trim();
     if (trimmed === "" || trimmed.includes("/") || trimmed.includes(":")) {
-      await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+      await showToast({ style: Toast.Style.Failure, title: strings.invalidName });
       return;
     }
     if (trimmed === template.name) {
@@ -159,24 +153,24 @@ function RenameTemplate({ template, onRenamed }: { template: Template; onRenamed
     try {
       fs.renameSync(template.path, target);
     } catch (error) {
-      await showFailure(t.renameFailed, error);
+      await showFailure(strings.renameFailed, error);
       return;
     }
     onRenamed();
-    await showToast({ style: Toast.Style.Success, title: t.renamed, message: trimmed });
+    await showToast({ style: Toast.Style.Success, title: strings.renamed, message: trimmed });
     pop();
   }
 
   return (
     <Form
-      navigationTitle={`${t.rename} — ${template.name}`}
+      navigationTitle={`${strings.rename} — ${template.name}`}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.rename} icon={Icon.Check} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.rename} icon={Icon.Check} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={t.name} placeholder={template.name} value={name} onChange={setName} />
+      <Form.TextField id="name" title={strings.name} placeholder={template.name} value={name} onChange={setName} />
     </Form>
   );
 }

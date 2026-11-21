@@ -18,8 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { getSettings } from "@/settings";
-import { getTranslations } from "@/i18n";
+import { strings } from "@/strings";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
 import type { SortOption } from "@/core/ui/sorting";
 import { groupItems } from "@/core/ui/grouping";
@@ -33,8 +32,6 @@ import type { BounceWithSource } from "@/core/projects/bounces";
 import { addExcludedSharedBounce, setExternalBounces } from "@/core/metadata/project-metadata";
 import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
 import { showFailure } from "@/core/ui/toast";
-
-const t = getTranslations(getSettings().language);
 
 const BOUNCES_SORT_STORAGE_KEY = "bounces-sort-option";
 const BOUNCES_GROUP_STORAGE_KEY = "bounces-group-option";
@@ -77,13 +74,13 @@ export function splitExt(name: string): { stem: string; ext: string } {
 
 export function BounceGroupSubmenu(props: { value: BounceGroup; onChange: (next: BounceGroup) => void }) {
   const options: [BounceGroup, string][] = [
-    ["source", t.groupBySource],
-    ["created", t.groupByCreated],
-    ["modified", t.groupByModified],
-    ["none", t.groupNone],
+    ["source", strings.groupBySource],
+    ["created", strings.groupByCreated],
+    ["modified", strings.groupByModified],
+    ["none", strings.groupNone],
   ];
   return (
-    <ActionPanel.Submenu title={t.groupBy} icon={Icon.List}>
+    <ActionPanel.Submenu title={strings.groupBy} icon={Icon.List}>
       {options.map(([value, title]) => (
         <Action
           key={value}
@@ -105,14 +102,14 @@ function RenameBounceForm({ current, onSubmit }: { current: string; onSubmit: (n
   }
   return (
     <Form
-      navigationTitle={t.renameBounce}
+      navigationTitle={strings.renameBounce}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.save} icon={Icon.Check} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.save} icon={Icon.Check} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={t.name} value={value} onChange={setValue} />
+      <Form.TextField id="name" title={strings.name} value={value} onChange={setValue} />
     </Form>
   );
 }
@@ -165,17 +162,17 @@ export function Bounces(props: {
 
   const handleTrash = async (bounce: BounceWithSource) => {
     const confirmed = await confirmAlert({
-      title: t.moveToTrash,
+      title: strings.moveToTrash,
       icon: Icon.Trash,
-      message: `${t.trashBounceHint}\n${bounce.name}`,
-      primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
+      message: `${strings.trashBounceHint}\n${bounce.name}`,
+      primaryAction: { title: strings.moveToTrash, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
     try {
       await trash(bounce.path);
     } catch (error) {
       // 文件被占用、权限不足、外接盘已拔出等：如实提示，不更新登记记录。
-      await showFailure(t.trashFailed, error);
+      await showFailure(strings.trashFailed, error);
       return;
     }
     // 若删掉的正是被登记的外部文件来源，顺手移除记录（用户经扩展主动删除，确知已不存在）。
@@ -186,18 +183,18 @@ export function Bounces(props: {
       props.onChanged?.();
     }
     setReloadToken((n) => n + 1);
-    await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: bounce.name });
+    await showToast({ style: Toast.Style.Success, title: strings.movedToTrash, message: bounce.name });
   };
 
   const handleCopy = async (bounce: BounceWithSource) => {
     await Clipboard.copy({ file: bounce.path });
-    await showToast({ style: Toast.Style.Success, title: t.bounceCopied, message: bounce.name });
+    await showToast({ style: Toast.Style.Success, title: strings.bounceCopied, message: bounce.name });
   };
 
   const handleRename = async (bounce: BounceWithSource, rawName: string) => {
     const base = rawName.trim();
     if (base === "" || base.includes("/") || base.includes(":")) {
-      await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+      await showToast({ style: Toast.Style.Failure, title: strings.invalidName });
       return;
     }
     const ext = path.extname(bounce.path);
@@ -206,13 +203,13 @@ export function Bounces(props: {
     const newPath = path.join(path.dirname(bounce.path), finalName);
     if (newPath === bounce.path) return;
     if (fs.existsSync(newPath)) {
-      await showToast({ style: Toast.Style.Failure, title: t.bounceNameExists });
+      await showToast({ style: Toast.Style.Failure, title: strings.bounceNameExists });
       return;
     }
     try {
       fs.renameSync(bounce.path, newPath);
     } catch (error) {
-      await showFailure(t.renameFailed, error);
+      await showFailure(strings.renameFailed, error);
       return;
     }
     // 外部「文件」来源：路径即登记路径，改名后同步更新记录，否则记录会指向旧名而失效。
@@ -223,7 +220,7 @@ export function Bounces(props: {
       props.onChanged?.();
     }
     setReloadToken((n) => n + 1);
-    await showToast({ style: Toast.Style.Success, title: t.bounceRenamed, message: finalName });
+    await showToast({ style: Toast.Style.Success, title: strings.bounceRenamed, message: finalName });
   };
 
   // 共享文件夹里配错的文件：标成不属于这个项目，退回 Unmatched Bounces。
@@ -236,15 +233,15 @@ export function Bounces(props: {
     });
     setReloadToken((n) => n + 1);
     props.onChanged?.();
-    await showToast({ style: Toast.Style.Success, title: t.movedToUnmatched, message: bounce.name });
+    await showToast({ style: Toast.Style.Success, title: strings.movedToUnmatched, message: bounce.name });
   };
 
   const removeSource = async (sourcePath: string) => {
     const confirmed = await confirmAlert({
       icon: Icon.MinusCircle,
-      title: t.removeExternalSourceConfirmTitle,
-      message: `${t.removeExternalSourceConfirmHint}\n${sourcePath}`,
-      primaryAction: { title: t.removeExternalSource, style: Alert.ActionStyle.Destructive },
+      title: strings.removeExternalSourceConfirmTitle,
+      message: `${strings.removeExternalSourceConfirmHint}\n${sourcePath}`,
+      primaryAction: { title: strings.removeExternalSource, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
     const nextFolders = folders.filter((f) => f !== sourcePath);
@@ -253,12 +250,12 @@ export function Bounces(props: {
     setFiles(nextFiles);
     await setExternalBounces(props.projectId, nextFolders, nextFiles);
     props.onChanged?.();
-    await showToast({ style: Toast.Style.Success, title: t.externalSourceRemoved });
+    await showToast({ style: Toast.Style.Success, title: strings.externalSourceRemoved });
   };
 
   const renderManageAction = () => (
     <Action.Push
-      title={t.manageExternalBounce}
+      title={strings.manageExternalBounce}
       icon={Icon.Link}
       shortcut={{ modifiers: ["cmd"], key: "b" }}
       target={
@@ -289,10 +286,10 @@ export function Bounces(props: {
               key: kind,
               title:
                 kind === "project"
-                  ? t.sourceProjectFolder
+                  ? strings.sourceProjectFolder
                   : kind === "shared"
-                    ? t.sourceSharedFolder
-                    : t.sourceExternal,
+                    ? strings.sourceSharedFolder
+                    : strings.sourceExternal,
               subtitle: String(items.length),
               items,
             };
@@ -308,11 +305,11 @@ export function Bounces(props: {
   return (
     <List
       isLoading={isLoading}
-      navigationTitle={`${t.browseBounces} — ${props.projectName}`}
-      searchBarPlaceholder={t.searchProjectBounces}
+      navigationTitle={`${strings.browseBounces} — ${props.projectName}`}
+      searchBarPlaceholder={strings.searchProjectBounces}
     >
       {groups.length === 0 ? (
-        <List.EmptyView icon={Icon.Waveform} title={t.noBounces} />
+        <List.EmptyView icon={Icon.Waveform} title={strings.noBounces} />
       ) : (
         groups.map((group) => (
           <List.Section key={group.key} title={group.title} subtitle={group.subtitle}>
@@ -323,7 +320,9 @@ export function Bounces(props: {
                 subtitle={splitExt(b.name).ext}
                 icon="bounce.png"
                 accessories={
-                  b.available ? [{ text: formatSize(b.size) }] : [{ tag: { value: t.unavailable, color: Color.Red } }]
+                  b.available
+                    ? [{ text: formatSize(b.size) }]
+                    : [{ tag: { value: strings.unavailable, color: Color.Red } }]
                 }
                 quickLook={b.available ? { path: b.path, name: b.name } : undefined}
                 actions={
@@ -332,19 +331,19 @@ export function Bounces(props: {
                       <ActionPanel.Section>
                         <Action.ToggleQuickLook />
                         <Action.Open
-                          title={t.openInDefaultApp}
+                          title={strings.openInDefaultApp}
                           icon={Icon.AppWindow}
                           target={b.path}
                           shortcut={Keyboard.Shortcut.Common.Open}
                         />
                         {renderManageAction()}
                         <Action.ShowInFinder
-                          title={t.showInFinder}
+                          title={strings.showInFinder}
                           path={b.path}
                           shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                         />
                         <Action.Push
-                          title={t.renameBounce}
+                          title={strings.renameBounce}
                           icon={Icon.Pencil}
                           shortcut={Keyboard.Shortcut.Common.Edit}
                           target={
@@ -356,7 +355,7 @@ export function Bounces(props: {
                         />
                         {b.source === "shared" && (
                           <Action
-                            title={t.notThisProject}
+                            title={strings.notThisProject}
                             icon={Icon.XMarkCircle}
                             onAction={() => handleNotThisProject(b)}
                           />
@@ -367,39 +366,39 @@ export function Bounces(props: {
                         {renderManageAction()}
                         <Action.CopyToClipboard
                           content={b.path}
-                          title={t.copyBouncePath}
+                          title={strings.copyBouncePath}
                           icon={Icon.CopyClipboard}
                           shortcut={Keyboard.Shortcut.Common.CopyPath}
                         />
                       </ActionPanel.Section>
                     )}
                     {b.available && (
-                      <ActionPanel.Section title={t.sectionCopy}>
+                      <ActionPanel.Section title={strings.sectionCopy}>
                         <Action
-                          title={t.copyBounce}
+                          title={strings.copyBounce}
                           icon={Icon.CopyClipboard}
                           shortcut={Keyboard.Shortcut.Common.Copy}
                           onAction={() => handleCopy(b)}
                         />
                         <Action.CopyToClipboard
                           content={b.name}
-                          title={t.copyBounceName}
+                          title={strings.copyBounceName}
                           icon={Icon.CopyClipboard}
                           shortcut={Keyboard.Shortcut.Common.CopyName}
                         />
                         <Action.CopyToClipboard
                           content={b.path}
-                          title={t.copyBouncePath}
+                          title={strings.copyBouncePath}
                           icon={Icon.CopyClipboard}
                           shortcut={Keyboard.Shortcut.Common.CopyPath}
                         />
                       </ActionPanel.Section>
                     )}
-                    <ActionPanel.Section title={t.sectionArrange}>
+                    <ActionPanel.Section title={strings.sectionArrange}>
                       <BounceGroupSubmenu value={groupBy} onChange={setGroupBy} />
                       <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
                     </ActionPanel.Section>
-                    <ActionPanel.Section title={t.sectionNavigate}>
+                    <ActionPanel.Section title={strings.sectionNavigate}>
                       <Action
                         title={props.backTitle}
                         icon={Icon.Compass}
@@ -408,9 +407,9 @@ export function Bounces(props: {
                       />
                     </ActionPanel.Section>
                     {b.available ? (
-                      <ActionPanel.Section title={t.sectionDangerZone}>
+                      <ActionPanel.Section title={strings.sectionDangerZone}>
                         <Action
-                          title={t.moveToTrash}
+                          title={strings.moveToTrash}
                           icon={Icon.Trash}
                           style={Action.Style.Destructive}
                           shortcut={Keyboard.Shortcut.Common.Remove}
@@ -420,9 +419,9 @@ export function Bounces(props: {
                     ) : (
                       b.source === "external" &&
                       b.externalSource !== undefined && (
-                        <ActionPanel.Section title={t.sectionDangerZone}>
+                        <ActionPanel.Section title={strings.sectionDangerZone}>
                           <Action
-                            title={t.removeExternalSource}
+                            title={strings.removeExternalSource}
                             icon={Icon.MinusCircle}
                             style={Action.Style.Destructive}
                             shortcut={Keyboard.Shortcut.Common.Remove}

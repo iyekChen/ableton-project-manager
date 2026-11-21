@@ -1,12 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { getSettings } from "@/settings";
-import { getTemplateLabels } from "../labels";
+import { templateLabels } from "../labels";
 import { getAlsMetadata } from "./als-metadata";
 import { TemplatesView } from "./templates-view";
 import type { DawAdapter, DawSet } from "../types";
-
-const templateLabels = getTemplateLabels(getSettings().language);
 
 /** Ableton 的 Set 文件后缀。 */
 export const SET_EXTENSION = ".als";

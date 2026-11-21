@@ -9,13 +9,9 @@ import {
   writeDocBody,
 } from "@/core/docs/docs";
 import { showDocError } from "@/core/docs/doc-actions";
-import { getSettings } from "@/settings";
 import { showFailure } from "@/core/ui/toast";
-import { getTranslations } from "@/i18n";
+import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
-
-const settings = getSettings();
-const t = getTranslations(settings.language);
 
 export function EditNote({
   project,
@@ -41,8 +37,8 @@ export function EditNote({
       setNote(stripFrontmatter(isBlankDoc(raw) ? initialContent(project, kind) : raw));
       setLoaded(true);
     } catch (error) {
-      void showFailure(kind === "notes" ? t.docUnreadable : t.lyricsUnreadable, error, {
-        message: t.docUnreadableHint,
+      void showFailure(kind === "notes" ? strings.docUnreadable : strings.lyricsUnreadable, error, {
+        message: strings.docUnreadableHint,
       });
       pop();
     }
@@ -53,9 +49,9 @@ export function EditNote({
     if (docFileMtime(project, kind) !== loadedMtime.current) {
       const confirmed = await confirmAlert({
         icon: Icon.Warning,
-        title: kind === "notes" ? t.docChangedExternally : t.lyricsChangedExternally,
-        message: kind === "notes" ? t.docChangedExternallyHint : t.lyricsChangedExternallyHint,
-        primaryAction: { title: t.overwriteDoc, style: Alert.ActionStyle.Destructive },
+        title: kind === "notes" ? strings.docChangedExternally : strings.lyricsChangedExternally,
+        message: kind === "notes" ? strings.docChangedExternallyHint : strings.lyricsChangedExternallyHint,
+        primaryAction: { title: strings.overwriteDoc, style: Alert.ActionStyle.Destructive },
       });
       // 不覆盖：留在表单里，已输入的内容不丢。
       if (!confirmed) return;
@@ -73,7 +69,7 @@ export function EditNote({
 
     await showToast({
       style: Toast.Style.Success,
-      title: t.infoUpdated,
+      title: strings.infoUpdated,
     });
 
     pop();
@@ -82,10 +78,17 @@ export function EditNote({
   return (
     <Form
       isLoading={!loaded}
-      navigationTitle={`${kind === "notes" ? t.editNote : t.editLyrics} — ${project.title}`}
-      actions={<ActionPanel>{loaded && <Action.SubmitForm title={t.save} onSubmit={handleSubmit} />}</ActionPanel>}
+      navigationTitle={`${kind === "notes" ? strings.editNote : strings.editLyrics} — ${project.title}`}
+      actions={
+        <ActionPanel>{loaded && <Action.SubmitForm title={strings.save} onSubmit={handleSubmit} />}</ActionPanel>
+      }
     >
-      <Form.TextArea id="note" title={kind === "notes" ? t.notes : t.lyrics} value={note} onChange={setNote} />
+      <Form.TextArea
+        id="note"
+        title={kind === "notes" ? strings.notes : strings.lyrics}
+        value={note}
+        onChange={setNote}
+      />
     </Form>
   );
 }

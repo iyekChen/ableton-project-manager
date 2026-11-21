@@ -12,31 +12,28 @@ import {
   type DocKind,
 } from "./docs";
 import { showFailure } from "@/core/ui/toast";
-import { getTranslations } from "@/i18n";
-import { getSettings } from "@/settings";
-
-const t = getTranslations(getSettings().language);
+import { strings } from "@/strings";
 
 /** 文档读写出错时统一提示；自定义文件夹失效时附带"打开扩展设置"。 */
 export async function showDocError(error: unknown): Promise<void> {
   if (error instanceof DocSharedError) {
-    await showToast({ style: Toast.Style.Failure, title: t.docShared, message: error.others.join(", ") });
+    await showToast({ style: Toast.Style.Failure, title: strings.docShared, message: error.others.join(", ") });
     return;
   }
   if (error instanceof DocFolderMissingError) {
     await showToast({
       style: Toast.Style.Failure,
-      title: t.docFolderMissing,
+      title: strings.docFolderMissing,
       message: error.folder,
-      primaryAction: { title: t.openPreferences, onAction: () => void openExtensionPreferences() },
+      primaryAction: { title: strings.openPreferences, onAction: () => void openExtensionPreferences() },
       // 只有设置已被清空时才有意义：设置里还填着旧路径的话，要去设置里改。
       secondaryAction: error.fromMemory
-        ? { title: t.useProjectFolders, onAction: () => forgetDocFolder(error.kind) }
+        ? { title: strings.useProjectFolders, onAction: () => forgetDocFolder(error.kind) }
         : undefined,
     });
     return;
   }
-  await showFailure(t.docSaveFailed, error);
+  await showFailure(strings.docSaveFailed, error);
 }
 
 /** 打开（必要时按模板新建）某项目的文档；出错时提示而不是抛出。 */
@@ -49,9 +46,9 @@ export async function openDoc(project: { title: string; folderPath: string }, ki
     if (template) {
       await showToast({
         style: Toast.Style.Failure,
-        title: t.templateMissing,
+        title: strings.templateMissing,
         message: template,
-        primaryAction: { title: t.openPreferences, onAction: () => void openExtensionPreferences() },
+        primaryAction: { title: strings.openPreferences, onAction: () => void openExtensionPreferences() },
       });
     }
   } catch (error) {
@@ -63,12 +60,12 @@ export async function openDoc(project: { title: string; folderPath: string }, ki
 export function docPlaceholder(kind: DocKind, title?: string, missingFolder?: string | null): string {
   const others = title ? docSharedWith(title, kind) : [];
   if (others.length > 0) {
-    return `**${t.docShared}**\n\n${t.docSharedHint.replace("{names}", others.join(", "))}`;
+    return `**${strings.docShared}**\n\n${strings.docSharedHint.replace("{names}", others.join(", "))}`;
   }
   // 调用方可以预先算好（每次渲染只查一次）；没传时照旧现查。
   const missing = missingFolder === undefined ? missingDocFolder(kind) : missingFolder;
   if (missing) {
-    return `**⚠️ ${t.docFolderMissing}**\n\n\`${missing}\`\n\n${t.docFolderMissingHint}`;
+    return `**⚠️ ${strings.docFolderMissing}**\n\n\`${missing}\`\n\n${strings.docFolderMissingHint}`;
   }
-  return kind === "notes" ? t.noNotesYet : t.noLyricsYet;
+  return kind === "notes" ? strings.noNotesYet : strings.noLyricsYet;
 }

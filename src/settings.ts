@@ -1,10 +1,7 @@
 import { getPreferenceValues } from "@raycast/api";
 
-export type Language = "en";
-
 export type Settings = {
   projectsFolder: string;
-  language: Language;
 };
 
 export function getSettings(): Settings {
@@ -12,6 +9,5 @@ export function getSettings(): Settings {
 
   return {
     projectsFolder: preferences.projectsFolder,
-    language: "en",
   };
 }

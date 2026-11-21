@@ -79,9 +79,9 @@ export interface DawAdapter {
 export type DawLabels = {
   /** 项目里各版本的叫法（复数），如 Sets、Alternatives。 */
   sets: string;
-  latestSet: string;
+  currentSet: string;
   viewSets: string;
-  openLatestSet: string;
+  openCurrentSet: string;
   noSets: string;
   openSetFailed: string;
   readingSets: string;
@@ -99,8 +99,8 @@ export type DawLabels = {
 export type ProjectFilesInfo = {
   /** 工程文件的个数。 */
   count: number;
-  /** 最新 Set 所在工程文件的显示名，参数是最新 Set 的 path。 */
-  latestName: (latestSetPath: string) => string;
+  /** current Set 所在工程文件的显示名，参数是 current Set 的 path。 */
+  latestName: (currentSetPath: string) => string;
   labels: {
     projectFiles: string;
     latestProjectFile: string;

@@ -34,7 +34,7 @@ npm run build         # 构建正式版扩展
 - `src/*.tsx` 是命令入口，每个命令一个文件。Manage Tags 对应 `manage-categories.tsx`。
 - `src/core/` 包含所有不针对 Ableton Live 的部分：项目、bounce、合集、笔记、搜索和存储。
 - `src/daws/ableton/` 包含 Ableton 专用的部分：读取 `.als` 文件、Sets 视图和 Live 模板。它们通过 `src/daws/types.ts` 中的 `DawAdapter` 接口接入其余部分。
-- 大部分界面文字在 `src/i18n.ts` 中。Ableton 专用的文字在 `src/daws/labels.ts` 和 `src/daws/ableton/strings.ts` 中，命令和设置项的标题在 `package.json` 中。
+- 大部分界面文字在 `src/strings.ts` 中。Ableton 专用的文字在 `src/daws/labels.ts` 和 `src/daws/ableton/strings.ts` 中，命令和设置项的标题在 `package.json` 中。
 - `swift/` 是音频播放器的源码，`scripts/` 是构建它的脚本。
 - `test/` 是 Vitest 单元测试。
 

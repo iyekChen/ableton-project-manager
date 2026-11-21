@@ -16,7 +16,7 @@ export const EMPTY_METADATA: ProjectFileMetadata = {
   key: null,
 };
 
-// Search Projects 要给每个项目的最新 Set 留缓存，View Sets 也会用。每条约 150 字节，2000 条约 300 KB。
+// Search Projects 要给每个项目的 current Set 留缓存，View Sets 也会用。每条约 150 字节，2000 条约 300 KB。
 const CACHE_LIMIT = 2000;
 // 沿用旧键名：改了只会让已有缓存全部作废、重新解析。
 const STORAGE_KEY = "als-metadata-cache-v2";

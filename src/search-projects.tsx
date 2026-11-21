@@ -33,7 +33,7 @@ import {
 } from "@/core/metadata/project-metadata";
 import { removeProjectFromAllOrders } from "@/core/metadata/collection-order";
 import { removeProjectFromAllRoles } from "@/core/metadata/collection-roles";
-import { getTranslations } from "./i18n";
+import { strings } from "@/strings";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
 import type { SortOption } from "@/core/ui/sorting";
 import { GroupBySubmenu, groupItems, useGroupOption } from "@/core/ui/grouping";
@@ -68,7 +68,7 @@ import {
   parseSetMetadata,
 } from "@/core/projects/project-file-cache";
 import { SetsView, projectFilesInfo } from "@/daws/ui";
-import { getDawLabels } from "@/daws/labels";
+import { labels } from "@/daws/labels";
 import { projectIcon } from "@/daws/icons";
 import { openWithDaw, resolveDawApp } from "@/core/daw-app";
 import { LOG_PREFIX } from "@/core/log";
@@ -80,12 +80,10 @@ import {
   optionKeywords,
   timeSignatureMatches,
 } from "@/core/ui/search-keywords";
-import { findLatestSet } from "@/core/projects/latest-set";
+import { findCurrentSet } from "@/core/projects/current-set";
 import { keyKeywords, keyToken } from "@/core/projects/musical-key";
 
 const settings = getSettings();
-const t = getTranslations(settings.language);
-const labels = getDawLabels(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 const SORT_STORAGE_KEY = "project-sort-option";
 const GROUP_STORAGE_KEY = "project-group-option";
@@ -104,8 +102,8 @@ const SET_PROGRESS_MIN = 5;
 const INITIAL_ITEM_COUNT = 15;
 const FILL_DELAY_MS = 0;
 
-// 每个项目的最新 Set 和它的元数据；还没读完时 metadata 为 null。
-type LatestSetInfo = { set: DawSet; metadata: ProjectFileMetadata | null };
+// 每个项目的 current Set 和它的元数据；还没读完时 metadata 为 null。
+type CurrentSetInfo = { set: DawSet; metadata: ProjectFileMetadata | null };
 // 正在由扩展执行 Move to Trash 的项目：已归档，目录监听触发的重载不要再当成 Finder 删除处理。
 const trashingIds = new Set<string>();
 
@@ -166,10 +164,10 @@ export default function Command() {
     viewPrefs.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
   );
   const [dawApp, setDawApp] = useState<Application | null>(null);
-  const [latestSets, setLatestSets] = useState<Record<string, LatestSetInfo>>({});
+  const [currentSets, setCurrentSets] = useState<Record<string, CurrentSetInfo>>({});
   const [readingSets, setReadingSets] = useState(false);
   // 每次读取编号：新一轮开始后，旧一轮的结果不再写入。
-  const latestSetsRunRef = useRef(0);
+  const currentSetsRunRef = useRef(0);
   const baseProjectsRef = useRef<Project[]>([]);
   // 每次渲染都更新：load() 的闭包里拿不到最新的 projects state。
   const projectsRef = useRef<Project[]>(projects);
@@ -236,22 +234,22 @@ export default function Command() {
     commitProjects(updated);
   }, [commitProjects]);
 
-  // 读出每个项目最新 Set 的元数据：有缓存的立刻显示，其余在后台解析，读完一个显示一个。
-  const refreshLatestSets = useCallback(async (list: Project[]) => {
-    const run = ++latestSetsRunRef.current;
+  // 读出每个项目 current Set 的元数据：有缓存的立刻显示，其余在后台解析，读完一个显示一个。
+  const refreshCurrentSets = useCallback(async (list: Project[]) => {
+    const run = ++currentSetsRunRef.current;
     await loadPersistentProjectFileCache();
-    if (run !== latestSetsRunRef.current) return;
+    if (run !== currentSetsRunRef.current) return;
 
-    const initial: Record<string, LatestSetInfo> = {};
+    const initial: Record<string, CurrentSetInfo> = {};
     const missing: [string, DawSet][] = [];
     for (const project of list) {
-      const set = findLatestSet(daw.listSets(project));
+      const set = findCurrentSet(daw.listSets(project));
       if (!set) continue;
       const cached = cachedSetMetadata(set);
       initial[project.id] = { set, metadata: cached };
       if (!cached) missing.push([project.id, set]);
     }
-    setLatestSets(initial);
+    setCurrentSets(initial);
     setReadingSets(missing.length > 0);
     if (missing.length === 0) return;
 
@@ -264,15 +262,15 @@ export default function Command() {
     let done = 0;
     let nextIndex = 0;
     async function worker() {
-      while (run === latestSetsRunRef.current) {
+      while (run === currentSetsRunRef.current) {
         const index = nextIndex++;
         if (index >= missing.length) return;
         const [id, set] = missing[index];
         try {
           const metadata = await parseSetMetadata(set);
-          if (run !== latestSetsRunRef.current) return;
-          // 期间项目的最新 Set 换了（又存了一个）就不写，等下一轮。
-          setLatestSets((prev) => (prev[id]?.set.path === set.path ? { ...prev, [id]: { set, metadata } } : prev));
+          if (run !== currentSetsRunRef.current) return;
+          // 期间项目的 current Set 换了（又存了一个）就不写，等下一轮。
+          setCurrentSets((prev) => (prev[id]?.set.path === set.path ? { ...prev, [id]: { set, metadata } } : prev));
         } catch (error) {
           console.error(`${LOG_PREFIX} Failed to load set metadata: ${set.path}`, error);
         }
@@ -283,7 +281,7 @@ export default function Command() {
     await Promise.all(Array.from({ length: Math.min(METADATA_CONCURRENCY, missing.length) }, () => worker()));
 
     void toast?.hide();
-    if (run === latestSetsRunRef.current) setReadingSets(false);
+    if (run === currentSetsRunRef.current) setReadingSets(false);
   }, []);
 
   const runReload = useCallback(async (): Promise<string[]> => {
@@ -297,7 +295,7 @@ export default function Command() {
         onApplied: (updated, base) => {
           commitProjects(updated);
           // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
-          void refreshLatestSets(base);
+          void refreshCurrentSets(base);
         },
       });
       setOrphanIds(orphans);
@@ -306,13 +304,13 @@ export default function Command() {
       console.error(`${LOG_PREFIX} Failed to load projects:`, error);
       setProjects([]);
       setOrphanIds([]);
-      await showFailure(t.loadProjectsFailed, error, { message: t.loadProjectsFailedHint });
+      await showFailure(strings.loadProjectsFailed, error, { message: strings.loadProjectsFailedHint });
     } finally {
       // 静默启动刷新只做一次，成功失败都复位。
       silentStartupRef.current = false;
     }
     return [] as string[];
-  }, [commitProjects, refreshLatestSets]);
+  }, [commitProjects, refreshCurrentSets]);
 
   // 同一时刻只跑一次：执行中再被触发（目录监听、返回刷新、保存回调）只记一笔，结束后补跑一次。
   // 避免两次 Finder 同步交错——后一次可能拿已被前一次清掉的空数据去覆盖删除记录。
@@ -347,10 +345,10 @@ export default function Command() {
       if ((await LocalStorage.getItem(ONBOARDING_ASKED_KEY)) === "true") return;
       onboardingShownRef.current = true;
       await confirmAlert({
-        title: t.onboardingSharedTitle,
-        message: t.onboardingSharedMessage,
-        primaryAction: { title: t.openPreferences, onAction: () => void openExtensionPreferences() },
-        dismissAction: { title: t.skip },
+        title: strings.onboardingSharedTitle,
+        message: strings.onboardingSharedMessage,
+        primaryAction: { title: strings.openPreferences, onAction: () => void openExtensionPreferences() },
+        dismissAction: { title: strings.skip },
       });
       await LocalStorage.setItem(ONBOARDING_ASKED_KEY, "true");
       return;
@@ -365,14 +363,14 @@ export default function Command() {
     if (count === 0) return;
     onboardingShownRef.current = true;
     await confirmAlert({
-      title: t.onboardingUnmatchedTitle.replace("{count}", String(count)),
-      message: t.onboardingUnmatchedMessage,
+      title: strings.onboardingUnmatchedTitle.replace("{count}", String(count)),
+      message: strings.onboardingUnmatchedMessage,
       primaryAction: {
-        title: t.review,
+        title: strings.review,
         onAction: () =>
           push(<UnmatchedBounces projects={projectsRef.current} onChanged={() => void reloadProjects()} />),
       },
-      dismissAction: { title: t.skip },
+      dismissAction: { title: strings.skip },
     });
   }, [push, reloadProjects]);
 
@@ -389,10 +387,10 @@ export default function Command() {
         leftoverToastShownRef.current = true;
         await showToast({
           style: Toast.Style.Success,
-          title: t.leftoversFound,
-          message: t.leftoversFoundMessage.replace("{count}", String(orphans.length)),
+          title: strings.leftoversFound,
+          message: strings.leftoversFoundMessage.replace("{count}", String(orphans.length)),
           primaryAction: {
-            title: t.cleanUpLeftovers,
+            title: strings.cleanUpLeftovers,
             onAction: () => push(<CleanUpRemovedProjects />, () => void reloadProjects()),
           },
         });
@@ -448,7 +446,7 @@ export default function Command() {
     if (isActive) {
       // 标题放歌名（主文字色），说明放进度（次要文字色）；动作名已经写了 Play Latest Bounce，这里不重复。
       // 还不知道歌名时（如刚从后台恢复、列表未载入）退回 "Playing Latest Bounce"。
-      const title = name || t.playingLatestBounce;
+      const title = name || strings.playingLatestBounce;
       const message = durationSeconds > 0 ? `${formatTime(positionSeconds)} / ${formatTime(durationSeconds)}` : "";
       if (toastRef.current) {
         toastRef.current.title = title;
@@ -474,12 +472,12 @@ export default function Command() {
     (project: Project) => {
       const latestBouncePath = findLatestProjectBounce(project);
       if (!latestBouncePath) {
-        void showToast({ style: Toast.Style.Failure, title: t.noBounces });
+        void showToast({ style: Toast.Style.Failure, title: strings.noBounces });
         return;
       }
       play(project.id, latestBouncePath, {
         onError: (message) => {
-          void showFailure(t.playbackFailed, message);
+          void showFailure(strings.playbackFailed, message);
         },
       });
     },
@@ -488,21 +486,21 @@ export default function Command() {
   const copyLatestBounce = useCallback(async (project: Project) => {
     const latestBouncePath = findLatestProjectBounce(project);
     if (!latestBouncePath) {
-      await showToast({ style: Toast.Style.Failure, title: t.noBounces });
+      await showToast({ style: Toast.Style.Failure, title: strings.noBounces });
       return;
     }
     await Clipboard.copy({ file: latestBouncePath });
     await showToast({
       style: Toast.Style.Success,
-      title: t.bounceCopied,
+      title: strings.bounceCopied,
       message: latestBouncePath.split("/").pop() ?? "",
     });
   }, []);
 
   // 和打开 Set 的其他入口一样：打开后关掉 Raycast 窗口。
-  const openLatestSet = useCallback(async (project: Project) => {
+  const openCurrentSet = useCallback(async (project: Project) => {
     const sets = daw.listSets(project);
-    const set = findLatestSet(sets);
+    const set = findCurrentSet(sets);
     if (sets.length === 0) {
       await showToast({ style: Toast.Style.Failure, title: labels.noSets });
       return;
@@ -521,7 +519,7 @@ export default function Command() {
     await applyMetadata();
     await showToast({
       style: Toast.Style.Success,
-      title: project.pinned ? t.projectUnpinned : t.projectPinned,
+      title: project.pinned ? strings.projectUnpinned : strings.projectPinned,
     });
   };
 
@@ -532,10 +530,10 @@ export default function Command() {
 
   const handleTrashProject = async (project: Project) => {
     const confirmed = await confirmAlert({
-      title: t.moveToTrash,
+      title: strings.moveToTrash,
       icon: Icon.Trash,
-      message: `${t.trashProjectHint}\n${project.title}`,
-      primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
+      message: `${strings.trashProjectHint}\n${project.title}`,
+      primaryAction: { title: strings.moveToTrash, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
     trashingIds.add(project.id);
@@ -550,9 +548,9 @@ export default function Command() {
       await removeProjectFromAllOrders(project.id);
       await removeProjectFromAllRoles(project.id);
       await reloadProjects();
-      await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: project.title });
+      await showToast({ style: Toast.Style.Success, title: strings.movedToTrash, message: project.title });
     } catch (error) {
-      await showFailure(t.trashFailed, error);
+      await showFailure(strings.trashFailed, error);
     } finally {
       trashingIds.delete(project.id);
     }
@@ -584,17 +582,17 @@ export default function Command() {
     return projects;
   })();
 
-  // 最新 Set 的 Key 的各种写法。不放进 searchTerms：组合搜索里 Key 要整词对上，
+  // current Set 的 Key 的各种写法。不放进 searchTerms：组合搜索里 Key 要整词对上，
   // 否则 cm（C 小调）会被当成 cmaj（C 大调）的一部分搜到。
   const keyWordsOf = (project: Project) => {
-    const key = latestSets[project.id]?.metadata?.key;
+    const key = currentSets[project.id]?.metadata?.key;
     return key ? [key, ...keyKeywords(key)] : [];
   };
 
   const matchProject = (project: Project, query: string) => {
     const keyTokens = new Set(keyWordsOf(project).map(keyToken));
-    const bpm = latestSets[project.id]?.metadata?.bpm ?? null;
-    const timeSignature = latestSets[project.id]?.metadata?.timeSignature ?? null;
+    const bpm = currentSets[project.id]?.metadata?.bpm ?? null;
+    const timeSignature = currentSets[project.id]?.metadata?.timeSignature ?? null;
     return matchesSearch(
       searchTerms(project),
       query,
@@ -636,8 +634,8 @@ export default function Command() {
     const stage = stageOptions.find((option) => option.id === item.stageId);
     const genreNames = namesFor(item.genreIds, genreOptions);
     const collectionNames = namesFor(item.collectionIds, collectionOptions);
-    const latest = latestSets[item.id];
-    const latestBpm = latest?.metadata?.bpm ?? null;
+    const current = currentSets[item.id];
+    const currentBpm = current?.metadata?.bpm ?? null;
     const files = projectFiles.get(item.id) ?? null;
     const filesAccessories = files
       ? [
@@ -655,11 +653,11 @@ export default function Command() {
     const toggleIsPause = isThisPlaying && (playbackStatus === "Playing" || playbackStatus === "Starting");
     const toggleTitle = isThisPlaying
       ? playbackStatus === "Paused"
-        ? t.resumePlayback
+        ? strings.resumePlayback
         : playbackStatus === "Stopping"
-          ? t.stoppingPlayback
-          : t.pausePlayback
-      : t.playLatestBounce;
+          ? strings.stoppingPlayback
+          : strings.pausePlayback
+      : strings.playLatestBounce;
 
     const toggleIcon = isThisPlaying ? (toggleIsPause ? Icon.PauseFilled : Icon.PlayFilled) : Icon.Play;
 
@@ -729,13 +727,13 @@ export default function Command() {
                   {files ? (
                     <List.Item.Detail.Metadata.Label
                       title={files.labels.latestProjectFile}
-                      text={latest ? files.latestName(latest.set.path) : ""}
+                      text={current ? files.latestName(current.set.path) : ""}
                     />
                   ) : (
-                    <List.Item.Detail.Metadata.Label title={labels.latestSet} text={latest?.set.name ?? ""} />
+                    <List.Item.Detail.Metadata.Label title={labels.currentSet} text={current?.set.name ?? ""} />
                   )}
-                  <List.Item.Detail.Metadata.Label title="Key" text={latest?.metadata?.key ?? ""} />
-                  <List.Item.Detail.Metadata.Label title="BPM" text={latestBpm === null ? "" : String(latestBpm)} />
+                  <List.Item.Detail.Metadata.Label title="Key" text={current?.metadata?.key ?? ""} />
+                  <List.Item.Detail.Metadata.Label title="BPM" text={currentBpm === null ? "" : String(currentBpm)} />
                   <List.Item.Detail.Metadata.Separator />
                   <List.Item.Detail.Metadata.Label title="Created" text={formatDate(item.createdAt)} />
                   <List.Item.Detail.Metadata.Label title="Modified" text={formatDate(item.modifiedAt)} />
@@ -773,7 +771,7 @@ export default function Command() {
                 }}
               />
               <Action
-                title={t.browseBounces}
+                title={strings.browseBounces}
                 icon={Icon.Waveform}
                 shortcut={{ modifiers: ["opt"], key: "return" }}
                 onAction={() => {
@@ -784,7 +782,7 @@ export default function Command() {
                       projectPath={item.folderPath}
                       externalFolders={item.externalBounceFolders}
                       externalFiles={item.externalBounceFiles}
-                      backTitle={t.backToProjects}
+                      backTitle={strings.backToProjects}
                       onChanged={reloadProjects}
                     />,
                     () => void reloadProjects(),
@@ -792,7 +790,7 @@ export default function Command() {
                 }}
               />
               <Action.Push
-                title={t.browseCollections}
+                title={strings.browseCollections}
                 icon={Icon.Tray}
                 shortcut={{ modifiers: ["ctrl"], key: "return" }}
                 target={
@@ -810,34 +808,34 @@ export default function Command() {
                 }}
               />
               <Action
-                title={files ? files.labels.openLatestProjectFile : labels.openLatestSet}
+                title={files ? files.labels.openLatestProjectFile : labels.openCurrentSet}
                 icon={dawApp ? { fileIcon: dawApp.path } : Icon.Document}
                 shortcut={Keyboard.Shortcut.Common.Open}
-                onAction={() => openLatestSet(item)}
+                onAction={() => openCurrentSet(item)}
               />
             </ActionPanel.Section>
             {isAnythingPlaying && (
-              <ActionPanel.Section title={t.sectionPlayback}>
+              <ActionPanel.Section title={strings.sectionPlayback}>
                 <Action
-                  title={t.stopPlayback}
+                  title={strings.stopPlayback}
                   icon={Icon.StopFilled}
                   shortcut={{ modifiers: ["cmd"], key: "-" }}
                   onAction={stop}
                 />
                 <Action
-                  title={t.seekBackward}
+                  title={strings.seekBackward}
                   icon={Icon.RewindFilled}
                   shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
                   onAction={() => seek(-SEEK_STEP_SECONDS)}
                 />
                 <Action
-                  title={t.seekForward}
+                  title={strings.seekForward}
                   icon={Icon.ForwardFilled}
                   shortcut={{ modifiers: ["opt"], key: "arrowRight" }}
                   onAction={() => seek(SEEK_STEP_SECONDS)}
                 />
                 <Action
-                  title={t.restartTrack}
+                  title={strings.restartTrack}
                   icon={Icon.ArrowCounterClockwise}
                   shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
                   onAction={() => {
@@ -849,27 +847,27 @@ export default function Command() {
                 />
               </ActionPanel.Section>
             )}
-            <ActionPanel.Section title={t.sectionDetails}>
+            <ActionPanel.Section title={strings.sectionDetails}>
               <Action.Push
-                title={t.editInfo}
+                title={strings.editInfo}
                 icon={Icon.Pencil}
                 shortcut={Keyboard.Shortcut.Common.Edit}
                 target={<EditInfo project={item} onSaved={reloadProjects} />}
               />
               <Action.Push
-                title={t.editNote}
+                title={strings.editNote}
                 icon={Icon.Highlight}
                 shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
                 target={<EditNote project={item} onSaved={reloadProjects} />}
               />
               <Action.Push
-                title={t.editLyrics}
+                title={strings.editLyrics}
                 icon={Icon.Highlight}
                 shortcut={{ modifiers: ["cmd", "opt"], key: "l" }}
                 target={<EditNote project={item} kind="lyrics" onSaved={reloadProjects} />}
               />
               <Action
-                title={t.openNote}
+                title={strings.openNote}
                 icon={Icon.Book}
                 shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
                 onAction={async () => {
@@ -877,7 +875,7 @@ export default function Command() {
                 }}
               />
               <Action
-                title={t.openLyrics}
+                title={strings.openLyrics}
                 icon={Icon.Book}
                 shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
                 onAction={async () => {
@@ -885,17 +883,17 @@ export default function Command() {
                 }}
               />
             </ActionPanel.Section>
-            <ActionPanel.Section title={t.sectionFile}>
+            <ActionPanel.Section title={strings.sectionFile}>
               {/* 包用「打开」会交给 DAW，所以改成在 Finder 里选中它；普通文件夹照旧在 Finder 里打开。 */}
               {item.kind === "package" ? (
                 <Action.ShowInFinder
                   path={item.folderPath}
-                  title={t.showInFinder}
+                  title={strings.showInFinder}
                   shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                 />
               ) : (
                 <Action.Open
-                  title={t.openInFinder}
+                  title={strings.openInFinder}
                   icon={Icon.Finder}
                   shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                   target={item.folderPath}
@@ -926,13 +924,13 @@ export default function Command() {
                 />
               )}
               <Action.Push
-                title={t.duplicateProject}
+                title={strings.duplicateProject}
                 icon={Icon.Duplicate}
                 shortcut={Keyboard.Shortcut.Common.Duplicate}
                 target={<DuplicateProject project={item} onDuplicated={reloadProjects} />}
               />
               <Action.Push
-                title={t.manageExternalBounce}
+                title={strings.manageExternalBounce}
                 icon={Icon.Link}
                 shortcut={{ modifiers: ["cmd"], key: "b" }}
                 target={
@@ -947,17 +945,17 @@ export default function Command() {
               />
               {resolveSharedBouncesFolder() !== null && (
                 <Action.Push
-                  title={t.unmatchedBounces}
+                  title={strings.unmatchedBounces}
                   icon={Icon.QuestionMarkCircle}
                   shortcut={{ modifiers: ["cmd", "shift"], key: "b" }}
                   target={<UnmatchedBounces projects={projects} onChanged={() => void reloadProjects()} />}
                 />
               )}
             </ActionPanel.Section>
-            <ActionPanel.Section title={t.sectionCopy}>
+            <ActionPanel.Section title={strings.sectionCopy}>
               {item.bouncesCount > 0 && (
                 <Action
-                  title={t.copyLatestBounce}
+                  title={strings.copyLatestBounce}
                   icon={Icon.CopyClipboard}
                   shortcut={Keyboard.Shortcut.Common.Copy}
                   onAction={() => copyLatestBounce(item)}
@@ -965,20 +963,20 @@ export default function Command() {
               )}
               <Action.CopyToClipboard
                 content={item.title}
-                title={t.copyProjectName}
+                title={strings.copyProjectName}
                 icon={Icon.CopyClipboard}
                 shortcut={Keyboard.Shortcut.Common.CopyName}
               />
               <Action.CopyToClipboard
                 content={item.folderPath}
-                title={t.copyProjectPath}
+                title={strings.copyProjectPath}
                 icon={Icon.CopyClipboard}
                 shortcut={Keyboard.Shortcut.Common.CopyPath}
               />
             </ActionPanel.Section>
-            <ActionPanel.Section title={t.sectionPin}>
+            <ActionPanel.Section title={strings.sectionPin}>
               <Action
-                title={item.pinned ? t.unpinProject : t.pinProject}
+                title={item.pinned ? strings.unpinProject : strings.pinProject}
                 icon={item.pinned ? Icon.TackDisabled : Icon.Tack}
                 shortcut={Keyboard.Shortcut.Common.Pin}
                 onAction={() => handlePinToggle(item)}
@@ -986,13 +984,13 @@ export default function Command() {
               {item.pinned && (
                 <>
                   <Action
-                    title={t.moveUp}
+                    title={strings.moveUp}
                     icon={Icon.ArrowUp}
                     shortcut={Keyboard.Shortcut.Common.MoveUp}
                     onAction={() => handleMovePinnedProject(item, "up")}
                   />
                   <Action
-                    title={t.moveDown}
+                    title={strings.moveDown}
                     icon={Icon.ArrowDown}
                     shortcut={Keyboard.Shortcut.Common.MoveDown}
                     onAction={() => handleMovePinnedProject(item, "down")}
@@ -1000,37 +998,37 @@ export default function Command() {
                 </>
               )}
             </ActionPanel.Section>
-            <ActionPanel.Section title={t.sectionView}>
+            <ActionPanel.Section title={strings.sectionView}>
               <Action
-                title={showDetail ? t.showOverview : t.showDetail}
+                title={showDetail ? strings.showOverview : strings.showDetail}
                 icon={Icon.AppWindowSidebarRight}
                 shortcut={{ modifiers: ["cmd", "shift"], key: "t" }}
                 onAction={toggleDetail}
               />
               {showDetail && (
                 <Action
-                  title={detailDoc === "notes" ? t.showLyrics : t.showNotes}
+                  title={detailDoc === "notes" ? strings.showLyrics : strings.showNotes}
                   shortcut={{ modifiers: ["cmd", "opt", "shift"], key: "t" }}
                   icon={Icon.Paragraph}
                   onAction={toggleDetailDoc}
                 />
               )}
             </ActionPanel.Section>
-            <ActionPanel.Section title={t.sectionArrange}>
+            <ActionPanel.Section title={strings.sectionArrange}>
               <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
             </ActionPanel.Section>
-            <ActionPanel.Section title={t.sectionDangerZone}>
+            <ActionPanel.Section title={strings.sectionDangerZone}>
               {orphanIds.length > 0 && (
                 <Action.Push
-                  title={t.cleanUpLeftovers}
+                  title={strings.cleanUpLeftovers}
                   icon={Icon.Eraser}
                   target={<CleanUpRemovedProjects />}
                   onPop={() => void reloadProjects()}
                 />
               )}
               <Action
-                title={t.moveToTrash}
+                title={strings.moveToTrash}
                 icon={Icon.Trash}
                 style={Action.Style.Destructive}
                 shortcut={Keyboard.Shortcut.Common.Remove}
@@ -1088,41 +1086,41 @@ export default function Command() {
         // 一打字就补全，不等计时器。
         if (text) setShowAll(true);
       }}
-      searchBarPlaceholder={t.searchProjectsPlaceholder}
+      searchBarPlaceholder={strings.searchProjectsPlaceholder}
       searchBarAccessory={
-        <List.Dropdown tooltip={t.filter} value={selectedFilter} onChange={setSelectedFilter}>
+        <List.Dropdown tooltip={strings.filter} value={selectedFilter} onChange={setSelectedFilter}>
           <List.Dropdown.Section title="">
-            <List.Dropdown.Item title={t.all} value="all" icon={Icon.CircleProgress100} />
+            <List.Dropdown.Item title={strings.all} value="all" icon={Icon.CircleProgress100} />
           </List.Dropdown.Section>
-          <List.Dropdown.Section title={t.stage}>
+          <List.Dropdown.Section title={strings.stage}>
             {stageOptions.map((option) => (
               <List.Dropdown.Item
                 key={`stage:${option.id}`}
                 title={option.name}
                 value={`stage:${option.id}`}
-                keywords={["stage", "stages", t.stage, ...optionKeywords(option)]}
+                keywords={["stage", "stages", strings.stage, ...optionKeywords(option)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
               />
             ))}
           </List.Dropdown.Section>
-          <List.Dropdown.Section title={t.genre}>
+          <List.Dropdown.Section title={strings.genre}>
             {genreOptions.map((option) => (
               <List.Dropdown.Item
                 key={`genre:${option.id}`}
                 title={option.name}
                 value={`genre:${option.id}`}
-                keywords={["genre", "genres", t.genre, ...optionKeywords(option)]}
+                keywords={["genre", "genres", strings.genre, ...optionKeywords(option)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Tag}
               />
             ))}
           </List.Dropdown.Section>
-          <List.Dropdown.Section title={t.created}>
+          <List.Dropdown.Section title={strings.created}>
             {createdYears.map((year) => (
               <List.Dropdown.Item
                 key={`created:${year}`}
                 title={String(year)}
                 value={`created:${year}`}
-                keywords={["created", "year", t.created]}
+                keywords={["created", "year", strings.created]}
                 icon={Icon.Calendar}
               />
             ))}
@@ -1137,8 +1135,8 @@ export default function Command() {
           description={labels.noProjectsFoundHint.replace("{folder}", PROJECTS_ROOT)}
           actions={
             <ActionPanel>
-              <Action title={t.openPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
-              <Action.Open title={t.openProjectsFolder} icon={Icon.Finder} target={PROJECTS_ROOT} />
+              <Action title={strings.openPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
+              <Action.Open title={strings.openProjectsFolder} icon={Icon.Finder} target={PROJECTS_ROOT} />
             </ActionPanel>
           }
         />
@@ -1146,17 +1144,17 @@ export default function Command() {
       {isEmptyTagSearch && (
         <List.EmptyView
           icon={Icon.MagnifyingGlass}
-          title={t.advancedSearch}
-          description={t.advancedSearchHint}
+          title={strings.advancedSearch}
+          description={strings.advancedSearchHint}
           actions={
             <ActionPanel>
-              <Action.OpenInBrowser title={t.openReadme} icon={Icon.Book} url={daw.readmeUrl} />
+              <Action.OpenInBrowser title={strings.openReadme} icon={Icon.Book} url={daw.readmeUrl} />
             </ActionPanel>
           }
         />
       )}
       {!isEmptyTagSearch && renderPinned.length > 0 && (
-        <List.Section title={t.pinned}>{renderPinned.map(renderProject)}</List.Section>
+        <List.Section title={strings.pinned}>{renderPinned.map(renderProject)}</List.Section>
       )}
       {!isEmptyTagSearch &&
         renderGroups.map((group) => (

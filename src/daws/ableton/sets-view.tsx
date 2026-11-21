@@ -29,16 +29,11 @@ import {
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
 import type { SortOption } from "@/core/ui/sorting";
 import { GroupBySubmenu, groupItems, useGroupOption } from "@/core/ui/grouping";
-import { getSettings } from "@/settings";
-import { getTranslations } from "@/i18n";
+import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
 import { showFailure } from "@/core/ui/toast";
 import { LOG_PREFIX } from "@/core/log";
-import { getSetsViewStrings } from "./strings";
-
-const settings = getSettings();
-const t = getTranslations(settings.language);
-const setsText = getSetsViewStrings(settings.language);
+import { setsViewStrings } from "./strings";
 
 const SETS_SORT_STORAGE_KEY = "sets-sort-option";
 const SETS_GROUP_STORAGE_KEY = "sets-group-option";
@@ -96,47 +91,51 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
       return;
     }
     if (trimmed.includes("/") || trimmed.includes(":")) {
-      await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+      await showToast({ style: Toast.Style.Failure, title: strings.invalidName });
       return;
     }
 
     const target = path.join(path.dirname(set.path), `${trimmed}${SET_EXTENSION}`);
     // 目标已存在且不是它自己（只改大小写）时拦下，绝不覆盖另一个 Set。
     if (fs.existsSync(target) && !isSameFile(target, set.path)) {
-      await showToast({ style: Toast.Style.Failure, title: setsText.setNameExists });
+      await showToast({ style: Toast.Style.Failure, title: setsViewStrings.setNameExists });
       return;
     }
 
     const confirmed = await confirmAlert({
       icon: { source: Icon.Warning, tintColor: Color.Yellow },
-      title: setsText.renameSetConfirmTitle,
-      message: setsText.renameSetConfirmMessage,
-      primaryAction: { title: t.rename, style: Alert.ActionStyle.Default },
+      title: setsViewStrings.renameSetConfirmTitle,
+      message: setsViewStrings.renameSetConfirmMessage,
+      primaryAction: { title: strings.rename, style: Alert.ActionStyle.Default },
     });
     if (!confirmed) return;
 
     try {
       fs.renameSync(set.path, target);
     } catch (error) {
-      await showFailure(t.renameFailed, error);
+      await showFailure(strings.renameFailed, error);
       return;
     }
 
     onRenamed();
-    await showToast({ style: Toast.Style.Success, title: setsText.setRenamed, message: `${trimmed}${SET_EXTENSION}` });
+    await showToast({
+      style: Toast.Style.Success,
+      title: setsViewStrings.setRenamed,
+      message: `${trimmed}${SET_EXTENSION}`,
+    });
     pop();
   }
 
   return (
     <Form
-      navigationTitle={`${setsText.renameSet} — ${set.name}`}
+      navigationTitle={`${setsViewStrings.renameSet} — ${set.name}`}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.save} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.save} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
+      <Form.TextField id="name" title={strings.name} value={name} onChange={setName} />
     </Form>
   );
 }
@@ -228,26 +227,30 @@ export function SetsView({ project }: { project: Project }) {
       const target = uniqueCopyPath(path.dirname(set.path), set.name);
       fs.copyFileSync(set.path, target);
       setReloadToken((n) => n + 1);
-      await showToast({ style: Toast.Style.Success, title: setsText.setDuplicated, message: path.basename(target) });
+      await showToast({
+        style: Toast.Style.Success,
+        title: setsViewStrings.setDuplicated,
+        message: path.basename(target),
+      });
     } catch (error) {
-      await showFailure(t.duplicateFailed, error);
+      await showFailure(strings.duplicateFailed, error);
     }
   };
 
   const handleTrash = async (set: ProjectSet) => {
     const confirmed = await confirmAlert({
-      title: t.moveToTrash,
+      title: strings.moveToTrash,
       icon: Icon.Trash,
-      message: `${setsText.trashSetHint}\n${set.name}`,
-      primaryAction: { title: t.moveToTrash, style: Alert.ActionStyle.Destructive },
+      message: `${setsViewStrings.trashSetHint}\n${set.name}`,
+      primaryAction: { title: strings.moveToTrash, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
     try {
       await trash(set.path);
       setReloadToken((n) => n + 1);
-      await showToast({ style: Toast.Style.Success, title: t.movedToTrash, message: set.name });
+      await showToast({ style: Toast.Style.Success, title: strings.movedToTrash, message: set.name });
     } catch (error) {
-      await showFailure(t.trashFailed, error);
+      await showFailure(strings.trashFailed, error);
     }
   };
 
@@ -262,7 +265,7 @@ export function SetsView({ project }: { project: Project }) {
       isLoading={isLoading}
       isShowingDetail
       navigationTitle={project.title}
-      searchBarPlaceholder={setsText.searchSets}
+      searchBarPlaceholder={setsViewStrings.searchSets}
     >
       {groupItems(
         sortedSets,
@@ -291,49 +294,49 @@ export function SetsView({ project }: { project: Project }) {
                 <ActionPanel>
                   <ActionPanel.Section>
                     <Action.Open
-                      title={setsText.openInDaw}
+                      title={setsViewStrings.openInDaw}
                       icon={abletonApp ? { fileIcon: abletonApp.path } : Icon.Document}
                       target={set.path}
                     />
                     <Action.ShowInFinder
                       path={set.path}
-                      title={t.showInFinder}
+                      title={strings.showInFinder}
                       shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                     />
                     <Action.Push
-                      title={setsText.renameSet}
+                      title={setsViewStrings.renameSet}
                       icon={Icon.Pencil}
                       shortcut={Keyboard.Shortcut.Common.Edit}
                       target={<RenameSetForm set={set} onRenamed={() => setReloadToken((n) => n + 1)} />}
                     />
                     <Action
-                      title={setsText.duplicateSet}
+                      title={setsViewStrings.duplicateSet}
                       icon={Icon.Duplicate}
                       shortcut={Keyboard.Shortcut.Common.Duplicate}
                       onAction={() => handleDuplicate(set)}
                     />
                   </ActionPanel.Section>
-                  <ActionPanel.Section title={t.sectionCopy}>
+                  <ActionPanel.Section title={strings.sectionCopy}>
                     <Action.CopyToClipboard
                       content={set.path.split("/").pop() ?? ""}
-                      title={setsText.copySetName}
+                      title={setsViewStrings.copySetName}
                       icon={Icon.CopyClipboard}
                       shortcut={Keyboard.Shortcut.Common.CopyName}
                     />
                     <Action.CopyToClipboard
                       content={set.path}
-                      title={setsText.copySetPath}
+                      title={setsViewStrings.copySetPath}
                       icon={Icon.CopyClipboard}
                       shortcut={Keyboard.Shortcut.Common.CopyPath}
                     />
                   </ActionPanel.Section>
-                  <ActionPanel.Section title={t.sectionArrange}>
+                  <ActionPanel.Section title={strings.sectionArrange}>
                     <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
                     <SortBySubmenu allowed={SETS_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
                   </ActionPanel.Section>
-                  <ActionPanel.Section title={t.sectionDangerZone}>
+                  <ActionPanel.Section title={strings.sectionDangerZone}>
                     <Action
-                      title={t.moveToTrash}
+                      title={strings.moveToTrash}
                       icon={Icon.Trash}
                       style={Action.Style.Destructive}
                       shortcut={Keyboard.Shortcut.Common.Remove}

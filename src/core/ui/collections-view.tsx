@@ -18,7 +18,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { getTranslations } from "@/i18n";
+import { strings } from "@/strings";
 import { getSettings } from "@/settings";
 import type { Project } from "@/core/projects/types";
 import { slugify, type TaxonomyOption } from "@/core/metadata/taxonomy";
@@ -74,8 +74,6 @@ import { EditNote } from "@/core/ui/components/project/edit-note";
 import { optionKeywords } from "@/core/ui/search-keywords";
 import { projectIcon } from "@/daws/icons";
 
-const t = getTranslations(getSettings().language);
-
 type Collection = { id: string; name: string };
 
 const VIEW_MODE_STORAGE_KEY = "view-mode:collections";
@@ -126,7 +124,7 @@ function CollectionNameForm(props: {
       actions={
         <ActionPanel>
           <Action.SubmitForm
-            title={t.save}
+            title={strings.save}
             onSubmit={async () => {
               const trimmed = name.trim();
               if (trimmed === "") {
@@ -135,7 +133,7 @@ function CollectionNameForm(props: {
                   pop();
                   return;
                 }
-                await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+                await showToast({ style: Toast.Style.Failure, title: strings.invalidName });
                 return;
               }
               // 返回 false（如重名）时留在表单里，方便直接改。
@@ -145,7 +143,7 @@ function CollectionNameForm(props: {
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={t.name} placeholder={props.currentName} value={name} onChange={setName} />
+      <Form.TextField id="name" title={strings.name} placeholder={props.currentName} value={name} onChange={setName} />
     </Form>
   );
 }
@@ -187,7 +185,7 @@ export function CollectionList({
   async function createCollection(name: string): Promise<boolean> {
     const current = await collectionTaxonomy.get();
     if (current.some((o) => sameName(o.name, name))) {
-      await showToast({ style: Toast.Style.Failure, title: t.collectionNameExists });
+      await showToast({ style: Toast.Style.Failure, title: strings.collectionNameExists });
       return false;
     }
     const base = slugify(name);
@@ -198,28 +196,28 @@ export function CollectionList({
     const option: TaxonomyOption = { id, name };
     await collectionTaxonomy.save([...current, option]);
     await reloadCollections();
-    await showToast({ style: Toast.Style.Success, title: t.created });
+    await showToast({ style: Toast.Style.Success, title: strings.created });
     return true;
   }
 
   async function renameCollection(id: string, name: string): Promise<boolean> {
     const current = await collectionTaxonomy.get();
     if (current.some((o) => o.id !== id && sameName(o.name, name))) {
-      await showToast({ style: Toast.Style.Failure, title: t.collectionNameExists });
+      await showToast({ style: Toast.Style.Failure, title: strings.collectionNameExists });
       return false;
     }
     await collectionTaxonomy.save(current.map((o) => (o.id === id ? { ...o, name } : o)));
     await reloadCollections();
-    await showToast({ style: Toast.Style.Success, title: t.renamed });
+    await showToast({ style: Toast.Style.Success, title: strings.renamed });
     return true;
   }
 
   async function deleteCollection(c: Collection) {
     const confirmed = await confirmAlert({
       icon: { source: Icon.Trash, tintColor: Color.Red },
-      title: `${t.delete} “${c.name}”?`,
-      message: t.deleteCollectionHint,
-      primaryAction: { title: t.delete, style: Alert.ActionStyle.Destructive },
+      title: `${strings.delete} “${c.name}”?`,
+      message: strings.deleteCollectionHint,
+      primaryAction: { title: strings.delete, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
     const current = await collectionTaxonomy.get();
@@ -232,15 +230,15 @@ export function CollectionList({
     setPinnedIds(await removePinnedCollection(c.id));
 
     await reloadCollections();
-    await showToast({ style: Toast.Style.Success, title: t.deleted });
+    await showToast({ style: Toast.Style.Success, title: strings.deleted });
   }
 
   const createAction = (
     <Action.Push
-      title={t.create}
+      title={strings.create}
       icon={Icon.Plus}
       shortcut={Keyboard.Shortcut.Common.New}
-      target={<CollectionNameForm title={t.create} onSubmit={createCollection} />}
+      target={<CollectionNameForm title={strings.create} onSubmit={createCollection} />}
     />
   );
 
@@ -260,7 +258,7 @@ export function CollectionList({
         actions={
           <ActionPanel>
             <Action.Push
-              title={t.open}
+              title={strings.open}
               icon={Icon.Tray}
               target={
                 <CollectionPanel
@@ -274,27 +272,27 @@ export function CollectionList({
             />
             {createAction}
             <Action.Push
-              title={t.rename}
+              title={strings.rename}
               icon={Icon.Pencil}
               shortcut={Keyboard.Shortcut.Common.Edit}
               target={
                 <CollectionNameForm
-                  title={t.rename}
+                  title={strings.rename}
                   currentName={c.name}
                   onSubmit={(name) => renameCollection(c.id, name)}
                 />
               }
             />
-            <ActionPanel.Section title={t.sectionPin}>
+            <ActionPanel.Section title={strings.sectionPin}>
               <Action
-                title={options.isPinned ? t.unpinProject : t.pinProject}
+                title={options.isPinned ? strings.unpinProject : strings.pinProject}
                 icon={options.isPinned ? Icon.TackDisabled : Icon.Tack}
                 shortcut={Keyboard.Shortcut.Common.Pin}
                 onAction={() => togglePin(c.id)}
               />
               {options.isPinned && options.index > 0 && (
                 <Action
-                  title={t.moveUp}
+                  title={strings.moveUp}
                   icon={Icon.ArrowUp}
                   shortcut={Keyboard.Shortcut.Common.MoveUp}
                   onAction={() => movePin(c.id, "up")}
@@ -302,24 +300,24 @@ export function CollectionList({
               )}
               {options.isPinned && options.index < options.total - 1 && (
                 <Action
-                  title={t.moveDown}
+                  title={strings.moveDown}
                   icon={Icon.ArrowDown}
                   shortcut={Keyboard.Shortcut.Common.MoveDown}
                   onAction={() => movePin(c.id, "down")}
                 />
               )}
             </ActionPanel.Section>
-            <ActionPanel.Section title={t.sectionNavigate}>
+            <ActionPanel.Section title={strings.sectionNavigate}>
               <Action
-                title={t.backToProjects}
+                title={strings.backToProjects}
                 icon={Icon.Compass}
                 shortcut={{ modifiers: ["ctrl"], key: "return" }}
                 onAction={pop}
               />
             </ActionPanel.Section>
-            <ActionPanel.Section title={t.sectionDangerZone}>
+            <ActionPanel.Section title={strings.sectionDangerZone}>
               <Action
-                title={t.delete}
+                title={strings.delete}
                 icon={Icon.Trash}
                 style={Action.Style.Destructive}
                 shortcut={Keyboard.Shortcut.Common.Remove}
@@ -333,19 +331,19 @@ export function CollectionList({
   };
 
   return (
-    <List navigationTitle={t.browseCollections} searchBarPlaceholder={t.searchCollections}>
+    <List navigationTitle={strings.browseCollections} searchBarPlaceholder={strings.searchCollections}>
       {collections.length === 0 ? (
-        <List.EmptyView title={t.noCategories} actions={<ActionPanel>{createAction}</ActionPanel>} />
+        <List.EmptyView title={strings.noCategories} actions={<ActionPanel>{createAction}</ActionPanel>} />
       ) : (
         <>
           {pinnedCollections.length > 0 && (
-            <List.Section title={t.pinned}>
+            <List.Section title={strings.pinned}>
               {pinnedCollections.map((c, index) =>
                 renderItem(c, { isPinned: true, index, total: pinnedCollections.length }),
               )}
             </List.Section>
           )}
-          <List.Section title={t.collections}>
+          <List.Section title={strings.collections}>
             {unpinnedCollections.map((c) =>
               renderItem(c, { isPinned: false, index: 0, total: unpinnedCollections.length }),
             )}
@@ -396,12 +394,12 @@ function CollectionPanel({
   function playProjectBounce(project: Project) {
     const latestBouncePath = findLatestProjectBounce(project);
     if (!latestBouncePath) {
-      void showToast({ style: Toast.Style.Failure, title: t.noBounces });
+      void showToast({ style: Toast.Style.Failure, title: strings.noBounces });
       return;
     }
     play(project.id, latestBouncePath, {
       onError: (message) => {
-        void showFailure(t.playbackFailed, message);
+        void showFailure(strings.playbackFailed, message);
       },
     });
   }
@@ -410,13 +408,13 @@ function CollectionPanel({
   async function copyLatestBounce(project: Project) {
     const latestBouncePath = findLatestProjectBounce(project);
     if (!latestBouncePath) {
-      void showToast({ style: Toast.Style.Failure, title: t.noBounces });
+      void showToast({ style: Toast.Style.Failure, title: strings.noBounces });
       return;
     }
     await Clipboard.copy({ file: latestBouncePath });
     void showToast({
       style: Toast.Style.Success,
-      title: t.bounceCopied,
+      title: strings.bounceCopied,
       message: latestBouncePath.split("/").pop() ?? "",
     });
   }
@@ -425,11 +423,11 @@ function CollectionPanel({
     const toggleIsPause = isThisPlaying && (playbackStatus === "Playing" || playbackStatus === "Starting");
     const title = isThisPlaying
       ? playbackStatus === "Paused"
-        ? t.resumePlayback
+        ? strings.resumePlayback
         : playbackStatus === "Stopping"
-          ? t.stoppingPlayback
-          : t.pausePlayback
-      : t.playLatestBounce;
+          ? strings.stoppingPlayback
+          : strings.pausePlayback
+      : strings.playLatestBounce;
     return (
       <Action
         title={title}
@@ -455,27 +453,27 @@ function CollectionPanel({
   // 播放时才出现的停止、seek / restart 控制，作用于全局播放器。
   const renderPlaybackControls = () =>
     playingId !== null ? (
-      <ActionPanel.Section title={t.sectionPlayback}>
+      <ActionPanel.Section title={strings.sectionPlayback}>
         <Action
-          title={t.stopPlayback}
+          title={strings.stopPlayback}
           icon={Icon.StopFilled}
           shortcut={{ modifiers: ["cmd"], key: "-" }}
           onAction={stop}
         />
         <Action
-          title={t.seekBackward}
+          title={strings.seekBackward}
           icon={Icon.RewindFilled}
           shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
           onAction={() => seek(-SEEK_STEP_SECONDS)}
         />
         <Action
-          title={t.seekForward}
+          title={strings.seekForward}
           icon={Icon.ForwardFilled}
           shortcut={{ modifiers: ["opt"], key: "arrowRight" }}
           onAction={() => seek(SEEK_STEP_SECONDS)}
         />
         <Action
-          title={t.restartTrack}
+          title={strings.restartTrack}
           icon={Icon.ArrowCounterClockwise}
           shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
           onAction={() => {
@@ -606,10 +604,10 @@ function CollectionPanel({
   // 把该项目整个移出本 collection：清掉成员关系 + 本合集轨号 + Role（项目本身与文件不受影响）。
   async function removeFromCollection(p: Project) {
     const confirmed = await confirmAlert({
-      title: t.removeFromCollection,
+      title: strings.removeFromCollection,
       icon: { source: Icon.Trash, tintColor: Color.Red },
-      message: t.removeFromCollectionHint,
-      primaryAction: { title: t.removeFromCollection, style: Alert.ActionStyle.Destructive },
+      message: strings.removeFromCollectionHint,
+      primaryAction: { title: strings.removeFromCollection, style: Alert.ActionStyle.Destructive },
     });
     if (!confirmed) return;
     await removeFromTracklist(p.id);
@@ -630,7 +628,7 @@ function CollectionPanel({
     try {
       await addProjectsToCollection(ids, collection.id);
     } catch (error) {
-      await showFailure(t.saveFailed, error);
+      await showFailure(strings.saveFailed, error);
       return;
     }
     await reloadMetadata();
@@ -641,7 +639,7 @@ function CollectionPanel({
       (projectId, info) => setInfos((prev) => ({ ...prev, [projectId]: info })),
       () => false,
     );
-    await showToast({ style: Toast.Style.Success, title: t.projectsAdded, message: String(ids.length) });
+    await showToast({ style: Toast.Style.Success, title: strings.projectsAdded, message: String(ids.length) });
   }
 
   // 按 Track Number 顺序把 Tracklist 成员的 latest bounce 写成 .m3u，Unsorted 不排。
@@ -656,7 +654,7 @@ function CollectionPanel({
     }
 
     if (entries.length === 0) {
-      await showToast({ style: Toast.Style.Failure, title: t.noBounces });
+      await showToast({ style: Toast.Style.Failure, title: strings.noBounces });
       return;
     }
 
@@ -672,7 +670,7 @@ function CollectionPanel({
     try {
       fs.writeFileSync(playlistPath, lines.join("\n") + "\n");
     } catch (error) {
-      await showFailure(t.queueFailed, error);
+      await showFailure(strings.queueFailed, error);
       return;
     }
 
@@ -681,18 +679,18 @@ function CollectionPanel({
     const skipped = tracked.length - entries.length;
     await showToast({
       style: Toast.Style.Success,
-      title: t.collectionQueued,
+      title: strings.collectionQueued,
       message:
         skipped > 0
-          ? `${entries.length} ${t.tracksWord} · ${skipped} ${t.skippedNoBounce}`
-          : `${entries.length} ${t.tracksWord}`,
+          ? `${entries.length} ${strings.tracksWord} · ${skipped} ${strings.skippedNoBounce}`
+          : `${entries.length} ${strings.tracksWord}`,
     });
   }
 
   const renderQueueCollection = () =>
     tracked.length > 0 && (
       <Action
-        title={t.queueCollection}
+        title={strings.queueCollection}
         icon={Icon.AppWindow}
         shortcut={{ modifiers: ["cmd", "shift"], key: "return" }}
         onAction={queueCollection}
@@ -709,19 +707,19 @@ function CollectionPanel({
   const renderDocActions = (p: Project) => (
     <>
       <Action.Push
-        title={t.editNote}
+        title={strings.editNote}
         icon={Icon.Highlight}
         shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
         target={<EditNote project={p} onSaved={() => reloadDoc(p, "notes")} />}
       />
       <Action.Push
-        title={t.editLyrics}
+        title={strings.editLyrics}
         icon={Icon.Highlight}
         shortcut={{ modifiers: ["cmd", "opt"], key: "l" }}
         target={<EditNote project={p} kind="lyrics" onSaved={() => reloadDoc(p, "lyrics")} />}
       />
       <Action
-        title={t.openNote}
+        title={strings.openNote}
         icon={Icon.Book}
         shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
         onAction={async () => {
@@ -729,7 +727,7 @@ function CollectionPanel({
         }}
       />
       <Action
-        title={t.openLyrics}
+        title={strings.openLyrics}
         icon={Icon.Book}
         shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
         onAction={async () => {
@@ -743,14 +741,14 @@ function CollectionPanel({
   const renderViewToggle = () => (
     <ActionPanel.Section>
       <Action
-        title={showDetail ? t.showOverview : t.showDetail}
+        title={showDetail ? strings.showOverview : strings.showDetail}
         icon={Icon.AppWindowSidebarRight}
         shortcut={{ modifiers: ["cmd", "shift"], key: "t" }}
         onAction={toggleDetail}
       />
       {showDetail && (
         <Action
-          title={detailDoc === "notes" ? t.showLyrics : t.showNotes}
+          title={detailDoc === "notes" ? strings.showLyrics : strings.showNotes}
           icon={Icon.Text}
           shortcut={{ modifiers: ["cmd", "opt", "shift"], key: "t" }}
           onAction={toggleDetailDoc}
@@ -761,9 +759,9 @@ function CollectionPanel({
 
   // 返回 Search Projects（跨层直接回根视图）。
   const renderBackToProjects = () => (
-    <ActionPanel.Section title={t.sectionNavigate}>
+    <ActionPanel.Section title={strings.sectionNavigate}>
       <Action
-        title={t.backToProjects}
+        title={strings.backToProjects}
         icon={Icon.Compass}
         shortcut={{ modifiers: ["ctrl"], key: "return" }}
         onAction={() => {
@@ -779,12 +777,12 @@ function CollectionPanel({
     p.kind === "package" ? (
       <Action.ShowInFinder
         path={p.folderPath}
-        title={t.showInFinder}
+        title={strings.showInFinder}
         shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
       />
     ) : (
       <Action.Open
-        title={t.openInFinder}
+        title={strings.openInFinder}
         icon={Icon.Finder}
         shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
         target={p.folderPath}
@@ -792,10 +790,10 @@ function CollectionPanel({
     );
 
   const renderCopySection = (p: Project) => (
-    <ActionPanel.Section title={t.sectionCopy}>
+    <ActionPanel.Section title={strings.sectionCopy}>
       {p.bouncesCount > 0 && (
         <Action
-          title={t.copyLatestBounce}
+          title={strings.copyLatestBounce}
           icon={Icon.CopyClipboard}
           shortcut={Keyboard.Shortcut.Common.Copy}
           onAction={() => copyLatestBounce(p)}
@@ -803,13 +801,13 @@ function CollectionPanel({
       )}
       <Action.CopyToClipboard
         content={p.title}
-        title={t.copyProjectName}
+        title={strings.copyProjectName}
         icon={Icon.CopyClipboard}
         shortcut={Keyboard.Shortcut.Common.CopyName}
       />
       <Action.CopyToClipboard
         content={p.folderPath}
-        title={t.copyProjectPath}
+        title={strings.copyProjectPath}
         icon={Icon.CopyClipboard}
         shortcut={Keyboard.Shortcut.Common.CopyPath}
       />
@@ -841,13 +839,14 @@ function CollectionPanel({
 
   // 总时长：所有已排序曲目（不分 Stage）。
   const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
-  const tracklistTitle = totalSeconds > 0 ? `${t.tracklistDuration} ${formatDuration(totalSeconds)}` : t.tracklist;
+  const tracklistTitle =
+    totalSeconds > 0 ? `${strings.tracklistDuration} ${formatDuration(totalSeconds)}` : strings.tracklist;
 
   // 还在分析的曲目（时长、能量）：顶部显示加载条，第一个分区的副标题显示进度，分析完自动消失。
   // 不用 Toast：播放中的常驻 Toast 会被盖掉。
   const analyzedCount = members.filter((p) => p.id in infos).length;
   const analyzing = !loading && analyzedCount < members.length;
-  const analyzingSubtitle = analyzing ? `${t.analyzing} ${analyzedCount}/${members.length}` : undefined;
+  const analyzingSubtitle = analyzing ? `${strings.analyzing} ${analyzedCount}/${members.length}` : undefined;
 
   // 分钟位宽：本合集任一曲目 ≥ 10 分钟则补两位，保证时长列对齐。
   const longestTrackSeconds = members.reduce((max, p) => Math.max(max, infos[p.id]?.duration ?? 0), 0);
@@ -923,9 +922,9 @@ function CollectionPanel({
     const i = tracked.indexOf(p);
     if (i === -1) {
       return (
-        <ActionPanel.Section title={t.sectionTracklist}>
+        <ActionPanel.Section title={strings.sectionTracklist}>
           <Action
-            title={t.addToTracklist}
+            title={strings.addToTracklist}
             icon={Icon.Plus}
             shortcut={Keyboard.Shortcut.Common.Pin}
             onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
@@ -934,16 +933,16 @@ function CollectionPanel({
       );
     }
     return (
-      <ActionPanel.Section title={t.sectionTracklist}>
+      <ActionPanel.Section title={strings.sectionTracklist}>
         <Action
-          title={t.removeFromTracklist}
+          title={strings.removeFromTracklist}
           icon={Icon.Minus}
           shortcut={Keyboard.Shortcut.Common.Pin}
           onAction={() => removeFromTracklist(p.id)}
         />
         {i > 0 && (
           <Action
-            title={t.swapUp}
+            title={strings.swapUp}
             icon={Icon.ArrowUp}
             shortcut={Keyboard.Shortcut.Common.MoveUp}
             onAction={() => apply(swapNumbers(map, p.id, tracked[i - 1].id))}
@@ -951,7 +950,7 @@ function CollectionPanel({
         )}
         {i < tracked.length - 1 && (
           <Action
-            title={t.swapDown}
+            title={strings.swapDown}
             icon={Icon.ArrowDown}
             shortcut={Keyboard.Shortcut.Common.MoveDown}
             onAction={() => apply(swapNumbers(map, p.id, tracked[i + 1].id))}
@@ -959,7 +958,7 @@ function CollectionPanel({
         )}
         {i > 0 && (
           <Action
-            title={t.moveToTop}
+            title={strings.moveToTop}
             icon={Icon.ArrowUpCircle}
             shortcut={{ modifiers: ["cmd", "shift"], key: "arrowUp" }}
             onAction={() => moveToTop(p.id)}
@@ -967,7 +966,7 @@ function CollectionPanel({
         )}
         {i < tracked.length - 1 && (
           <Action
-            title={t.moveToBottom}
+            title={strings.moveToBottom}
             icon={Icon.ArrowDownCircle}
             shortcut={{ modifiers: ["cmd", "shift"], key: "arrowDown" }}
             onAction={() => apply(assignNumber(map, p.id, nextNumber(map)))}
@@ -980,7 +979,7 @@ function CollectionPanel({
   // 批量加入：候选只列还不在本合集的项目。空合集的 EmptyView 也挂这个入口。
   const renderAddProjects = () => (
     <Action.Push
-      title={t.addProjects}
+      title={strings.addProjects}
       icon={Icon.Plus}
       shortcut={Keyboard.Shortcut.Common.New}
       target={
@@ -997,7 +996,7 @@ function CollectionPanel({
   const renderItemActions = (p: Project) => (
     <ActionPanel>
       <Action.Push
-        title={t.setTrackNumber}
+        title={strings.setTrackNumber}
         icon={Icon.Hashtag}
         target={
           <SetTrackNumberForm
@@ -1012,9 +1011,9 @@ function CollectionPanel({
       {renderOpenInFinder(p)}
       {renderPlaybackControls()}
       {renderTracklistSection(p)}
-      <ActionPanel.Section title={t.sectionDetails}>
+      <ActionPanel.Section title={strings.sectionDetails}>
         <Action.Push
-          title={t.editInfo}
+          title={strings.editInfo}
           icon={Icon.Pencil}
           shortcut={Keyboard.Shortcut.Common.Edit}
           target={
@@ -1036,9 +1035,9 @@ function CollectionPanel({
       {renderCopySection(p)}
       {renderViewToggle()}
       {renderBackToProjects()}
-      <ActionPanel.Section title={t.sectionDangerZone}>
+      <ActionPanel.Section title={strings.sectionDangerZone}>
         <Action
-          title={t.removeFromCollection}
+          title={strings.removeFromCollection}
           icon={Icon.Trash}
           style={Action.Style.Destructive}
           shortcut={Keyboard.Shortcut.Common.Remove}
@@ -1060,7 +1059,7 @@ function CollectionPanel({
         ? [
             {
               icon: { source: Icon.Warning, tintColor: Color.Yellow },
-              tooltip: t.duplicateTrack,
+              tooltip: strings.duplicateTrack,
             } as List.Item.Accessory,
           ]
         : []),
@@ -1086,32 +1085,32 @@ function CollectionPanel({
   return (
     <List
       navigationTitle={collection.name}
-      searchBarPlaceholder={t.searchTracks}
+      searchBarPlaceholder={strings.searchTracks}
       isLoading={loading || analyzing}
       isShowingDetail={showDetail}
       searchBarAccessory={
-        <List.Dropdown tooltip={t.filter} value={selectedFilter} onChange={setSelectedFilter}>
+        <List.Dropdown tooltip={strings.filter} value={selectedFilter} onChange={setSelectedFilter}>
           <List.Dropdown.Section title="">
-            <List.Dropdown.Item title={t.all} value="all" icon={Icon.CircleProgress100} />
+            <List.Dropdown.Item title={strings.all} value="all" icon={Icon.CircleProgress100} />
           </List.Dropdown.Section>
-          <List.Dropdown.Section title={t.stage}>
+          <List.Dropdown.Section title={strings.stage}>
             {stages.map((option) => (
               <List.Dropdown.Item
                 key={`stage:${option.id}`}
                 title={option.name}
                 value={`stage:${option.id}`}
-                keywords={["stage", "stages", t.stage, ...optionKeywords(option)]}
+                keywords={["stage", "stages", strings.stage, ...optionKeywords(option)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Circle}
               />
             ))}
           </List.Dropdown.Section>
-          <List.Dropdown.Section title={t.genre}>
+          <List.Dropdown.Section title={strings.genre}>
             {genres.map((option) => (
               <List.Dropdown.Item
                 key={`genre:${option.id}`}
                 title={option.name}
                 value={`genre:${option.id}`}
-                keywords={["genre", "genres", t.genre, ...optionKeywords(option)]}
+                keywords={["genre", "genres", strings.genre, ...optionKeywords(option)]}
                 icon={option.color ? { source: Icon.Circle, tintColor: option.color } : Icon.Tag}
               />
             ))}
@@ -1121,7 +1120,7 @@ function CollectionPanel({
     >
       {tracked.length === 0 && unsorted.length === 0 ? (
         <List.EmptyView
-          title={t.noCategories}
+          title={strings.noCategories}
           actions={
             <ActionPanel>
               {renderAddProjects()}
@@ -1137,7 +1136,7 @@ function CollectionPanel({
             </List.Section>
           )}
           {unsorted.length > 0 && (
-            <List.Section title={t.unsorted} subtitle={tracked.length === 0 ? analyzingSubtitle : undefined}>
+            <List.Section title={strings.unsorted} subtitle={tracked.length === 0 ? analyzingSubtitle : undefined}>
               {unsorted.map((p) => renderMember(p))}
             </List.Section>
           )}
@@ -1158,11 +1157,11 @@ function AddProjectsForm({
   const [ids, setIds] = useState<string[]>([]);
   return (
     <Form
-      navigationTitle={t.addProjects}
+      navigationTitle={strings.addProjects}
       actions={
         <ActionPanel>
           <Action.SubmitForm
-            title={t.add}
+            title={strings.add}
             icon={Icon.Plus}
             onSubmit={async () => {
               await onSubmit(ids);
@@ -1173,9 +1172,9 @@ function AddProjectsForm({
       }
     >
       {candidates.length === 0 ? (
-        <Form.Description text={t.allProjectsInCollection} />
+        <Form.Description text={strings.allProjectsInCollection} />
       ) : (
-        <Form.TagPicker id="projects" title={t.projects} value={ids} onChange={setIds}>
+        <Form.TagPicker id="projects" title={strings.projects} value={ids} onChange={setIds}>
           {candidates.map((p) => (
             <Form.TagPicker.Item key={p.id} value={p.id} title={p.title} icon={projectIcon(p.kind)} />
           ))}
@@ -1197,7 +1196,7 @@ function SetTrackNumberForm({ current, onSubmit }: { current?: number; onSubmit:
     }
     const n = parseInt(trimmed, 10);
     if (isNaN(n) || n < 0) {
-      showToast({ style: Toast.Style.Failure, title: t.invalidPosition });
+      showToast({ style: Toast.Style.Failure, title: strings.invalidPosition });
       return;
     }
     onSubmit(n === 0 ? null : n); // 0 = 移出
@@ -1207,13 +1206,13 @@ function SetTrackNumberForm({ current, onSubmit }: { current?: number; onSubmit:
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.save} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.save} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
       <Form.TextField
         id="n"
-        title={t.trackNumber}
+        title={strings.trackNumber}
         placeholder={current !== undefined ? String(current) : "1"}
         value={value}
         onChange={setValue}

@@ -28,53 +28,53 @@ import {
 } from "@/core/data/data-transfer";
 import { loadProjects } from "@/core/projects/load-projects";
 import { showFailure } from "@/core/ui/toast";
-import { getTranslations } from "@/i18n";
+import { strings } from "@/strings";
 import { getSettings } from "@/settings";
 
 const settings = getSettings();
-const t = getTranslations(settings.language);
 
 function corruptKindName(kind: CorruptDataError["kind"]): string {
   switch (kind) {
     case "metadata":
-      return t.corruptDataMetadata;
+      return strings.corruptDataMetadata;
     case "categories":
-      return t.corruptDataCategories;
+      return strings.corruptDataCategories;
     case "pins":
-      return t.corruptDataPins;
+      return strings.corruptDataPins;
     case "orders":
-      return t.corruptDataOrders;
+      return strings.corruptDataOrders;
     case "roles":
-      return t.corruptDataRoles;
+      return strings.corruptDataRoles;
     case "deleted":
-      return t.corruptDataDeleted;
+      return strings.corruptDataDeleted;
   }
 }
 
 /** 只列出计数大于 0 的类别。 */
 function changeSummary(changes: ImportChanges): string {
   const parts: string[] = [];
-  if (changes.projects > 0) parts.push(t.importChangeProjects.replace("{count}", String(changes.projects)));
-  if (changes.options > 0) parts.push(t.importChangeOptions.replace("{count}", String(changes.options)));
+  if (changes.projects > 0) parts.push(strings.importChangeProjects.replace("{count}", String(changes.projects)));
+  if (changes.options > 0) parts.push(strings.importChangeOptions.replace("{count}", String(changes.options)));
   if (changes.collections > 0) {
-    parts.push(t.importChangeCollections.replace("{count}", String(changes.collections)));
+    parts.push(strings.importChangeCollections.replace("{count}", String(changes.collections)));
   }
-  if (changes.pins > 0) parts.push(t.importChangePins);
+  if (changes.pins > 0) parts.push(strings.importChangePins);
   return parts.join(", ");
 }
 
 function resultSummary(plan: ImportPlan): string {
   const parts: string[] = [];
-  if (plan.result.restored > 0) parts.push(t.importResultRestored.replace("{count}", String(plan.result.restored)));
-  if (plan.result.kept > 0) parts.push(t.importResultKept.replace("{count}", String(plan.result.kept)));
+  if (plan.result.restored > 0)
+    parts.push(strings.importResultRestored.replace("{count}", String(plan.result.restored)));
+  if (plan.result.kept > 0) parts.push(strings.importResultKept.replace("{count}", String(plan.result.kept)));
   if (plan.result.rematched > 0) {
-    parts.push(t.importResultRematched.replace("{count}", String(plan.result.rematched)));
+    parts.push(strings.importResultRematched.replace("{count}", String(plan.result.rematched)));
   }
   if (plan.result.unmatched > 0) {
-    parts.push(t.importResultUnmatched.replace("{count}", String(plan.result.unmatched)));
+    parts.push(strings.importResultUnmatched.replace("{count}", String(plan.result.unmatched)));
   }
   if (plan.result.droppedTracks > 0) {
-    parts.push(t.importResultDropped.replace("{count}", String(plan.result.droppedTracks)));
+    parts.push(strings.importResultDropped.replace("{count}", String(plan.result.droppedTracks)));
   }
   return parts.join(", ");
 }
@@ -84,7 +84,7 @@ export default function ImportData() {
   const [fileError, setFileError] = useState<string | undefined>();
 
   function validateFile(value: string[]): string | undefined {
-    return value[0] ? undefined : t.importFileRequired;
+    return value[0] ? undefined : strings.importFileRequired;
   }
 
   async function handleSubmit() {
@@ -95,7 +95,7 @@ export default function ImportData() {
     }
 
     const target = file[0];
-    const toast = await showToast({ style: Toast.Style.Animated, title: t.importingData });
+    const toast = await showToast({ style: Toast.Style.Animated, title: strings.importingData });
     try {
       const raw = fs.readFileSync(target, "utf8");
       const parsed = parseDataFile(raw, environment.extensionName);
@@ -107,7 +107,7 @@ export default function ImportData() {
 
       if (plan.unchanged) {
         toast.style = Toast.Style.Success;
-        toast.title = t.importNothingToChange;
+        toast.title = strings.importNothingToChange;
         return;
       }
 
@@ -115,9 +115,9 @@ export default function ImportData() {
       if (plan.changeCount > 0) {
         const backupName = backupFileName(new Date());
         const confirmed = await confirmAlert({
-          title: t.importConfirmTitle,
-          message: `${t.importConfirmBody.replace("{changes}", changeSummary(plan.changes))} ${t.importConfirmBackup.replace("{file}", backupName)}`,
-          primaryAction: { title: t.replaceData, style: Alert.ActionStyle.Destructive },
+          title: strings.importConfirmTitle,
+          message: `${strings.importConfirmBody.replace("{changes}", changeSummary(plan.changes))} ${strings.importConfirmBackup.replace("{file}", backupName)}`,
+          primaryAction: { title: strings.replaceData, style: Alert.ActionStyle.Destructive },
         });
         if (!confirmed) {
           await toast.hide();
@@ -129,13 +129,13 @@ export default function ImportData() {
       await applyPlan(plan, current);
 
       toast.style = Toast.Style.Success;
-      toast.title = t.dataImported;
+      toast.title = strings.dataImported;
       toast.message = resultSummary(plan);
       if (backupPath) {
         const backup = backupPath;
-        toast.message = `${toast.message} ${t.importBackupSaved.replace("{file}", path.basename(backup))}`;
+        toast.message = `${toast.message} ${strings.importBackupSaved.replace("{file}", path.basename(backup))}`;
         toast.primaryAction = {
-          title: t.showInFinder,
+          title: strings.showInFinder,
           onAction: () => {
             void showInFinder(backup);
           },
@@ -143,16 +143,16 @@ export default function ImportData() {
       }
     } catch (error) {
       if (error instanceof CorruptDataError) {
-        await showFailure(t.importFailed, error, {
-          message: t.corruptDataKind.replace("{kind}", corruptKindName(error.kind)),
+        await showFailure(strings.importFailed, error, {
+          message: strings.corruptDataKind.replace("{kind}", corruptKindName(error.kind)),
         });
         return;
       }
       if (error instanceof DataFileError) {
-        await showFailure(t.importFailed, new Error(importErrorMessage(error)));
+        await showFailure(strings.importFailed, new Error(importErrorMessage(error)));
         return;
       }
-      await showFailure(t.importFailed, error);
+      await showFailure(strings.importFailed, error);
     }
   }
 
@@ -160,14 +160,14 @@ export default function ImportData() {
     switch (error.reason) {
       case "parse":
       case "format":
-        return t.importBadFormat;
+        return strings.importBadFormat;
       case "version":
-        return t.importBadVersion;
+        return strings.importBadVersion;
       case "extension":
-        return t.importOtherExtension.replace("{extension}", error.message);
+        return strings.importOtherExtension.replace("{extension}", error.message);
       case "structure":
         // 校验失败时写明是哪一块数据、第一个出错的位置和原因。
-        return t.importBadStructureAt.replace("{detail}", error.message);
+        return strings.importBadStructureAt.replace("{detail}", error.message);
     }
   }
 
@@ -175,13 +175,13 @@ export default function ImportData() {
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.importData} icon={Icon.Upload} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.importData} icon={Icon.Upload} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
       <Form.FilePicker
         id="file"
-        title={t.importFile}
+        title={strings.importFile}
         value={file}
         error={fileError}
         onChange={(value) => {

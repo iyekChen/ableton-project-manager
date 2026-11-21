@@ -22,8 +22,7 @@ import {
   saveProjectMetadata,
 } from "@/core/metadata/project-metadata";
 import { showFailure } from "@/core/ui/toast";
-import { getTranslations } from "@/i18n";
-import { getSettings } from "@/settings";
+import { strings } from "@/strings";
 import {
   alteredDocChars,
   docFileBaseName,
@@ -49,12 +48,8 @@ import {
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "@/core/metadata/taxonomies";
 import type { Project } from "@/core/projects/types";
 import { daw } from "@/daws";
-import { getDawLabels } from "@/daws/labels";
+import { labels } from "@/daws/labels";
 import { optionKeywords } from "@/core/ui/search-keywords";
-
-const settings = getSettings();
-const t = getTranslations(settings.language);
-const labels = getDawLabels(settings.language);
 
 /** 改名成功时回传给调用方，便于其刷新内存中以旧 id 为键的状态。 */
 export type ProjectRename = { oldId: string; newId: string; folderPath: string };
@@ -138,7 +133,7 @@ export function EditInfo({
       (collectionId !== undefined && nextRole !== (currentRole ?? null));
 
     if (!changed) {
-      await showToast({ style: Toast.Style.Success, title: t.noChanges });
+      await showToast({ style: Toast.Style.Success, title: strings.noChanges });
       pop();
       return;
     }
@@ -149,7 +144,7 @@ export function EditInfo({
       await assertOrdersWritable();
       await assertRolesWritable();
     } catch (error) {
-      await showFailure(t.storageUnreadable, error);
+      await showFailure(strings.storageUnreadable, error);
       return;
     }
 
@@ -159,9 +154,9 @@ export function EditInfo({
       const names = removedCollections.map((id) => collectionOptions.find((c) => c.id === id)?.name ?? id).join(", ");
       const confirmed = await confirmAlert({
         icon: { source: Icon.Trash, tintColor: Color.Red },
-        title: t.removeCollectionsConfirmTitle,
-        message: t.removeCollectionsConfirmHint.replace("{names}", names),
-        primaryAction: { title: t.removeFromCollection, style: Alert.ActionStyle.Destructive },
+        title: strings.removeCollectionsConfirmTitle,
+        message: strings.removeCollectionsConfirmHint.replace("{names}", names),
+        primaryAction: { title: strings.removeFromCollection, style: Alert.ActionStyle.Destructive },
       });
       if (!confirmed) return;
     }
@@ -172,7 +167,7 @@ export function EditInfo({
 
     if (nameChanged) {
       if (trimmedName.includes("/") || trimmedName.includes(":")) {
-        await showToast({ style: Toast.Style.Failure, title: t.invalidName });
+        await showToast({ style: Toast.Style.Failure, title: strings.invalidName });
         return;
       }
 
@@ -188,14 +183,14 @@ export function EditInfo({
         // 目标不存在。
       }
       if (!targetIsSelf && fs.existsSync(newPath)) {
-        await showToast({ style: Toast.Style.Failure, title: t.nameExists });
+        await showToast({ style: Toast.Style.Failure, title: strings.nameExists });
         return;
       }
 
       // 改名后笔记/歌词文件会与别的项目撞名（如 Song?A 与 Song？A）：拦下，免得两个项目共用一份笔记。
       const docTakenBy = docNameTakenBy(trimmedName, project.title);
       if (docTakenBy.length > 0) {
-        await showToast({ style: Toast.Style.Failure, title: t.docNameTaken, message: docTakenBy.join(", ") });
+        await showToast({ style: Toast.Style.Failure, title: strings.docNameTaken, message: docTakenBy.join(", ") });
         return;
       }
 
@@ -204,12 +199,12 @@ export function EditInfo({
       const hasDocConflicts = docConflicts.length > 0;
       const confirmed = await confirmAlert({
         icon: { source: Icon.Warning, tintColor: Color.Yellow },
-        title: t.renameConfirmTitle,
+        title: strings.renameConfirmTitle,
         message: hasDocConflicts
-          ? `${labels.renameConfirmMessage}\n\n${t.docConflictWarning.replace("{files}", docConflicts.join(", "))}`
+          ? `${labels.renameConfirmMessage}\n\n${strings.docConflictWarning.replace("{files}", docConflicts.join(", "))}`
           : labels.renameConfirmMessage,
         primaryAction: {
-          title: hasDocConflicts ? t.renameAnyway : t.rename,
+          title: hasDocConflicts ? strings.renameAnyway : strings.rename,
           style: hasDocConflicts ? Alert.ActionStyle.Destructive : Alert.ActionStyle.Default,
         },
       });
@@ -221,7 +216,7 @@ export function EditInfo({
       try {
         fs.renameSync(project.folderPath, newPath);
       } catch (error) {
-        await showFailure(t.renameFailed, error);
+        await showFailure(strings.renameFailed, error);
         return;
       }
 
@@ -236,7 +231,7 @@ export function EditInfo({
         // 预检之后仍写入失败：文件夹已改名，不往回改。下次加载列表时，Finder 同步会按 inode 认出这次改名，
         // 把没迁完的数据和文档补齐（每一步都能重复执行）；同步成功前不会更新项目清单，所以每次加载都会重试。
         onSaved({ oldId: project.id, newId: trimmedName, folderPath: newPath });
-        await showFailure(t.renameFailed, error);
+        await showFailure(strings.renameFailed, error);
         return;
       }
       docRenameResult = renameDocFiles(project.title, trimmedName);
@@ -271,9 +266,9 @@ export function EditInfo({
     if (docRenameResult && (docRenameResult.conflicts.length > 0 || docRenameResult.failures.length > 0)) {
       // 文档改名有冲突/失败：如实告知，而不是误报"已更新"。
       const kinds = [...docRenameResult.conflicts, ...docRenameResult.failures].join(", ");
-      await showToast({ style: Toast.Style.Failure, title: t.docRenameSkipped, message: kinds });
+      await showToast({ style: Toast.Style.Failure, title: strings.docRenameSkipped, message: kinds });
     } else {
-      await showToast({ style: Toast.Style.Success, title: t.infoUpdated });
+      await showToast({ style: Toast.Style.Success, title: strings.infoUpdated });
     }
 
     pop();
@@ -281,23 +276,23 @@ export function EditInfo({
 
   return (
     <Form
-      navigationTitle={`${t.editInfo} — ${project.title}`}
+      navigationTitle={`${strings.editInfo} — ${project.title}`}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={t.save} icon={Icon.Check} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.save} icon={Icon.Check} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={t.name} value={name} onChange={setName} />
+      <Form.TextField id="name" title={strings.name} value={name} onChange={setName} />
       {alteredDocChars(name.trim()).length > 0 && (
         <Form.Description
-          text={t.docNameHint
+          text={strings.docNameHint
             .replace("{file}", docFileBaseName(name.trim()))
             .replace("{chars}", alteredDocChars(name.trim()).join(" "))}
         />
       )}
-      <Form.Dropdown id="stage" title={t.stage} value={stageId} onChange={setStageId}>
-        <Form.Dropdown.Item value="none" title={t.none} icon={Icon.Circle} />
+      <Form.Dropdown id="stage" title={strings.stage} value={stageId} onChange={setStageId}>
+        <Form.Dropdown.Item value="none" title={strings.none} icon={Icon.Circle} />
         {stageOptions.map((option) => (
           <Form.Dropdown.Item
             key={option.id}
@@ -308,22 +303,22 @@ export function EditInfo({
           />
         ))}
       </Form.Dropdown>
-      <Form.TagPicker id="genre" title={t.genre} value={genreIds} onChange={setGenreIds}>
+      <Form.TagPicker id="genre" title={strings.genre} value={genreIds} onChange={setGenreIds}>
         {genreOptions.map((option) => (
           <Form.TagPicker.Item key={option.id} value={option.id} title={option.name} />
         ))}
       </Form.TagPicker>
-      <Form.TagPicker id="collection" title={t.collection} value={collectionIds} onChange={setCollectionIds}>
+      <Form.TagPicker id="collection" title={strings.collection} value={collectionIds} onChange={setCollectionIds}>
         {collectionOptions.map((option) => (
           <Form.TagPicker.Item key={option.id} value={option.id} title={option.name} />
         ))}
       </Form.TagPicker>
       {originalCollectionIds.some((id) => !collectionIds.includes(id)) && (
-        <Form.Description text={t.removeCollectionsFormHint} />
+        <Form.Description text={strings.removeCollectionsFormHint} />
       )}
       {collectionId && rolesLoaded && (
-        <Form.Dropdown id="role" title={t.role} value={role} onChange={setRole}>
-          <Form.Dropdown.Item value="none" title={t.none} />
+        <Form.Dropdown id="role" title={strings.role} value={role} onChange={setRole}>
+          <Form.Dropdown.Item value="none" title={strings.none} />
           {roleOptions.map((option) => (
             <Form.Dropdown.Item
               key={option.id}

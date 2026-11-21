@@ -1,10 +1,7 @@
 import { Action, ActionPanel, Icon } from "@raycast/api";
 import { useState } from "react";
 import { readCachedChoice, viewPrefs } from "./view-prefs";
-import { getSettings } from "@/settings";
-import { getTranslations } from "@/i18n";
-
-const t = getTranslations(getSettings().language);
+import { strings } from "@/strings";
 
 export type GroupOption = "created" | "modified" | "none";
 export type GroupDateOption = "created" | "modified";
@@ -63,10 +60,10 @@ export function groupItems<T>(
   const startOfYear = new Date(y, 0, 1).getTime();
 
   function bandFor(ms: number): { key: string; title: string } {
-    if (ms >= startOfToday) return { key: "today", title: t.bandToday };
-    if (ms >= startOfYesterday) return { key: "yesterday", title: t.bandYesterday };
-    if (ms >= startOfPrev7) return { key: "prev7", title: t.bandPrev7Days };
-    if (ms >= startOfPrev30) return { key: "prev30", title: t.bandPrev30Days };
+    if (ms >= startOfToday) return { key: "today", title: strings.bandToday };
+    if (ms >= startOfYesterday) return { key: "yesterday", title: strings.bandYesterday };
+    if (ms >= startOfPrev7) return { key: "prev7", title: strings.bandPrev7Days };
+    if (ms >= startOfPrev30) return { key: "prev30", title: strings.bandPrev30Days };
     const date = new Date(ms);
     if (ms >= startOfYear) return { key: `month-${date.getMonth()}`, title: monthTitle(date) };
     return { key: `year-${date.getFullYear()}`, title: yearTitle(date) };
@@ -102,11 +99,11 @@ export function GroupBySubmenu(props: {
   onChange: (next: GroupOption) => void;
 }) {
   const labels: Record<GroupDateOption, string> = {
-    created: t.groupByCreated,
-    modified: t.groupByModified,
+    created: strings.groupByCreated,
+    modified: strings.groupByModified,
   };
   return (
-    <ActionPanel.Submenu title={t.groupBy} icon={Icon.List}>
+    <ActionPanel.Submenu title={strings.groupBy} icon={Icon.List}>
       {props.allowed.map((option) => (
         <Action
           key={option}
@@ -116,7 +113,7 @@ export function GroupBySubmenu(props: {
         />
       ))}
       <Action
-        title={t.groupNone}
+        title={strings.groupNone}
         icon={props.value === "none" ? Icon.CheckCircle : Icon.Circle}
         onAction={() => props.onChange("none")}
       />

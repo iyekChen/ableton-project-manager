@@ -13,7 +13,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "@raycast/utils";
 import { getSettings } from "@/settings";
-import { getTranslations } from "@/i18n";
+import { strings } from "@/strings";
 import { LOG_PREFIX } from "@/core/log";
 import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
 import { groupItems } from "@/core/ui/grouping";
@@ -40,7 +40,6 @@ import { AssignBounce } from "@/core/ui/unmatched-bounces";
 import { showFailure } from "@/core/ui/toast";
 
 const settings = getSettings();
-const t = getTranslations(settings.language);
 const PROJECTS_ROOT = settings.projectsFolder;
 
 const SEARCH_BOUNCES_SORT_STORAGE_KEY = "search-bounces-sort-option";
@@ -100,7 +99,7 @@ export function SearchBouncesView() {
       console.error(`${LOG_PREFIX} Failed to load bounces:`, error);
       setLoadFailed(true);
       // 列表保留不动：读失败时旧列表比空列表有用。
-      await showFailure(t.loadProjectsFailed, error, { message: t.loadProjectsFailedHint });
+      await showFailure(strings.loadProjectsFailed, error, { message: strings.loadProjectsFailedHint });
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +129,7 @@ export function SearchBouncesView() {
 
   const handleCopy = async (bounce: BounceListItem) => {
     await Clipboard.copy({ file: bounce.path });
-    await showToast({ style: Toast.Style.Success, title: t.bounceCopied, message: bounce.name });
+    await showToast({ style: Toast.Style.Success, title: strings.bounceCopied, message: bounce.name });
   };
 
   const sortedProjects = [...projects].sort((a, b) => a.title.localeCompare(b.title));
@@ -149,12 +148,12 @@ export function SearchBouncesView() {
               key: kind,
               title:
                 kind === "project"
-                  ? t.sourceProjectFolder
+                  ? strings.sourceProjectFolder
                   : kind === "shared"
-                    ? t.sourceSharedFolder
+                    ? strings.sourceSharedFolder
                     : kind === "external"
-                      ? t.sourceExternal
-                      : t.unmatchedBounces,
+                      ? strings.sourceExternal
+                      : strings.unmatchedBounces,
               subtitle: String(list.length),
               items: list,
             };
@@ -186,29 +185,29 @@ export function SearchBouncesView() {
         // 一打字就补全，不等计时器。
         if (text) setShowAll(true);
       }}
-      searchBarPlaceholder={t.searchBounces}
+      searchBarPlaceholder={strings.searchBounces}
     >
       {renderGroups.length === 0 && loadFailed ? (
         <List.EmptyView
           icon={{ source: Icon.ExclamationMark, tintColor: Color.Red }}
-          title={t.loadProjectsFailed}
-          description={t.loadProjectsFailedHint}
+          title={strings.loadProjectsFailed}
+          description={strings.loadProjectsFailedHint}
           actions={
             <ActionPanel>
               <Action
-                title={t.retry}
+                title={strings.retry}
                 icon={Icon.ArrowClockwise}
                 onAction={() => {
                   setIsLoading(true);
                   void reload();
                 }}
               />
-              <Action title={t.openExtensionPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
+              <Action title={strings.openExtensionPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
             </ActionPanel>
           }
         />
       ) : renderGroups.length === 0 ? (
-        <List.EmptyView icon="bounce.png" title={t.noBounces} />
+        <List.EmptyView icon="bounce.png" title={strings.noBounces} />
       ) : (
         renderGroups.map((group) => (
           <List.Section key={group.key} title={group.title} subtitle={group.subtitle}>
@@ -225,7 +224,7 @@ export function SearchBouncesView() {
                     ? [
                         {
                           icon: { source: Icon.QuestionMarkCircle, tintColor: Color.Orange },
-                          tooltip: t.unmatchedBounceTooltip,
+                          tooltip: strings.unmatchedBounceTooltip,
                         },
                         { text: formatSize(b.size) },
                       ]
@@ -236,19 +235,19 @@ export function SearchBouncesView() {
                     <ActionPanel.Section>
                       <Action.ToggleQuickLook />
                       <Action.Open
-                        title={t.openInDefaultApp}
+                        title={strings.openInDefaultApp}
                         icon={Icon.AppWindow}
                         target={b.path}
                         shortcut={Keyboard.Shortcut.Common.Open}
                       />
                       <Action.ShowInFinder
-                        title={t.showInFinder}
+                        title={strings.showInFinder}
                         path={b.path}
                         shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
                       />
                       {!b.unmatched && b.owners.length > 0 && (
                         <Action.Push
-                          title={t.browseProjectBounces}
+                          title={strings.browseProjectBounces}
                           icon={Icon.Waveform}
                           shortcut={{ modifiers: ["opt"], key: "return" }}
                           target={
@@ -258,7 +257,7 @@ export function SearchBouncesView() {
                               projectPath={b.owners[0].folderPath}
                               externalFolders={b.owners[0].externalBounceFolders}
                               externalFiles={b.owners[0].externalBounceFiles}
-                              backTitle={t.backToSearchBounces}
+                              backTitle={strings.backToSearchBounces}
                               onChanged={() => void reload()}
                             />
                           }
@@ -267,7 +266,7 @@ export function SearchBouncesView() {
                       )}
                       {b.unmatched && projects.length > 0 && (
                         <Action.Push
-                          title={t.assignToProject}
+                          title={strings.assignToProject}
                           icon={Icon.Link}
                           target={
                             <AssignBounce bounce={b} projects={sortedProjects} onAssigned={() => void reload()} />
@@ -275,27 +274,27 @@ export function SearchBouncesView() {
                         />
                       )}
                     </ActionPanel.Section>
-                    <ActionPanel.Section title={t.sectionCopy}>
+                    <ActionPanel.Section title={strings.sectionCopy}>
                       <Action
-                        title={t.copyBounce}
+                        title={strings.copyBounce}
                         icon={Icon.CopyClipboard}
                         shortcut={Keyboard.Shortcut.Common.Copy}
                         onAction={() => handleCopy(b)}
                       />
                       <Action.CopyToClipboard
                         content={b.name}
-                        title={t.copyBounceName}
+                        title={strings.copyBounceName}
                         icon={Icon.CopyClipboard}
                         shortcut={Keyboard.Shortcut.Common.CopyName}
                       />
                       <Action.CopyToClipboard
                         content={b.path}
-                        title={t.copyBouncePath}
+                        title={strings.copyBouncePath}
                         icon={Icon.CopyClipboard}
                         shortcut={Keyboard.Shortcut.Common.CopyPath}
                       />
                     </ActionPanel.Section>
-                    <ActionPanel.Section title={t.sectionArrange}>
+                    <ActionPanel.Section title={strings.sectionArrange}>
                       <BounceGroupSubmenu value={groupBy} onChange={setGroupBy} />
                       <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
                     </ActionPanel.Section>

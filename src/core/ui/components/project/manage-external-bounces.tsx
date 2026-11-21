@@ -12,12 +12,8 @@ import {
   getSharedBounceTitles,
   resolveSharedBouncesFolder,
 } from "@/core/projects/bounces";
-import { getTranslations } from "@/i18n";
-import { getSettings } from "@/settings";
+import { strings } from "@/strings";
 import { showFailure } from "@/core/ui/toast";
-
-const settings = getSettings();
-const t = getTranslations(settings.language);
 
 // 旧名字的日期按本地时间显示成 YYYY-MM-DD。
 function formatDate(ms: number): string {
@@ -72,14 +68,14 @@ export function ManageExternalBounces({
       })
       .catch((error: unknown) => {
         // 读失败时表单留着、不能保存，避免覆盖已存的数据。
-        void showFailure(t.loadBounceSettingsFailed, error);
+        void showFailure(strings.loadBounceSettingsFailed, error);
       });
   }, [projectId, showAliases]);
 
   function validateAliases(text: string): string | undefined {
     for (const alias of parseAliases(text)) {
       const problem = checkBounceAlias(alias, projectTitle, getSharedBounceTitles(), getSharedBounceAliases());
-      if (problem && problem !== "empty") return t.aliasTaken.replace("{project}", problem.taken);
+      if (problem && problem !== "empty") return strings.aliasTaken.replace("{project}", problem.taken);
     }
     return undefined;
   }
@@ -100,27 +96,27 @@ export function ManageExternalBounces({
       );
     }
     await setExternalBounces(projectId, folders, files);
-    await showToast({ style: Toast.Style.Success, title: t.externalBounceSaved });
+    await showToast({ style: Toast.Style.Success, title: strings.externalBounceSaved });
     onSaved(folders, files);
     pop();
   }
 
   return (
     <Form
-      navigationTitle={`${t.manageExternalBounce} — ${projectTitle}`}
+      navigationTitle={`${strings.manageExternalBounce} — ${projectTitle}`}
       isLoading={!metadataLoaded}
       actions={
         metadataLoaded ? (
           <ActionPanel>
-            <Action.SubmitForm title={t.save} icon={Icon.Check} onSubmit={handleSubmit} />
+            <Action.SubmitForm title={strings.save} icon={Icon.Check} onSubmit={handleSubmit} />
           </ActionPanel>
         ) : undefined
       }
     >
-      <Form.Description text={t.externalBounceFormHint} />
+      <Form.Description text={strings.externalBounceFormHint} />
       <Form.FilePicker
         id="folders"
-        title={t.externalBounceFoldersField}
+        title={strings.externalBounceFoldersField}
         value={folders}
         onChange={setFolders}
         canChooseDirectories
@@ -129,7 +125,7 @@ export function ManageExternalBounces({
       />
       <Form.FilePicker
         id="files"
-        title={t.externalBounceFilesField}
+        title={strings.externalBounceFilesField}
         value={files}
         onChange={setFiles}
         canChooseDirectories={false}
@@ -139,9 +135,9 @@ export function ManageExternalBounces({
       {showAliases && (
         <Form.TextField
           id="aliases"
-          title={t.bounceAliasesField}
-          info={t.bounceAliasesInfo}
-          placeholder={t.bounceAliasesPlaceholder}
+          title={strings.bounceAliasesField}
+          info={strings.bounceAliasesInfo}
+          placeholder={strings.bounceAliasesPlaceholder}
           value={aliasText}
           error={aliasError}
           onChange={(value) => {
@@ -154,8 +150,8 @@ export function ManageExternalBounces({
       {showAliases && previousNames.length > 0 && (
         <Form.TagPicker
           id="previousNames"
-          title={t.previousNamesField}
-          info={t.previousNamesInfo}
+          title={strings.previousNamesField}
+          info={strings.previousNamesInfo}
           value={selectedPreviousNames}
           onChange={setSelectedPreviousNames}
         >

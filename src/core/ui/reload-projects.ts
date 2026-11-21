@@ -1,6 +1,5 @@
 import { Toast, open, openExtensionPreferences, showToast } from "@raycast/api";
-import { getTranslations } from "@/i18n";
-import { getSettings } from "@/settings";
+import { strings } from "@/strings";
 import { readDocFile, setKnownProjectTitles, stripFrontmatter } from "@/core/docs/docs";
 import { restorePutBackProjects } from "@/core/fs/deleted-projects";
 import { syncFinderChanges } from "@/core/fs/finder-sync";
@@ -21,8 +20,6 @@ import {
 } from "@/core/projects/bounces";
 import { loadProjects } from "@/core/projects/load-projects";
 import type { Project } from "@/core/projects/types";
-
-const t = getTranslations(getSettings().language);
 
 export async function applyProjectMetadata(base: Project[]): Promise<Project[]> {
   let metadataStore = await getAllProjectMetadata();
@@ -126,24 +123,24 @@ export async function reloadProjectData(
     // 标题只说结论；原因和下一步放进 message，按 ⌘T 展开操作。
     await showToast({
       style: Toast.Style.Failure,
-      title: t.manyProjectsMissing,
-      message: t.manyProjectsMissingHint,
-      primaryAction: { title: t.openPreferences, onAction: () => void openExtensionPreferences() },
-      secondaryAction: { title: t.openProjectsFolder, onAction: () => void open(root) },
+      title: strings.manyProjectsMissing,
+      message: strings.manyProjectsMissingHint,
+      primaryAction: { title: strings.openPreferences, onAction: () => void openExtensionPreferences() },
+      secondaryAction: { title: strings.openProjectsFolder, onAction: () => void open(root) },
     });
   } else if (ambiguous > 0) {
     await showToast({
       style: Toast.Style.Failure,
-      title: t.ambiguousFinderChanges,
-      message: t.ambiguousFinderChangesHint,
+      title: strings.ambiguousFinderChanges,
+      message: strings.ambiguousFinderChangesHint,
     });
   } else if (trashUnavailable) {
     await showToast({
       style: Toast.Style.Failure,
-      title: t.trashNoAccess,
-      message: t.trashNoAccessHint,
+      title: strings.trashNoAccess,
+      message: strings.trashNoAccessHint,
       primaryAction: {
-        title: t.openFullDiskAccess,
+        title: strings.openFullDiskAccess,
         onAction: () => {
           void open("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles");
         },
@@ -151,16 +148,24 @@ export async function reloadProjectData(
     });
   } else if (docRenameIssues.length > 0) {
     // 与扩展内改名一致：笔记 / 歌词没跟着迁移时如实告知。
-    await showToast({ style: Toast.Style.Failure, title: t.docRenameSkipped, message: docRenameIssues.join(", ") });
+    await showToast({
+      style: Toast.Style.Failure,
+      title: strings.docRenameSkipped,
+      message: docRenameIssues.join(", "),
+    });
   }
   // 先还原从废纸篓放回的项目（标签/轨号/角色/文档），再套用元数据。
   const { restored, docConflicts } = await restorePutBackProjects(base);
   const projects = await applyProjectMetadata(base);
   hooks.onApplied?.(projects, base);
   if (docConflicts.length > 0) {
-    await showToast({ style: Toast.Style.Failure, title: t.restoreDocConflict, message: docConflicts.join(", ") });
+    await showToast({
+      style: Toast.Style.Failure,
+      title: strings.restoreDocConflict,
+      message: docConflicts.join(", "),
+    });
   } else if (restored.length > 0) {
-    await showToast({ style: Toast.Style.Success, title: t.projectsRestored, message: restored.join(", ") });
+    await showToast({ style: Toast.Style.Success, title: strings.projectsRestored, message: restored.join(", ") });
   }
   // 扫描「孤儿」数据：metadata 还在、但项目文件夹已不在根目录（根目录读不到时为 null，按无残留处理）。
   const orphans = removedProjectIds(root, Object.keys(await getAllProjectMetadata())) ?? [];

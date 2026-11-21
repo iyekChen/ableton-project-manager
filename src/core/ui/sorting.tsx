@@ -1,10 +1,7 @@
 import { Action, ActionPanel, Icon } from "@raycast/api";
 import { useState } from "react";
 import { readCachedChoice, viewPrefs } from "./view-prefs";
-import { getSettings } from "@/settings";
-import { getTranslations } from "@/i18n";
-
-const t = getTranslations(getSettings().language);
+import { strings } from "@/strings";
 
 export type SortOption =
   | "modified-desc"
@@ -20,14 +17,14 @@ type SortOptionDef = { value: SortOption; title: string };
 
 // 全部可用选项及其显示文案。每个界面从中挑自己要的子集(通过 allowed 传入)。
 const ALL_SORT_OPTIONS: SortOptionDef[] = [
-  { value: "modified-desc", title: t.modifiedNewest },
-  { value: "modified-asc", title: t.modifiedOldest },
-  { value: "created-desc", title: t.createdNewest },
-  { value: "created-asc", title: t.createdOldest },
-  { value: "name-asc", title: t.nameAZ },
-  { value: "name-desc", title: t.nameZA },
-  { value: "size-desc", title: t.sizeLargest },
-  { value: "size-asc", title: t.sizeSmallest },
+  { value: "modified-desc", title: strings.modifiedNewest },
+  { value: "modified-asc", title: strings.modifiedOldest },
+  { value: "created-desc", title: strings.createdNewest },
+  { value: "created-asc", title: strings.createdOldest },
+  { value: "name-asc", title: strings.nameAZ },
+  { value: "name-desc", title: strings.nameZA },
+  { value: "size-desc", title: strings.sizeLargest },
+  { value: "size-asc", title: strings.sizeSmallest },
 ];
 
 export function isSortOption(value: string): value is SortOption {
@@ -102,7 +99,7 @@ export function SortBySubmenu(props: {
   const options = ALL_SORT_OPTIONS.filter((option) => props.allowed.includes(option.value));
 
   return (
-    <ActionPanel.Submenu title={t.sortBy} icon={Icon.NumberList}>
+    <ActionPanel.Submenu title={strings.sortBy} icon={Icon.NumberList}>
       {options.map((option) => (
         <Action
           key={option.value}
