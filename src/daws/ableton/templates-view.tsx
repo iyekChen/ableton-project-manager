@@ -22,6 +22,7 @@ import { strings } from "@/strings";
 import { labels, templateLabels } from "@/daws/labels";
 import { openWithDaw } from "@/core/daw-app";
 import { showFailure } from "@/core/ui/shared/toast";
+import { ShowInFinderAction } from "@/core/ui/actions/show-in-finder";
 import { defaultTemplatesFolder, isTemplate, listTemplates, type Template, type TemplateGroup } from "./templates";
 
 function templatesFolderPreference(): string | undefined {
@@ -82,7 +83,7 @@ export function TemplatesView() {
             icon={Icon.NewDocument}
             onAction={() => handleCreate(template)}
           />
-          <Action.ShowInFinder path={template.path} title={strings.showInFinder} />
+          <ShowInFinderAction path={template.path} />
           <Action.Push
             title={strings.rename}
             icon={Icon.Pencil}
