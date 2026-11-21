@@ -3,8 +3,15 @@ import { strings } from "@/strings";
 export type GroupOption = "created" | "modified" | "none";
 export type GroupDateOption = "created" | "modified";
 
+// bounce 列表额外支持按来源分组。
+export type BounceGroup = "source" | GroupOption;
+
 export function isGroupOption(value: string): value is GroupOption {
   return value === "created" || value === "modified" || value === "none";
+}
+
+export function isBounceGroup(value: string): value is BounceGroup {
+  return value === "source" || isGroupOption(value);
 }
 
 // 月份段标题，如「September」。

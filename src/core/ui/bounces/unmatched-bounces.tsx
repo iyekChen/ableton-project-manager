@@ -21,6 +21,7 @@ import {
 } from "@/core/projects/bounces";
 import type { Project } from "@/core/projects/types";
 import { showFailure } from "@/core/ui/shared/toast";
+import { ShowInFinderAction } from "@/core/ui/actions/show-in-finder";
 import { projectIcon } from "@/daws/icons";
 import { strings } from "@/strings";
 
@@ -69,11 +70,7 @@ export function UnmatchedBounces({ projects, onChanged }: { projects: Project[];
                   target={<AssignBounce bounce={bounce} projects={sortedProjects} onAssigned={handleAssigned} />}
                 />
                 <Action.ToggleQuickLook shortcut={{ modifiers: ["cmd"], key: "y" }} />
-                <Action.ShowInFinder
-                  path={bounce.path}
-                  title={strings.showInFinder}
-                  shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-                />
+                <ShowInFinderAction path={bounce.path} />
               </ActionPanel.Section>
               <ActionPanel.Section title={strings.sectionCopy}>
                 <Action.CopyToClipboard

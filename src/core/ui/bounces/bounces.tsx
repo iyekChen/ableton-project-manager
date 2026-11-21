@@ -13,17 +13,19 @@ import {
   Toast,
   trash,
   useNavigation,
-  LocalStorage,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import { strings } from "@/strings";
 import { SortBySubmenu } from "@/core/ui/actions/sort-by-submenu";
+import { CopyBounceSection } from "@/core/ui/actions/copy-bounce-section";
+import { ShowInFinderAction } from "@/core/ui/actions/show-in-finder";
 import { useSortOption } from "@/core/ui/hooks/use-sort-option";
 import { sortItems, sortOptionTitle } from "@/core/ui/shared/sorting";
 import type { SortOption } from "@/core/ui/shared/sorting";
-import { groupItems } from "@/core/ui/shared/grouping";
+import { groupItems, type BounceGroup } from "@/core/ui/shared/grouping";
+import { useBounceGroupOption } from "@/core/ui/hooks/use-bounce-group-option";
 import {
   collectBounces,
   getSharedBounceExclusions,
@@ -47,14 +49,6 @@ export const BOUNCES_SORT_OPTIONS: SortOption[] = [
   "size-desc",
   "size-asc",
 ];
-
-// Browse Bounces 本地分组维度：在共享的日期分组之外额外支持按来源分组，
-// 不污染共享的 grouping 模块（其 GroupOption 还被 Search Projects 复用）。
-export type BounceGroup = "source" | "created" | "modified" | "none";
-
-export function isBounceGroup(value: string): value is BounceGroup {
-  return value === "source" || value === "created" || value === "modified" || value === "none";
-}
 
 export function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -132,20 +126,11 @@ export function Bounces(props: {
   const [bounces, setBounces] = useState<BounceWithSource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useSortOption(BOUNCES_SORT_STORAGE_KEY, BOUNCES_SORT_OPTIONS, "created-desc");
-  const [groupBy, setGroupByState] = useState<BounceGroup>("source");
+  // 键名不变，旧版本存在 LocalStorage 里的值第一次读到时搬过来。
+  const [groupBy, setGroupBy] = useBounceGroupOption(BOUNCES_GROUP_STORAGE_KEY, "source", {
+    key: BOUNCES_GROUP_STORAGE_KEY,
+  });
   const [reloadToken, setReloadToken] = useState(0);
-
-  // 读取持久化的分组选择（含 "source"）。
-  useEffect(() => {
-    void LocalStorage.getItem<string>(BOUNCES_GROUP_STORAGE_KEY).then((stored) => {
-      if (stored && isBounceGroup(stored)) setGroupByState(stored);
-    });
-  }, []);
-
-  const setGroupBy = (next: BounceGroup) => {
-    setGroupByState(next);
-    void LocalStorage.setItem(BOUNCES_GROUP_STORAGE_KEY, next);
-  };
 
   // 列表 = 默认 Bounces 文件夹 + 外部来源（去重、带来源标记、含不可用占位）。
   useEffect(() => {
@@ -339,11 +324,7 @@ export function Bounces(props: {
                           shortcut={Keyboard.Shortcut.Common.Open}
                         />
                         {renderManageAction()}
-                        <Action.ShowInFinder
-                          title={strings.showInFinder}
-                          path={b.path}
-                          shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-                        />
+                        <ShowInFinderAction path={b.path} />
                         <Action.Push
                           title={strings.renameBounce}
                           icon={Icon.Pencil}
@@ -374,28 +355,7 @@ export function Bounces(props: {
                         />
                       </ActionPanel.Section>
                     )}
-                    {b.available && (
-                      <ActionPanel.Section title={strings.sectionCopy}>
-                        <Action
-                          title={strings.copyBounce}
-                          icon={Icon.CopyClipboard}
-                          shortcut={Keyboard.Shortcut.Common.Copy}
-                          onAction={() => handleCopy(b)}
-                        />
-                        <Action.CopyToClipboard
-                          content={b.name}
-                          title={strings.copyBounceName}
-                          icon={Icon.CopyClipboard}
-                          shortcut={Keyboard.Shortcut.Common.CopyName}
-                        />
-                        <Action.CopyToClipboard
-                          content={b.path}
-                          title={strings.copyBouncePath}
-                          icon={Icon.CopyClipboard}
-                          shortcut={Keyboard.Shortcut.Common.CopyPath}
-                        />
-                      </ActionPanel.Section>
-                    )}
+                    {b.available && <CopyBounceSection name={b.name} path={b.path} onCopy={() => handleCopy(b)} />}
                     <ActionPanel.Section title={strings.sectionArrange}>
                       <BounceGroupSubmenu value={groupBy} onChange={setGroupBy} />
                       <SortBySubmenu allowed={BOUNCES_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />

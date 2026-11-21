@@ -34,8 +34,14 @@ import {
 import { removeProjectFromAllOrders } from "@/core/metadata/collection-order";
 import { removeProjectFromAllRoles } from "@/core/metadata/collection-roles";
 import { strings } from "@/strings";
+import { PlayToggleAction } from "@/core/ui/actions/play-toggle";
+import { PlaybackControlsSection } from "@/core/ui/actions/playback-controls";
+import { DocActions } from "@/core/ui/actions/doc-actions";
+import { CopyProjectSection } from "@/core/ui/actions/copy-project-section";
+import { OpenProjectInFinderAction } from "@/core/ui/actions/open-project-in-finder";
 import { SortBySubmenu } from "@/core/ui/actions/sort-by-submenu";
 import { useSortOption } from "@/core/ui/hooks/use-sort-option";
+import { useDetailView } from "@/core/ui/hooks/use-detail-view";
 import { sortItems, sortOptionTitle } from "@/core/ui/shared/sorting";
 import type { SortOption } from "@/core/ui/shared/sorting";
 import { GroupBySubmenu } from "@/core/ui/actions/group-by-submenu";
@@ -45,13 +51,12 @@ import { Bounces, UnmatchedBounces } from "@/core/ui/bounces";
 import { stageTaxonomy, genreTaxonomy, collectionTaxonomy } from "@/core/metadata/taxonomies";
 import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import { displayDoc, missingDocFolder } from "@/core/docs/docs";
-import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
+import { docPlaceholder } from "@/core/docs/doc-actions";
 import { archiveDeletedProject, assertDeletionWritable } from "@/core/fs/deleted-projects";
 import { showFailure } from "@/core/ui/shared/toast";
 import { CollectionList } from "@/core/ui/collections";
 import { CleanUpRemovedProjects } from "@/core/ui/cleanup";
 import { EditInfo } from "@/core/ui/components/edit-info";
-import { EditNote } from "@/core/ui/components/edit-note";
 import { DuplicateProject } from "@/core/ui/projects/duplicate-project";
 import { ManageExternalBounces } from "@/core/ui/components/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
@@ -63,7 +68,6 @@ import {
 } from "@/core/projects/list-cache";
 import { applyProjectMetadata, reloadProjectData } from "@/core/ui/shared/reload-projects";
 import { findLatestProjectBounce, resolveSharedBouncesFolder, unmatchedSharedBounces } from "@/core/projects/bounces";
-import { viewPrefs } from "@/core/ui/shared/view-prefs";
 import { daw, type DawSet, type ProjectFileMetadata } from "@/daws";
 import {
   cachedSetMetadata,
@@ -96,7 +100,6 @@ const ONBOARDING_ASKED_KEY = "onboarding:shared-bounces-asked";
 const ONBOARDING_UNMATCHED_KEY = "onboarding:unmatched-shown-for";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:projects";
 const PLAYER_PATH = ensureAudioPlayerBinary();
-const SEEK_STEP_SECONDS = 5;
 // 同时解析的 Set 数，和 View Sets 一样。
 const METADATA_CONCURRENCY = 3;
 // 要读的 Set 少于这个数时不弹进度提示（如在 DAW 里刚存了一个 Set），免得一闪而过。
@@ -162,10 +165,11 @@ export function ProjectsView() {
   const lastWrittenRef = useRef(initialCache);
   const [orphanIds, setOrphanIds] = useState<string[]>([]);
   // 默认 Detail；只有记过 Overview 才进 Overview。
-  const [showDetail, setShowDetail] = useState(() => viewPrefs.get(VIEW_MODE_STORAGE_KEY) !== "overview");
-  const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">(() =>
-    viewPrefs.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
-  );
+  const { showDetail, toggleDetail, detailDoc, toggleDetailDoc } = useDetailView({
+    viewModeKey: VIEW_MODE_STORAGE_KEY,
+    detailDocKey: DETAIL_DOC_STORAGE_KEY,
+    defaultMode: "detail",
+  });
   const [dawApp, setDawApp] = useState<Application | null>(null);
   const [currentSets, setCurrentSets] = useState<Record<string, CurrentSetInfo>>({});
   const [readingSets, setReadingSets] = useState(false);
@@ -207,22 +211,6 @@ export function ProjectsView() {
     void stageTaxonomy.get().then(setStageOptions);
     void genreTaxonomy.get().then(setGenreOptions);
     void collectionTaxonomy.get().then(setCollectionOptions);
-  }, []);
-
-  const toggleDetail = useCallback(() => {
-    setShowDetail((prev) => {
-      const next = !prev;
-      viewPrefs.set(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
-      return next;
-    });
-  }, []);
-
-  const toggleDetailDoc = useCallback(() => {
-    setDetailDoc((prev) => {
-      const next = prev === "notes" ? "lyrics" : "notes";
-      viewPrefs.set(DETAIL_DOC_STORAGE_KEY, next);
-      return next;
-    });
   }, []);
 
   // 静默启动刷新：内容没变就保留原引用，不触发重渲染，也不重写缓存。
@@ -651,18 +639,6 @@ export function ProjectsView() {
     const detailPlaceholder = docPlaceholder(detailDoc, item.title, missingDocFolders[detailDoc]);
 
     const isThisPlaying = playingId === item.id;
-    const isAnythingPlaying = playingId !== null;
-    // 主操作：未播→播；播放中→暂停；暂停→续播。
-    const toggleIsPause = isThisPlaying && (playbackStatus === "Playing" || playbackStatus === "Starting");
-    const toggleTitle = isThisPlaying
-      ? playbackStatus === "Paused"
-        ? strings.resumePlayback
-        : playbackStatus === "Stopping"
-          ? strings.stoppingPlayback
-          : strings.pausePlayback
-      : strings.playLatestBounce;
-
-    const toggleIcon = isThisPlaying ? (toggleIsPause ? Icon.PauseFilled : Icon.PlayFilled) : Icon.Play;
 
     return (
       <List.Item
@@ -754,24 +730,13 @@ export function ProjectsView() {
                 target={<SetsView project={item} />}
                 onPop={() => void reloadProjects()}
               />
-              <Action
-                title={toggleTitle}
-                icon={toggleIcon}
+              <PlayToggleAction
+                isThisPlaying={isThisPlaying}
+                playbackStatus={playbackStatus}
                 shortcut={{ modifiers: ["cmd"], key: "return" }}
-                onAction={() => {
-                  if (isThisPlaying) {
-                    if (playbackStatus === "Stopping") {
-                      return;
-                    }
-                    if (playbackStatus === "Paused") {
-                      resume();
-                    } else {
-                      pause();
-                    }
-                    return;
-                  }
-                  playProjectBounce(item);
-                }}
+                onPlay={() => playProjectBounce(item)}
+                onPause={pause}
+                onResume={resume}
               />
               <Action
                 title={strings.browseBounces}
@@ -817,39 +782,14 @@ export function ProjectsView() {
                 onAction={() => openCurrentSet(item)}
               />
             </ActionPanel.Section>
-            {isAnythingPlaying && (
-              <ActionPanel.Section title={strings.sectionPlayback}>
-                <Action
-                  title={strings.stopPlayback}
-                  icon={Icon.StopFilled}
-                  shortcut={{ modifiers: ["cmd"], key: "-" }}
-                  onAction={stop}
-                />
-                <Action
-                  title={strings.seekBackward}
-                  icon={Icon.RewindFilled}
-                  shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
-                  onAction={() => seek(-SEEK_STEP_SECONDS)}
-                />
-                <Action
-                  title={strings.seekForward}
-                  icon={Icon.ForwardFilled}
-                  shortcut={{ modifiers: ["opt"], key: "arrowRight" }}
-                  onAction={() => seek(SEEK_STEP_SECONDS)}
-                />
-                <Action
-                  title={strings.restartTrack}
-                  icon={Icon.ArrowCounterClockwise}
-                  shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
-                  onAction={() => {
-                    restart();
-                    if (playbackStatus === "Paused") {
-                      resume();
-                    }
-                  }}
-                />
-              </ActionPanel.Section>
-            )}
+            <PlaybackControlsSection
+              playingId={playingId}
+              playbackStatus={playbackStatus}
+              onStop={stop}
+              onSeek={seek}
+              onRestart={restart}
+              onResume={resume}
+            />
             <ActionPanel.Section title={strings.sectionDetails}>
               <Action.Push
                 title={strings.editInfo}
@@ -857,51 +797,10 @@ export function ProjectsView() {
                 shortcut={Keyboard.Shortcut.Common.Edit}
                 target={<EditInfo project={item} onSaved={reloadProjects} />}
               />
-              <Action.Push
-                title={strings.editNote}
-                icon={Icon.Highlight}
-                shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
-                target={<EditNote project={item} onSaved={reloadProjects} />}
-              />
-              <Action.Push
-                title={strings.editLyrics}
-                icon={Icon.Highlight}
-                shortcut={{ modifiers: ["cmd", "opt"], key: "l" }}
-                target={<EditNote project={item} kind="lyrics" onSaved={reloadProjects} />}
-              />
-              <Action
-                title={strings.openNote}
-                icon={Icon.Book}
-                shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
-                onAction={async () => {
-                  await openDoc(item, "notes");
-                }}
-              />
-              <Action
-                title={strings.openLyrics}
-                icon={Icon.Book}
-                shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
-                onAction={async () => {
-                  await openDoc(item, "lyrics");
-                }}
-              />
+              <DocActions project={item} onNoteSaved={reloadProjects} onLyricsSaved={reloadProjects} />
             </ActionPanel.Section>
             <ActionPanel.Section title={strings.sectionFile}>
-              {/* 包用「打开」会交给 DAW，所以改成在 Finder 里选中它；普通文件夹照旧在 Finder 里打开。 */}
-              {item.kind === "package" ? (
-                <Action.ShowInFinder
-                  path={item.folderPath}
-                  title={strings.showInFinder}
-                  shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-                />
-              ) : (
-                <Action.Open
-                  title={strings.openInFinder}
-                  icon={Icon.Finder}
-                  shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-                  target={item.folderPath}
-                />
-              )}
+              <OpenProjectInFinderAction kind={item.kind} folderPath={item.folderPath} />
               <Action
                 title={labels.newProjectFile}
                 icon={Icon.NewDocument}
@@ -955,28 +854,7 @@ export function ProjectsView() {
                 />
               )}
             </ActionPanel.Section>
-            <ActionPanel.Section title={strings.sectionCopy}>
-              {item.bouncesCount > 0 && (
-                <Action
-                  title={strings.copyLatestBounce}
-                  icon={Icon.CopyClipboard}
-                  shortcut={Keyboard.Shortcut.Common.Copy}
-                  onAction={() => copyLatestBounce(item)}
-                />
-              )}
-              <Action.CopyToClipboard
-                content={item.title}
-                title={strings.copyProjectName}
-                icon={Icon.CopyClipboard}
-                shortcut={Keyboard.Shortcut.Common.CopyName}
-              />
-              <Action.CopyToClipboard
-                content={item.folderPath}
-                title={strings.copyProjectPath}
-                icon={Icon.CopyClipboard}
-                shortcut={Keyboard.Shortcut.Common.CopyPath}
-              />
-            </ActionPanel.Section>
+            <CopyProjectSection project={item} onCopyLatestBounce={() => copyLatestBounce(item)} />
             <ActionPanel.Section title={strings.sectionPin}>
               <Action
                 title={item.pinned ? strings.unpinProject : strings.pinProject}

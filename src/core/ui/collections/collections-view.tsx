@@ -22,7 +22,12 @@ import { strings } from "@/strings";
 import { getSettings } from "@/settings";
 import type { Project } from "@/core/projects/types";
 import { slugify, type TaxonomyOption } from "@/core/metadata/taxonomy";
-import { viewPrefs } from "@/core/ui/shared/view-prefs";
+import { PlayToggleAction } from "@/core/ui/actions/play-toggle";
+import { PlaybackControlsSection } from "@/core/ui/actions/playback-controls";
+import { DocActions } from "@/core/ui/actions/doc-actions";
+import { CopyProjectSection } from "@/core/ui/actions/copy-project-section";
+import { OpenProjectInFinderAction } from "@/core/ui/actions/open-project-in-finder";
+import { useDetailView } from "@/core/ui/hooks/use-detail-view";
 import {
   TrackMap,
   assignNumber,
@@ -53,7 +58,7 @@ import { refreshDocFile, useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { findLatestProjectBounce } from "@/core/projects/bounces";
 import { displayDoc, readDocFile, stripFrontmatter } from "@/core/docs/docs";
-import { docPlaceholder, openDoc } from "@/core/docs/doc-actions";
+import { docPlaceholder } from "@/core/docs/doc-actions";
 import {
   getPinnedCollections,
   movePinnedCollection,
@@ -70,7 +75,6 @@ import {
 import { showFailure } from "@/core/ui/shared/toast";
 import { onFinderRenames } from "@/core/fs/finder-sync";
 import { EditInfo, type ProjectRename } from "@/core/ui/components/edit-info";
-import { EditNote } from "@/core/ui/components/edit-note";
 import { optionKeywords } from "@/core/ui/shared/search-keywords";
 import { projectIcon } from "@/daws/icons";
 
@@ -79,7 +83,6 @@ type Collection = { id: string; name: string };
 const VIEW_MODE_STORAGE_KEY = "view-mode:collections";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:collections";
 const PLAYER_PATH = ensureAudioPlayerBinary();
-const SEEK_STEP_SECONDS = 5;
 
 // 固定的冷→暖位置色模板：每个圆点槽位颜色固定，所有 Project 一致。
 // 槽位 1→5：最冷 → 次冷 → 中性 → 次暖 → 最暖。
@@ -383,10 +386,11 @@ function CollectionPanel({
   const [infos, setInfos] = useState<Record<string, TrackInfo>>({});
   const [loading, setLoading] = useState(true);
   // 默认 Overview；只有记过 Detail 才进 Detail。
-  const [showDetail, setShowDetail] = useState(() => viewPrefs.get(VIEW_MODE_STORAGE_KEY) === "detail");
-  const [detailDoc, setDetailDoc] = useState<"notes" | "lyrics">(() =>
-    viewPrefs.get(DETAIL_DOC_STORAGE_KEY) === "lyrics" ? "lyrics" : "notes",
-  );
+  const { showDetail, toggleDetail, detailDoc, toggleDetailDoc } = useDetailView({
+    viewModeKey: VIEW_MODE_STORAGE_KEY,
+    detailDocKey: DETAIL_DOC_STORAGE_KEY,
+    defaultMode: "overview",
+  });
   const [selectedFilter, setSelectedFilter] = useState("all");
   const { playbackStatus, playingId, play, pause, resume, stop, seek, restart } = useAudioPlayer({
     playerPath: PLAYER_PATH,
@@ -418,73 +422,27 @@ function CollectionPanel({
       message: latestBouncePath.split("/").pop() ?? "",
     });
   }
-  const renderPlayToggle = (p: Project) => {
-    const isThisPlaying = playingId === p.id;
-    const toggleIsPause = isThisPlaying && (playbackStatus === "Playing" || playbackStatus === "Starting");
-    const title = isThisPlaying
-      ? playbackStatus === "Paused"
-        ? strings.resumePlayback
-        : playbackStatus === "Stopping"
-          ? strings.stoppingPlayback
-          : strings.pausePlayback
-      : strings.playLatestBounce;
-    return (
-      <Action
-        title={title}
-        icon={isThisPlaying ? (toggleIsPause ? Icon.PauseFilled : Icon.PlayFilled) : Icon.Play}
-        onAction={() => {
-          if (isThisPlaying) {
-            if (playbackStatus === "Stopping") {
-              return;
-            }
-            if (playbackStatus === "Paused") {
-              resume();
-            } else {
-              pause();
-            }
-            return;
-          }
-          playProjectBounce(p);
-        }}
-      />
-    );
-  };
+  const renderPlayToggle = (p: Project) => (
+    <PlayToggleAction
+      isThisPlaying={playingId === p.id}
+      playbackStatus={playbackStatus}
+      onPlay={() => playProjectBounce(p)}
+      onPause={pause}
+      onResume={resume}
+    />
+  );
 
   // 播放时才出现的停止、seek / restart 控制，作用于全局播放器。
-  const renderPlaybackControls = () =>
-    playingId !== null ? (
-      <ActionPanel.Section title={strings.sectionPlayback}>
-        <Action
-          title={strings.stopPlayback}
-          icon={Icon.StopFilled}
-          shortcut={{ modifiers: ["cmd"], key: "-" }}
-          onAction={stop}
-        />
-        <Action
-          title={strings.seekBackward}
-          icon={Icon.RewindFilled}
-          shortcut={{ modifiers: ["opt"], key: "arrowLeft" }}
-          onAction={() => seek(-SEEK_STEP_SECONDS)}
-        />
-        <Action
-          title={strings.seekForward}
-          icon={Icon.ForwardFilled}
-          shortcut={{ modifiers: ["opt"], key: "arrowRight" }}
-          onAction={() => seek(SEEK_STEP_SECONDS)}
-        />
-        <Action
-          title={strings.restartTrack}
-          icon={Icon.ArrowCounterClockwise}
-          shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
-          onAction={() => {
-            restart();
-            if (playbackStatus === "Paused") {
-              resume();
-            }
-          }}
-        />
-      </ActionPanel.Section>
-    ) : null;
+  const renderPlaybackControls = () => (
+    <PlaybackControlsSection
+      playingId={playingId}
+      playbackStatus={playbackStatus}
+      onStop={stop}
+      onSeek={seek}
+      onRestart={restart}
+      onResume={resume}
+    />
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -509,22 +467,6 @@ function CollectionPanel({
       cancelled = true;
     };
   }, [collection.id, projects]);
-
-  function toggleDetail() {
-    setShowDetail((prev) => {
-      const next = !prev;
-      viewPrefs.set(VIEW_MODE_STORAGE_KEY, next ? "detail" : "overview");
-      return next;
-    });
-  }
-
-  function toggleDetailDoc() {
-    setDetailDoc((prev) => {
-      const next = prev === "notes" ? "lyrics" : "notes";
-      viewPrefs.set(DETAIL_DOC_STORAGE_KEY, next);
-      return next;
-    });
-  }
 
   async function apply(next: TrackMap) {
     setMap(next);
@@ -705,36 +647,7 @@ function CollectionPanel({
 
   // 打开 Note / Lyrics 的外部编辑动作。Note 文件存在才出现；Lyrics 打开即建（可套模板）。
   const renderDocActions = (p: Project) => (
-    <>
-      <Action.Push
-        title={strings.editNote}
-        icon={Icon.Highlight}
-        shortcut={{ modifiers: ["cmd", "opt"], key: "n" }}
-        target={<EditNote project={p} onSaved={() => reloadDoc(p, "notes")} />}
-      />
-      <Action.Push
-        title={strings.editLyrics}
-        icon={Icon.Highlight}
-        shortcut={{ modifiers: ["cmd", "opt"], key: "l" }}
-        target={<EditNote project={p} kind="lyrics" onSaved={() => reloadDoc(p, "lyrics")} />}
-      />
-      <Action
-        title={strings.openNote}
-        icon={Icon.Book}
-        shortcut={{ modifiers: ["cmd", "shift"], key: "n" }}
-        onAction={async () => {
-          await openDoc(p, "notes");
-        }}
-      />
-      <Action
-        title={strings.openLyrics}
-        icon={Icon.Book}
-        shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
-        onAction={async () => {
-          await openDoc(p, "lyrics");
-        }}
-      />
-    </>
+    <DocActions project={p} onNoteSaved={() => reloadDoc(p, "notes")} onLyricsSaved={() => reloadDoc(p, "lyrics")} />
   );
 
   // 视图切换 Action（Detail / Overview，本视图独立记忆）。
@@ -773,45 +686,10 @@ function CollectionPanel({
   );
 
   // 工程包用「打开」会交给 DAW，所以改成在 Finder 里选中它；普通文件夹照旧在 Finder 里打开。
-  const renderOpenInFinder = (p: Project) =>
-    p.kind === "package" ? (
-      <Action.ShowInFinder
-        path={p.folderPath}
-        title={strings.showInFinder}
-        shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-      />
-    ) : (
-      <Action.Open
-        title={strings.openInFinder}
-        icon={Icon.Finder}
-        shortcut={{ modifiers: ["cmd", "opt"], key: "o" }}
-        target={p.folderPath}
-      />
-    );
+  const renderOpenInFinder = (p: Project) => <OpenProjectInFinderAction kind={p.kind} folderPath={p.folderPath} />;
 
   const renderCopySection = (p: Project) => (
-    <ActionPanel.Section title={strings.sectionCopy}>
-      {p.bouncesCount > 0 && (
-        <Action
-          title={strings.copyLatestBounce}
-          icon={Icon.CopyClipboard}
-          shortcut={Keyboard.Shortcut.Common.Copy}
-          onAction={() => copyLatestBounce(p)}
-        />
-      )}
-      <Action.CopyToClipboard
-        content={p.title}
-        title={strings.copyProjectName}
-        icon={Icon.CopyClipboard}
-        shortcut={Keyboard.Shortcut.Common.CopyName}
-      />
-      <Action.CopyToClipboard
-        content={p.folderPath}
-        title={strings.copyProjectPath}
-        icon={Icon.CopyClipboard}
-        shortcut={Keyboard.Shortcut.Common.CopyPath}
-      />
-    </ActionPanel.Section>
+    <CopyProjectSection project={p} onCopyLatestBounce={() => copyLatestBounce(p)} />
   );
 
   const tracked = members
