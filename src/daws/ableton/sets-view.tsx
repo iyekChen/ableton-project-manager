@@ -160,6 +160,9 @@ export function SetsView({ project }: { project: Project }) {
     });
   }, []);
 
+  // 只依赖这两个字段：project 对象来自上一层，引用可能每次都变，整个放进依赖会让 effect 反复跑。
+  const { folderPath, kind } = project;
+
   useEffect(() => {
     let cancelled = false;
 
@@ -170,7 +173,7 @@ export function SetsView({ project }: { project: Project }) {
         if (cancelled) return;
 
         // 有缓存的先显示，没缓存的再并发解析。
-        const items = abletonAdapter.listSets(project).map((dawSet) => {
+        const items = abletonAdapter.listSets({ folderPath, kind }).map((dawSet) => {
           const cached = cachedSetMetadata(dawSet);
           const set: ProjectSet = { ...dawSet, ...(cached ?? EMPTY_METADATA) };
           return { set, cached: cached !== null };
@@ -225,7 +228,7 @@ export function SetsView({ project }: { project: Project }) {
     return () => {
       cancelled = true;
     };
-  }, [project.folderPath, project.kind, reloadToken]);
+  }, [folderPath, kind, reloadToken]);
 
   const handleDuplicate = async (set: ProjectSet) => {
     try {
