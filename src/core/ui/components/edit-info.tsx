@@ -21,7 +21,7 @@ import {
   renameProjectMetadata,
   saveProjectMetadata,
 } from "@/core/metadata/project-metadata";
-import { showFailure } from "@/core/ui/toast";
+import { showFailure } from "@/core/ui/shared/toast";
 import { strings } from "@/strings";
 import {
   alteredDocChars,
@@ -49,7 +49,7 @@ import { stageTaxonomy, genreTaxonomy, collectionTaxonomy, roleTaxonomy } from "
 import type { Project } from "@/core/projects/types";
 import { daw } from "@/daws";
 import { labels } from "@/daws/labels";
-import { optionKeywords } from "@/core/ui/search-keywords";
+import { optionKeywords } from "@/core/ui/shared/search-keywords";
 
 /** 改名成功时回传给调用方，便于其刷新内存中以旧 id 为键的状态。 */
 export type ProjectRename = { oldId: string; newId: string; folderPath: string };

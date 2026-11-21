@@ -22,7 +22,7 @@ import { strings } from "@/strings";
 import { getSettings } from "@/settings";
 import type { Project } from "@/core/projects/types";
 import { slugify, type TaxonomyOption } from "@/core/metadata/taxonomy";
-import { viewPrefs } from "@/core/ui/view-prefs";
+import { viewPrefs } from "@/core/ui/shared/view-prefs";
 import {
   TrackMap,
   assignNumber,
@@ -67,11 +67,11 @@ import {
   getAllProjectMetadata,
   saveProjectMetadata,
 } from "@/core/metadata/project-metadata";
-import { showFailure } from "@/core/ui/toast";
+import { showFailure } from "@/core/ui/shared/toast";
 import { onFinderRenames } from "@/core/fs/finder-sync";
-import { EditInfo, type ProjectRename } from "@/core/ui/components/project/edit-info";
-import { EditNote } from "@/core/ui/components/project/edit-note";
-import { optionKeywords } from "@/core/ui/search-keywords";
+import { EditInfo, type ProjectRename } from "@/core/ui/components/edit-info";
+import { EditNote } from "@/core/ui/components/edit-note";
+import { optionKeywords } from "@/core/ui/shared/search-keywords";
 import { projectIcon } from "@/daws/icons";
 
 type Collection = { id: string; name: string };

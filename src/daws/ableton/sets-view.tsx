@@ -26,12 +26,16 @@ import {
   loadPersistentProjectFileCache,
   parseSetMetadata,
 } from "@/core/projects/project-file-cache";
-import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
-import type { SortOption } from "@/core/ui/sorting";
-import { GroupBySubmenu, groupItems, useGroupOption } from "@/core/ui/grouping";
+import { SortBySubmenu } from "@/core/ui/actions/sort-by-submenu";
+import { useSortOption } from "@/core/ui/hooks/use-sort-option";
+import { sortItems, sortOptionTitle } from "@/core/ui/shared/sorting";
+import type { SortOption } from "@/core/ui/shared/sorting";
+import { GroupBySubmenu } from "@/core/ui/actions/group-by-submenu";
+import { useGroupOption } from "@/core/ui/hooks/use-group-option";
+import { groupItems } from "@/core/ui/shared/grouping";
 import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
-import { showFailure } from "@/core/ui/toast";
+import { showFailure } from "@/core/ui/shared/toast";
 import { LOG_PREFIX } from "@/core/log";
 import { setsViewStrings } from "./strings";
 

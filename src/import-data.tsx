@@ -27,7 +27,7 @@ import {
   type ImportPlan,
 } from "@/core/data/data-transfer";
 import { loadProjects } from "@/core/projects/load-projects";
-import { showFailure } from "@/core/ui/toast";
+import { showFailure } from "@/core/ui/shared/toast";
 import { strings } from "@/strings";
 import { getSettings } from "@/settings";
 

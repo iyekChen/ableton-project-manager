@@ -49,7 +49,7 @@ import {
 } from "@/core/data/data-transfer";
 import { genreTaxonomy } from "@/core/metadata/taxonomies";
 import type { Project } from "@/core/projects/types";
-import { optionKeywords } from "@/core/ui/search-keywords";
+import { optionKeywords } from "@/core/ui/shared/search-keywords";
 
 const EXTENSION = environment.extensionName;
 

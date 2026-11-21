@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bpmMatches, matchesSearch, nameKeywords, timeSignatureMatches } from "../src/core/ui/search-keywords";
+import { bpmMatches, matchesSearch, nameKeywords, timeSignatureMatches } from "../src/core/ui/shared/search-keywords";
 
 describe("nameKeywords", () => {
   it("& 换成 n / and", () => {

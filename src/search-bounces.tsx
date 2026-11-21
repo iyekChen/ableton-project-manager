@@ -1,1 +1,1 @@
-export { SearchBouncesView as default } from "@/core/ui/search-bounces-view";
+export { SearchBouncesView as default } from "@/core/ui/bounces";

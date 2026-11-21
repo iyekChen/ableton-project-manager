@@ -11,7 +11,7 @@ import {
   unreadableTemplate,
   type DocKind,
 } from "./docs";
-import { showFailure } from "@/core/ui/toast";
+import { showFailure } from "@/core/ui/shared/toast";
 import { strings } from "@/strings";
 
 /** 文档读写出错时统一提示；自定义文件夹失效时附带"打开扩展设置"。 */

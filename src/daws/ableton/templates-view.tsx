@@ -21,7 +21,7 @@ import path from "node:path";
 import { strings } from "@/strings";
 import { labels, templateLabels } from "@/daws/labels";
 import { openWithDaw } from "@/core/daw-app";
-import { showFailure } from "@/core/ui/toast";
+import { showFailure } from "@/core/ui/shared/toast";
 import { defaultTemplatesFolder, isTemplate, listTemplates, type Template, type TemplateGroup } from "./templates";
 
 function templatesFolderPreference(): string | undefined {

@@ -13,7 +13,7 @@ import {
   resolveSharedBouncesFolder,
 } from "@/core/projects/bounces";
 import { strings } from "@/strings";
-import { showFailure } from "@/core/ui/toast";
+import { showFailure } from "@/core/ui/shared/toast";
 
 // 旧名字的日期按本地时间显示成 YYYY-MM-DD。
 function formatDate(ms: number): string {

@@ -20,7 +20,7 @@ import {
   type Bounce,
 } from "@/core/projects/bounces";
 import type { Project } from "@/core/projects/types";
-import { showFailure } from "@/core/ui/toast";
+import { showFailure } from "@/core/ui/shared/toast";
 import { projectIcon } from "@/daws/icons";
 import { strings } from "@/strings";
 

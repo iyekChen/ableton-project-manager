@@ -9,7 +9,7 @@ import {
   writeDocBody,
 } from "@/core/docs/docs";
 import { showDocError } from "@/core/docs/doc-actions";
-import { showFailure } from "@/core/ui/toast";
+import { showFailure } from "@/core/ui/shared/toast";
 import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
 

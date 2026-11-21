@@ -19,9 +19,11 @@ import { useEffect, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import { strings } from "@/strings";
-import { SortBySubmenu, sortItems, sortOptionTitle, useSortOption } from "@/core/ui/sorting";
-import type { SortOption } from "@/core/ui/sorting";
-import { groupItems } from "@/core/ui/grouping";
+import { SortBySubmenu } from "@/core/ui/actions/sort-by-submenu";
+import { useSortOption } from "@/core/ui/hooks/use-sort-option";
+import { sortItems, sortOptionTitle } from "@/core/ui/shared/sorting";
+import type { SortOption } from "@/core/ui/shared/sorting";
+import { groupItems } from "@/core/ui/shared/grouping";
 import {
   collectBounces,
   getSharedBounceExclusions,
@@ -30,8 +32,8 @@ import {
 } from "@/core/projects/bounces";
 import type { BounceWithSource } from "@/core/projects/bounces";
 import { addExcludedSharedBounce, setExternalBounces } from "@/core/metadata/project-metadata";
-import { ManageExternalBounces } from "@/core/ui/components/project/manage-external-bounces";
-import { showFailure } from "@/core/ui/toast";
+import { ManageExternalBounces } from "@/core/ui/components/manage-external-bounces";
+import { showFailure } from "@/core/ui/shared/toast";
 
 const BOUNCES_SORT_STORAGE_KEY = "bounces-sort-option";
 const BOUNCES_GROUP_STORAGE_KEY = "bounces-group-option";

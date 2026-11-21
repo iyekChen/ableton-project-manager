@@ -6,7 +6,7 @@ import { docNameTakenBy } from "@/core/docs/docs";
 import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
 import { daw, type ProjectKind } from "@/daws";
-import { copyErrorAction } from "@/core/ui/toast";
+import { copyErrorAction } from "@/core/ui/shared/toast";
 
 // 与 Finder 一致的副本命名：Song copy、Song copy 2、Song copy 3…
 function uniqueCopyName(dir: string, title: string, kind: ProjectKind): string {

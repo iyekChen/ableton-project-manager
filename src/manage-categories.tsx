@@ -26,8 +26,8 @@ import {
 } from "@/core/metadata/project-metadata";
 import { loadProjects } from "@/core/projects/load-projects";
 import type { Project } from "@/core/projects/types";
-import { showFailure } from "@/core/ui/toast";
-import { optionKeywords } from "@/core/ui/search-keywords";
+import { showFailure } from "@/core/ui/shared/toast";
+import { optionKeywords } from "@/core/ui/shared/search-keywords";
 import { getSettings } from "./settings";
 import { strings } from "@/strings";
 import { labels } from "@/daws/labels";
