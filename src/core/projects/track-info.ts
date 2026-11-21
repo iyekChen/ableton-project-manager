@@ -9,7 +9,8 @@ import {
   getCachedAudioAnalysisEntry,
   loadPersistentAudioAnalysisCache,
 } from "./audio-cache";
-import { daw, type DawSet, type ProjectFileMetadata } from "@/daws";
+import { daw, type ProjectFileMetadata } from "@/daws";
+import { findCurrentSet } from "./current-set";
 import {
   EMPTY_METADATA,
   cachedSetMetadata,
@@ -28,17 +29,6 @@ export type TrackInfo = {
   key: string | null;
   timeSignature: string | null;
 };
-
-/** 代表这个项目的 Set：DAW 标了当前版本就用它，否则取最近修改的。 */
-function primarySet(project: Project): DawSet | null {
-  const sets = daw.listSets(project);
-  const active = sets.find((set) => set.active);
-  if (active) return active;
-  return sets.reduce<DawSet | null>(
-    (latest, set) => (latest === null || set.modifiedAt > latest.modifiedAt ? set : latest),
-    null,
-  );
-}
 
 /** 波峰因数 = 峰值 / RMS（≥1）；RMS 为 0 时无意义，返回 null。 */
 function crestFactor(rms: number, peak: number): number | null {
@@ -104,7 +94,8 @@ async function loadAudioPart(project: Project): Promise<{
 }
 
 async function loadSetPart(project: Project): Promise<ProjectFileMetadata> {
-  const set = primarySet(project);
+  // 和 Search Projects 用同一个 current Set：同一个项目在两处显示的 BPM / Key 一致。
+  const set = findCurrentSet(daw.listSets(project));
   if (!set) return EMPTY_METADATA;
 
   await loadPersistentProjectFileCache();

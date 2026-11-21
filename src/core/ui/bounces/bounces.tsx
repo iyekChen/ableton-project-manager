@@ -25,6 +25,7 @@ import { useSortOption } from "@/core/ui/hooks/use-sort-option";
 import { sortItems, sortOptionTitle } from "@/core/ui/shared/sorting";
 import type { SortOption } from "@/core/ui/shared/sorting";
 import { groupItems, type BounceGroup } from "@/core/ui/shared/grouping";
+import { formatSize, groupBySource, splitExt } from "@/core/ui/bounces/bounce-format";
 import { useBounceGroupOption } from "@/core/ui/hooks/use-bounce-group-option";
 import {
   collectBounces,
@@ -49,24 +50,6 @@ export const BOUNCES_SORT_OPTIONS: SortOption[] = [
   "size-desc",
   "size-asc",
 ];
-
-export function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ["KB", "MB", "GB", "TB"];
-  let value = bytes / 1024;
-  let unitIndex = 0;
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex++;
-  }
-  return `${value.toFixed(1)} ${units[unitIndex]}`;
-}
-
-// 拆出文件名主体与后缀：后缀在列表里用 subtitle 以次级灰显示。
-export function splitExt(name: string): { stem: string; ext: string } {
-  const ext = path.extname(name);
-  return { stem: ext ? name.slice(0, -ext.length) : name, ext };
-}
 
 export function BounceGroupSubmenu(props: { value: BounceGroup; onChange: (next: BounceGroup) => void }) {
   const options: [BounceGroup, string][] = [
@@ -266,22 +249,7 @@ export function Bounces(props: {
 
   const groups: { key: string; title: string; subtitle: string; items: BounceWithSource[] }[] =
     groupBy === "source"
-      ? (["project", "shared", "external"] as const)
-          .map((kind) => {
-            const items = bySort(bounces.filter((b) => b.source === kind));
-            return {
-              key: kind,
-              title:
-                kind === "project"
-                  ? strings.sourceProjectFolder
-                  : kind === "shared"
-                    ? strings.sourceSharedFolder
-                    : strings.sourceExternal,
-              subtitle: String(items.length),
-              items,
-            };
-          })
-          .filter((group) => group.items.length > 0)
+      ? groupBySource(bounces, ["project", "shared", "external"], (b) => b.source, bySort)
       : groupItems(
           bySort(bounces),
           groupBy,

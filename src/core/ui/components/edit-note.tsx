@@ -8,7 +8,7 @@ import {
   stripFrontmatter,
   writeDocBody,
 } from "@/core/docs/docs";
-import { showDocError } from "@/core/docs/doc-actions";
+import { showDocError } from "@/core/ui/shared/doc-open";
 import { showFailure } from "@/core/ui/shared/toast";
 import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";

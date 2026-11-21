@@ -1,5 +1,5 @@
 import { Action, Icon } from "@raycast/api";
-import { openDoc } from "@/core/docs/doc-actions";
+import { openDoc } from "@/core/ui/shared/doc-open";
 import type { Project } from "@/core/projects/types";
 import { EditNote } from "@/core/ui/components/edit-note";
 import { strings } from "@/strings";

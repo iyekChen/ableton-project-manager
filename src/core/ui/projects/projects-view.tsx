@@ -80,16 +80,21 @@ import { labels } from "@/daws/labels";
 import { projectIcon } from "@/daws/icons";
 import { openWithDaw, resolveDawApp } from "@/core/daw-app";
 import { LOG_PREFIX } from "@/core/log";
-import {
-  bpmMatches,
-  dateKeywords,
-  matchesSearch,
-  nameKeywords,
-  optionKeywords,
-  timeSignatureMatches,
-} from "@/core/ui/shared/search-keywords";
+import { optionKeywords } from "@/core/ui/shared/search-keywords";
 import { findCurrentSet } from "@/core/projects/current-set";
-import { keyKeywords, keyToken } from "@/core/projects/musical-key";
+import { formatDate, formatTime } from "@/core/ui/shared/format";
+import { itemLimit, limitGroups } from "@/core/ui/shared/progressive-list";
+import { useProgressiveList } from "@/core/ui/hooks/use-progressive-list";
+import {
+  createdYears,
+  filterByDropdown,
+  matchProject,
+  parseTagSearch,
+  projectKeyWords,
+  projectSearchTerms,
+  splitPinned,
+  tagNames,
+} from "@/core/ui/projects/project-filter";
 
 const settings = getSettings();
 const PROJECTS_ROOT = settings.projectsFolder;
@@ -106,9 +111,6 @@ const METADATA_CONCURRENCY = 3;
 // 要读的 Set 少于这个数时不弹进度提示（如在 DAW 里刚存了一个 Set），免得一闪而过。
 const SET_PROGRESS_MIN = 5;
 
-const INITIAL_ITEM_COUNT = 15;
-const FILL_DELAY_MS = 0;
-
 // 每个项目的 current Set 和它的元数据；还没读完时 metadata 为 null。
 type CurrentSetInfo = { set: DawSet; metadata: ProjectFileMetadata | null };
 // 正在由扩展执行 Move to Trash 的项目：已归档，目录监听触发的重载不要再当成 Finder 删除处理。
@@ -123,27 +125,6 @@ const PROJECT_SORT_OPTIONS: SortOption[] = [
   "name-desc",
 ];
 
-function namesFor(ids: string[], options: TaxonomyOption[]): string[] {
-  return ids
-    .map((id) => options.find((option) => option.id === id)?.name)
-    .filter((name): name is string => name !== undefined);
-}
-
-function formatDate(ms: number): string {
-  const date = new Date(ms);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function formatTime(totalSeconds: number): string {
-  const safe = Number.isFinite(totalSeconds) && totalSeconds > 0 ? totalSeconds : 0;
-  const minutes = Math.floor(safe / 60);
-  const seconds = Math.floor(safe % 60);
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
-
 export function ProjectsView() {
   const { push } = useNavigation();
   const [stageOptions, setStageOptions] = useState<TaxonomyOption[]>([]);
@@ -151,13 +132,13 @@ export function ProjectsView() {
   const [collectionOptions, setCollectionOptions] = useState<TaxonomyOption[]>([]);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchText, setSearchText] = useState("");
-  // 先渲染前 INITIAL_ITEM_COUNT 项，首帧之后补全；一打字也立刻补全。
-  const [showAll, setShowAll] = useState(false);
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
   const [groupBy, setGroupBy] = useGroupOption(GROUP_STORAGE_KEY, "created");
   // 冷启动先显示上次读到的列表，扫描完再替换。
   const [initialCache] = useState(() => readProjectListCache(PROJECTS_ROOT));
   const [projects, setProjects] = useState<Project[]>(() => initialCache ?? []);
+  // 先渲染前 INITIAL_ITEM_COUNT 项，首帧之后补全；一打字也立刻补全。
+  const { showAll, showAllNow } = useProgressiveList(projects.length);
   // 读到缓存时先不显示加载：扫描完发现没变化就什么都不做。
   const [isLoading, setIsLoading] = useState(initialCache === undefined);
   // 静默启动刷新：只在读到缓存的那一次刷新里为 true，结束后复位。
@@ -400,14 +381,6 @@ export function ProjectsView() {
     lastWrittenRef.current = projects;
   }, [isLoading, projects]);
 
-  // 首帧只渲染前 INITIAL_ITEM_COUNT 项，这里补全其余部分。
-  // 依赖里带 showAll：StrictMode 模拟卸载后重新挂载时会重新设置计时器，不会被清掉后再也不设。
-  useEffect(() => {
-    if (showAll || projects.length === 0) return;
-    const timer = setTimeout(() => setShowAll(true), FILL_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [showAll, projects.length]);
-
   // 监听项目根目录（fs.watch 为 Node 内置，底层走 FSEvents）：Finder 里新建、删除、改名或从废纸篓放回项目时自动重载。
   // 去抖 0.5 秒，合并 Finder 连续触发的多次事件。
   useEffect(() => {
@@ -548,73 +521,24 @@ export function ProjectsView() {
     }
   };
 
-  // 每个项目可被搜到的内容：标题、Stage、Genre、合集名的各种写法，加上创建年月。
-  const searchTerms = (project: Project) => {
-    const stage = stageOptions.find((option) => option.id === project.stageId);
-    const genres = genreOptions.filter((option) => project.genreIds.includes(option.id));
-    const collections = collectionOptions.filter((option) => project.collectionIds.includes(option.id));
-    return [
-      ...nameKeywords(project.title),
-      ...(stage ? optionKeywords(stage) : []),
-      ...genres.flatMap(optionKeywords),
-      ...collections.flatMap(optionKeywords),
-      ...dateKeywords(project.createdAt),
-    ];
-  };
-
-  const filteredByDropdown = (() => {
-    if (selectedFilter === "all") return projects;
-    const separator = selectedFilter.indexOf(":");
-    const dimension = selectedFilter.slice(0, separator);
-    const id = selectedFilter.slice(separator + 1);
-    if (dimension === "stage") return projects.filter((project) => project.stageId === id);
-    if (dimension === "genre") return projects.filter((project) => project.genreIds.includes(id));
-    if (dimension === "created")
-      return projects.filter((project) => new Date(project.createdAt).getFullYear() === Number(id));
-    return projects;
-  })();
-
-  // current Set 的 Key 的各种写法。不放进 searchTerms：组合搜索里 Key 要整词对上，
-  // 否则 cm（C 小调）会被当成 cmaj（C 大调）的一部分搜到。
-  const keyWordsOf = (project: Project) => {
-    const key = currentSets[project.id]?.metadata?.key;
-    return key ? [key, ...keyKeywords(key)] : [];
-  };
-
-  const matchProject = (project: Project, query: string) => {
-    const keyTokens = new Set(keyWordsOf(project).map(keyToken));
-    const bpm = currentSets[project.id]?.metadata?.bpm ?? null;
-    const timeSignature = currentSets[project.id]?.metadata?.timeSignature ?? null;
-    return matchesSearch(
-      searchTerms(project),
-      query,
-      (word) =>
-        bpmMatches(bpm, word) ??
-        timeSignatureMatches(timeSignature, word) ??
-        (keyTokens.has(keyToken(word)) ? true : undefined),
-    );
-  };
+  // 搜索、筛选、排序都只读当前状态，计算本身在 project-filter.ts 里。
+  const searchContext = { stageOptions, genreOptions, collectionOptions, currentSets };
+  const searchTerms = (project: Project) => projectSearchTerms(project, searchContext);
+  const keyWordsOf = (project: Project) => projectKeyWords(project, searchContext);
 
   // 以 # 开头时用组合搜索（每个词都要命中）；否则交给 Raycast 的模糊搜索。
-  const isTagSearch = searchText.trimStart().startsWith("#");
-  const isEmptyTagSearch = isTagSearch && searchText.trimStart().slice(1).trim() === "";
+  const { isTagSearch, isEmptyTagSearch, query } = parseTagSearch(searchText);
+  const filteredByDropdown = filterByDropdown(projects, selectedFilter);
   const filteredProjects = isTagSearch
-    ? filteredByDropdown.filter((project) => matchProject(project, searchText.trimStart().slice(1)))
+    ? filteredByDropdown.filter((project) => matchProject(project, query, searchContext))
     : filteredByDropdown;
 
-  const pinnedProjects = filteredProjects
-    .filter((project) => project.pinned)
-    .sort((a, b) => (a.pinOrder ?? Number.MAX_SAFE_INTEGER) - (b.pinOrder ?? Number.MAX_SAFE_INTEGER));
-
-  const unpinnedProjects = sortItems(
-    filteredProjects.filter((project) => !project.pinned),
-    sortBy,
-    (project) => ({
-      created: project.createdAt,
-      modified: project.modifiedAt,
-      name: project.title,
-    }),
-  );
+  const { pinned: pinnedProjects, unpinned } = splitPinned(filteredProjects);
+  const unpinnedProjects = sortItems(unpinned, sortBy, (project) => ({
+    created: project.createdAt,
+    modified: project.modifiedAt,
+    name: project.title,
+  }));
 
   // 每次渲染只查一次：笔记 / 歌词文件夹是否存在。占位文字按这个结果生成，不再逐项 existsSync。
   const missingDocFolders: Record<"notes" | "lyrics", string | null> = {
@@ -624,8 +548,8 @@ export function ProjectsView() {
 
   const renderProject = (item: Project) => {
     const stage = stageOptions.find((option) => option.id === item.stageId);
-    const genreNames = namesFor(item.genreIds, genreOptions);
-    const collectionNames = namesFor(item.collectionIds, collectionOptions);
+    const genreNames = tagNames(item.genreIds, genreOptions);
+    const collectionNames = tagNames(item.collectionIds, collectionOptions);
     const current = currentSets[item.id];
     const currentBpm = current?.metadata?.bpm ?? null;
     const files = projectFiles.get(item.id) ?? null;
@@ -928,7 +852,7 @@ export function ProjectsView() {
 
   const currentSortTitle = sortOptionTitle(sortBy);
   // Filter 的 Created 分组只列出有项目的年份，新的在前。
-  const createdYears = [...new Set(projects.map((p) => new Date(p.createdAt).getFullYear()))].sort((a, b) => b - a);
+  const years = createdYears(projects);
 
   const groups = groupItems(
     unpinnedProjects,
@@ -937,16 +861,9 @@ export function ProjectsView() {
     currentSortTitle,
   );
   // 先渲染前 INITIAL_ITEM_COUNT 项，首帧之后补全。分组和排序已完成，只截掉最后渲染的部分。
-  const itemLimit = showAll ? Number.POSITIVE_INFINITY : INITIAL_ITEM_COUNT;
-  const renderPinned = pinnedProjects.slice(0, itemLimit);
-  let itemBudget = itemLimit - renderPinned.length;
-  const renderGroups = groups
-    .map((group) => {
-      const items = group.items.slice(0, Math.max(0, itemBudget));
-      itemBudget -= items.length;
-      return { ...group, items };
-    })
-    .filter((group) => group.items.length > 0);
+  const limit = itemLimit(showAll);
+  const renderPinned = pinnedProjects.slice(0, limit);
+  const renderGroups = limitGroups(groups, limit - renderPinned.length);
 
   return (
     <List
@@ -956,7 +873,7 @@ export function ProjectsView() {
       onSearchTextChange={(text) => {
         setSearchText(text);
         // 一打字就补全，不等计时器。
-        if (text) setShowAll(true);
+        if (text) showAllNow();
       }}
       searchBarPlaceholder={strings.searchProjectsPlaceholder}
       searchBarAccessory={
@@ -987,7 +904,7 @@ export function ProjectsView() {
             ))}
           </List.Dropdown.Section>
           <List.Dropdown.Section title={strings.created}>
-            {createdYears.map((year) => (
+            {years.map((year) => (
               <List.Dropdown.Item
                 key={`created:${year}`}
                 title={String(year)}

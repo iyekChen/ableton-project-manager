@@ -47,13 +47,7 @@ import {
   removeRoleMap,
   setRoleMap,
 } from "@/core/metadata/collection-roles";
-import {
-  ENERGY_ENABLED,
-  TrackInfo,
-  energyLevelFromScore,
-  energyScore,
-  loadTrackInfos,
-} from "@/core/projects/track-info";
+import { ENERGY_ENABLED, TrackInfo, loadTrackInfos } from "@/core/projects/track-info";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
 import { refreshDocFile, useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
@@ -77,6 +71,19 @@ import { showFailure } from "@/core/ui/shared/toast";
 import { onFinderRenames } from "@/core/fs/finder-sync";
 import { EditInfo, type ProjectRename } from "@/core/ui/components/edit-info";
 import { optionKeywords } from "@/core/ui/shared/search-keywords";
+import {
+  analyzedCount,
+  durationMinuteDigits,
+  durationPlaceholder,
+  energyLevelOf,
+  energyRanges,
+  formatDuration,
+  matchesFilter,
+  numberCounts,
+  sameName,
+  splitTracklist,
+  totalDuration,
+} from "@/core/ui/collections/tracklist";
 import { projectIcon } from "@/daws/icons";
 
 type Collection = { id: string; name: string };
@@ -89,17 +96,6 @@ const PLAYER_PATH = ensureAudioPlayerBinary();
 // 槽位 1→5：最冷 → 次冷 → 中性 → 次暖 → 最暖。
 const ENERGY_SLOT_COLORS: Color[] = [Color.Blue, Color.Green, Color.Yellow, Color.Orange, Color.Red];
 
-function formatDuration(totalSeconds: number, minuteDigits = 1): string {
-  const s = Math.round(totalSeconds);
-  const hours = Math.floor(s / 3600);
-  const minutes = Math.floor((s % 3600) / 60);
-  const seconds = s % 60;
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  }
-  return `${String(minutes).padStart(minuteDigits, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
 // 返回 5 个圆点 accessory：槽位 i < level 的点亮（显示该槽位的冷→暖色），其余留空（无色）。
 // level 为 null（无数据 / 分析中 / 本专辑暂无可定尺的曲目）→ 全部空点占位，保持右侧列对齐。
 function energyAccessories(level: number | null): List.Item.Accessory[] {
@@ -107,11 +103,6 @@ function energyAccessories(level: number | null): List.Item.Accessory[] {
     const filled = level !== null && i < level;
     return filled ? { text: { value: "●", color } } : { text: { value: "○", color: Color.SecondaryText } };
   });
-}
-
-// 合集名比较：忽略首尾空格与大小写。
-function sameName(a: string, b: string): boolean {
-  return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
 
 function CollectionNameForm(props: {
@@ -683,69 +674,38 @@ function CollectionPanel({
     <CopyProjectSection project={p} onCopyLatestBounce={() => copyLatestBounce(p)} />
   );
 
-  const tracked = members
-    .filter((p) => map[p.id] !== undefined)
-    .sort((a, b) => map[a.id] - map[b.id] || a.title.localeCompare(b.title));
-  const unsorted = members.filter((p) => map[p.id] === undefined).sort((a, b) => a.title.localeCompare(b.title));
+  const { tracked, unsorted } = splitTracklist(members, map);
 
   // 统计每个号被几首占用(用于撞号高亮)
-  const counts = new Map<number, number>();
-  for (const p of tracked) counts.set(map[p.id], (counts.get(map[p.id]) ?? 0) + 1);
+  const counts = numberCounts(tracked, map);
 
   // 能量定档的尺：对已排序曲目的各特征分别取 min/max。
-  const crests = tracked.map((p) => infos[p.id]?.crest).filter((v): v is number => typeof v === "number");
-  const crestRange = { min: crests.length ? Math.min(...crests) : 0, max: crests.length ? Math.max(...crests) : 0 };
-  const brightnesses = tracked.map((p) => infos[p.id]?.brightness).filter((v): v is number => typeof v === "number");
-  const brightnessRange = {
-    min: brightnesses.length ? Math.min(...brightnesses) : 0,
-    max: brightnesses.length ? Math.max(...brightnesses) : 0,
-  };
-  const activities = tracked.map((p) => infos[p.id]?.activity).filter((v): v is number => typeof v === "number");
-  const activityRange = {
-    min: activities.length ? Math.min(...activities) : 0,
-    max: activities.length ? Math.max(...activities) : 0,
-  };
+  const ranges = energyRanges(tracked, infos);
 
   // 总时长：所有已排序曲目（不分 Stage）。
-  const totalSeconds = tracked.reduce((sum, p) => sum + (infos[p.id]?.duration ?? 0), 0);
+  const totalSeconds = totalDuration(tracked, infos);
   const tracklistTitle =
     totalSeconds > 0 ? `${strings.tracklistDuration} ${formatDuration(totalSeconds)}` : strings.tracklist;
 
   // 还在分析的曲目（时长、能量）：顶部显示加载条，第一个分区的副标题显示进度，分析完自动消失。
   // 不用 Toast：播放中的常驻 Toast 会被盖掉。
-  const analyzedCount = members.filter((p) => p.id in infos).length;
-  const analyzing = !loading && analyzedCount < members.length;
-  const analyzingSubtitle = analyzing ? `${strings.analyzing} ${analyzedCount}/${members.length}` : undefined;
+  const analyzed = analyzedCount(members, infos);
+  const analyzing = !loading && analyzed < members.length;
+  const analyzingSubtitle = analyzing ? `${strings.analyzing} ${analyzed}/${members.length}` : undefined;
 
   // 分钟位宽：本合集任一曲目 ≥ 10 分钟则补两位，保证时长列对齐。
-  const longestTrackSeconds = members.reduce((max, p) => Math.max(max, infos[p.id]?.duration ?? 0), 0);
-  const durationMinuteDigits = longestTrackSeconds >= 600 ? 2 : 1;
-  const durationPlaceholder = durationMinuteDigits === 2 ? "--:--" : "-:--";
-
-  const matchesFilter = (p: Project) => {
-    if (selectedFilter === "all") return true;
-    const separator = selectedFilter.indexOf(":");
-    const dimension = selectedFilter.slice(0, separator);
-    const id = selectedFilter.slice(separator + 1);
-    if (dimension === "stage") return p.stageId === id;
-    if (dimension === "genre") return p.genreIds.includes(id);
-    return true;
-  };
+  const minuteDigits = durationMinuteDigits(members, infos);
+  const placeholder = durationPlaceholder(minuteDigits);
 
   // 已排序曲目的能量档位（以本合集已排序曲目为尺）；未排序或无数据 → null。
-  const energyLevelOf = (p: Project): number | null => {
-    const info = infos[p.id];
-    if (map[p.id] === undefined || !info) return null;
-    const score = energyScore(info, crestRange, brightnessRange, activityRange);
-    return score === null ? null : energyLevelFromScore(score);
-  };
+  const levelOf = (p: Project) => energyLevelOf(p, map, infos, ranges);
 
   // 单首曲目的 Detail 面板：Note 作 markdown 主体，其余作 metadata。缺数据的字段留标题、值空白。
   const renderDetail = (p: Project) => {
     const info = infos[p.id];
     const role = roles[p.id];
     const stage = stages.find((s) => s.id === p.stageId);
-    const level = energyLevelOf(p);
+    const level = levelOf(p);
     const detailBody = detailDoc === "notes" ? (p.notes ?? "") : (p.lyrics ?? "");
     const detailPlaceholder = docPlaceholder(detailDoc, p.title);
 
@@ -763,7 +723,7 @@ function CollectionPanel({
             )}
             <List.Item.Detail.Metadata.Label
               title="Duration"
-              text={info?.duration != null ? formatDuration(info.duration, durationMinuteDigits) : ""}
+              text={info?.duration != null ? formatDuration(info.duration, minuteDigits) : ""}
             />
             <List.Item.Detail.Metadata.Label title="Role" text={role ?? ""} />
             <List.Item.Detail.Metadata.Label title="BPM" text={info?.bpm != null ? String(info.bpm) : ""} />
@@ -933,14 +893,14 @@ function CollectionPanel({
           ]
         : []),
       { text: `Track ${String(num).padStart(2, "0")}` },
-      { text: info?.duration != null ? formatDuration(info.duration, durationMinuteDigits) : durationPlaceholder },
-      ...(ENERGY_ENABLED ? energyAccessories(energyLevelOf(p)) : []),
+      { text: info?.duration != null ? formatDuration(info.duration, minuteDigits) : placeholder },
+      ...(ENERGY_ENABLED ? energyAccessories(levelOf(p)) : []),
     ];
   };
 
   // Tracklist 与 Unsorted 共用同一种行：差别只在 accessories 和 Tracklist 分区的动作。
   const renderMember = (p: Project) =>
-    matchesFilter(p) ? (
+    matchesFilter(p, selectedFilter) ? (
       <List.Item
         key={p.id}
         icon={projectIcon(p.kind)}
