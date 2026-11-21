@@ -183,6 +183,22 @@ function invalid(at: string, expected: string, value: unknown): DataFileError {
   return new DataFileError("structure", `${at}: expected ${expected}, got ${describeType(value)}.`);
 }
 
+function checkTaxonomyOption(at: string, value: unknown): void {
+  if (!isPlainObject(value)) throw invalid(at, "an object", value);
+  for (const key of ["id", "name"]) {
+    if (typeof value[key] !== "string") throw invalid(`${at}.${key}`, "a string", value[key]);
+  }
+  if (value.aliases !== undefined && !isStringArray(value.aliases)) {
+    throw invalid(`${at}.aliases`, "an array of strings", value.aliases);
+  }
+  if (value.order !== undefined && !isFiniteNumber(value.order)) {
+    throw invalid(`${at}.order`, "a number", value.order);
+  }
+  if (value.color !== undefined && typeof value.color !== "string") {
+    throw invalid(`${at}.color`, "a string", value.color);
+  }
+}
+
 const METADATA_STRING_ARRAYS = [
   "genreIds",
   "collectionIds",
@@ -290,7 +306,7 @@ export function parseDataFile(raw: string, extensionName: string): DataFile {
 
   const data = requireObject("data", parsed.data);
 
-  // 项目元数据和删除记录逐项查类型（写入后会被直接使用），其余只查顶层；
+  // 项目元数据、分类选项和删除记录逐项查类型（写入后会被直接使用），其余只查顶层；
   // 过期记录、缺的字段照常接受，导入时写入 parse 之后的值。
   const rawMetadata = requireObject("projectMetadata", data.projectMetadata);
   // 旧版本导出的文件可能缺字段：补上默认值，后面合并和写入都按完整的结构处理。
@@ -303,7 +319,9 @@ export function parseDataFile(raw: string, extensionName: string): DataFile {
   const rawTaxonomies = requireObject("taxonomies", data.taxonomies);
   const taxonomies: Record<string, TaxonomyOption[]> = {};
   for (const key of TAXONOMY_KEYS) {
-    taxonomies[key] = parseOptions(requireArray(`taxonomies.${key}`, rawTaxonomies[key]));
+    const options = requireArray(`taxonomies.${key}`, rawTaxonomies[key]);
+    options.forEach((option, index) => checkTaxonomyOption(`taxonomies.${key}[${index}]`, option));
+    taxonomies[key] = parseOptions(options);
   }
 
   const collectionPins = parsePins(requireArray("collectionPins", data.collectionPins));
@@ -765,12 +783,19 @@ export function planImport(file: DataFile, current: CurrentData, projects: Proje
     }
     currentOrders[target] = merged;
   }
+  const roleOptions = taxonomies["role-options"];
+  const restoredRoleNames = new Map(roleOptions.map((option) => [option.id, option.name]));
+  const currentRoleNames = new Map<string, string>();
+  for (const option of current.taxonomies["role-options"] ?? []) {
+    const [restoredId] = fixReferences([option.id], roleOptions, currentNames["role-options"]);
+    currentRoleNames.set(option.name, restoredRoleNames.get(restoredId) ?? option.name);
+  }
   const currentRoles: Record<string, RoleMap> = {};
   for (const [id, map] of Object.entries(current.collectionRoles)) {
     const target = resolveCollectionId(id);
     const merged = { ...(currentRoles[target] ?? {}) };
     for (const [projectId, role] of Object.entries(map)) {
-      if (!(projectId in merged)) merged[projectId] = role;
+      if (!(projectId in merged)) merged[projectId] = currentRoleNames.get(role) ?? role;
     }
     currentRoles[target] = merged;
   }
