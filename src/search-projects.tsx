@@ -19,7 +19,7 @@ import {
   openExtensionPreferences,
   type Application,
 } from "@raycast/api";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import fs from "node:fs";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
 import { refreshDocFile, useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
@@ -67,7 +67,7 @@ import {
   loadPersistentProjectFileCache,
   parseSetMetadata,
 } from "@/core/projects/project-file-cache";
-import { SetsView } from "@/daws/ui";
+import { SetsView, projectFilesInfo } from "@/daws/ui";
 import { getDawLabels } from "@/daws/labels";
 import { projectIcon } from "@/daws/icons";
 import { openWithDaw, resolveDawApp } from "@/core/daw-app";
@@ -174,6 +174,11 @@ export default function Command() {
   // 每次渲染都更新：load() 的闭包里拿不到最新的 projects state。
   const projectsRef = useRef<Project[]>(projects);
   projectsRef.current = projects;
+  // 每个项目「工程文件」这一层的信息（由 DAW 提供，没有这一层时为 null）。只在列表变化时重算，不在每次渲染时读磁盘。
+  const projectFiles = useMemo(
+    () => new Map(projects.map((project) => [project.id, projectFilesInfo(project)])),
+    [projects],
+  );
   // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
   const leftoverToastShownRef = useRef(false);
   // 首次使用引导每次打开最多弹一个。
@@ -633,6 +638,13 @@ export default function Command() {
     const collectionNames = namesFor(item.collectionIds, collectionOptions);
     const latest = latestSets[item.id];
     const latestBpm = latest?.metadata?.bpm ?? null;
+    const files = projectFiles.get(item.id) ?? null;
+    const filesAccessories = files
+      ? [
+          { text: String(files.count), tooltip: `${files.count} ${files.labels.projectFiles}` },
+          { icon: "package.png", tooltip: `${files.count} ${files.labels.projectFiles}` },
+        ]
+      : [];
     const stagePill = stage ? [{ tag: { value: stage.name, color: stage.color ?? Color.SecondaryText } }] : [];
     const detailBody = !showDetail ? "" : detailDoc === "notes" ? item.notes : item.lyrics;
     const detailPlaceholder = docPlaceholder(detailDoc, item.title, missingDocFolders[detailDoc]);
@@ -662,8 +674,12 @@ export default function Command() {
             ? []
             : [
                 ...stagePill,
-                { text: String(item.setsCount), tooltip: `${item.setsCount} ${labels.sets}` },
-                { icon: Icon.Document, tooltip: `${item.setsCount} ${labels.sets}` },
+                ...(files
+                  ? filesAccessories
+                  : [
+                      { text: String(item.setsCount), tooltip: `${item.setsCount} ${labels.sets}` },
+                      { icon: Icon.Document, tooltip: `${item.setsCount} ${labels.sets}` },
+                    ]),
                 { text: String(item.bouncesCount), tooltip: `${item.bouncesCount} Bounces` },
                 { icon: Icon.Waveform, tooltip: `${item.bouncesCount} Bounces` },
               ]
@@ -704,9 +720,20 @@ export default function Command() {
                   )}
                   <List.Item.Detail.Metadata.Separator />
                   <List.Item.Detail.Metadata.Label title="Bounces" text={String(item.bouncesCount)} />
-                  <List.Item.Detail.Metadata.Label title={labels.sets} text={String(item.setsCount)} />
+                  {files ? (
+                    <List.Item.Detail.Metadata.Label title={files.labels.projectFiles} text={String(files.count)} />
+                  ) : (
+                    <List.Item.Detail.Metadata.Label title={labels.sets} text={String(item.setsCount)} />
+                  )}
                   <List.Item.Detail.Metadata.Separator />
-                  <List.Item.Detail.Metadata.Label title={labels.latestSet} text={latest?.set.name ?? ""} />
+                  {files ? (
+                    <List.Item.Detail.Metadata.Label
+                      title={files.labels.latestProjectFile}
+                      text={latest ? files.latestName(latest.set.path) : ""}
+                    />
+                  ) : (
+                    <List.Item.Detail.Metadata.Label title={labels.latestSet} text={latest?.set.name ?? ""} />
+                  )}
                   <List.Item.Detail.Metadata.Label title="Key" text={latest?.metadata?.key ?? ""} />
                   <List.Item.Detail.Metadata.Label title="BPM" text={latestBpm === null ? "" : String(latestBpm)} />
                   <List.Item.Detail.Metadata.Separator />
@@ -721,7 +748,7 @@ export default function Command() {
           <ActionPanel>
             <ActionPanel.Section>
               <Action.Push
-                title={labels.viewSets}
+                title={files ? files.labels.viewProjectFiles : labels.viewSets}
                 icon={Icon.Document}
                 target={<SetsView project={item} />}
                 onPop={() => void reloadProjects()}
@@ -782,7 +809,7 @@ export default function Command() {
                 }}
               />
               <Action
-                title={labels.openLatestSet}
+                title={files ? files.labels.openLatestProjectFile : labels.openLatestSet}
                 icon={dawApp ? { fileIcon: dawApp.path } : Icon.Document}
                 shortcut={Keyboard.Shortcut.Common.Open}
                 onAction={() => openLatestSet(item)}

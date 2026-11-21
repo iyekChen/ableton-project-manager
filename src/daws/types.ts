@@ -91,3 +91,20 @@ export type DawLabels = {
   noProjectsFoundHint: string;
   renameConfirmMessage: string;
 };
+
+/**
+ * 项目里「工程文件」这一层的信息：如 Logic 文件夹形态的项目里有一个或多个 .logicx，每个里面再有 Alternative。
+ * 每个仓库在 src/daws/ui.ts 里提供 projectFilesInfo；没有这一层时返回 null，Search Projects 按 Set 显示。
+ */
+export type ProjectFilesInfo = {
+  /** 工程文件的个数。 */
+  count: number;
+  /** 最新 Set 所在工程文件的显示名，参数是最新 Set 的 path。 */
+  latestName: (latestSetPath: string) => string;
+  labels: {
+    projectFiles: string;
+    latestProjectFile: string;
+    viewProjectFiles: string;
+    openLatestProjectFile: string;
+  };
+};
