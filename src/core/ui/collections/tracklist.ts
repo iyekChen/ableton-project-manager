@@ -103,9 +103,13 @@ export function analyzedCount(members: Project[], infos: Record<string, TrackInf
  *  - folderPath：bounce 默认文件夹
  *  - kind：listSets 用它区分包和文件夹
  *  - externalBounceFolders / externalBounceFiles：外部来源
- *  磁盘上的变化（新导出的 bounce、新保存的 Set、文件被改）不进签名：
- *  loadTrackInfo 自己按 mtime + size 判断缓存是否还有效，签名只负责「要不要重新问一遍」。
- *  笔记、歌词、标签、Stage 都不影响分析结果，不进签名。 */
+ *  笔记、歌词、标签、Stage 都不影响分析结果，不进签名。
+ *
+ *  磁盘上的变化（新导出的 bounce、新保存的 Set、文件被改）也不进签名，所以：
+ *  - 面板打开期间新导出的 bounce、新保存的 Set 不会自动出现，要重开面板才读到。
+ *  - 重开面板时一定读到：loadTrackInfo 每次都先实时扫磁盘（findLatestProjectBounce、
+ *    daw.listSets），再按 mtime + size 比对缓存，新文件在缓存里没有，必然重新分析。
+ *    缓存只跳过「文件没变」的情况，不会挡住新文件。 */
 export function trackInfoSignature(members: Project[]): string {
   return members
     .map((p) => {

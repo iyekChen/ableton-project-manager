@@ -27,7 +27,7 @@ import { removeCollectionEverywhere } from "@/core/metadata/project-metadata";
 import { removeTrackMap } from "@/core/metadata/collection-order";
 import { removeRoleMap } from "@/core/metadata/collection-roles";
 import { sameName } from "@/core/ui/collections/tracklist";
-import { CollectionPanel, type Collection } from "@/core/ui/collections/tracklist-view";
+import { CollectionPanel } from "@/core/ui/collections/tracklist-view";
 
 function CollectionNameForm(props: {
   title: string;
@@ -74,12 +74,12 @@ export function CollectionList({
   genres,
 }: {
   projects: Project[];
-  collections: Collection[];
+  collections: TaxonomyOption[];
   stages: TaxonomyOption[];
   genres: TaxonomyOption[];
 }) {
   const { pop } = useNavigation();
-  const [collections, setCollections] = useState<Collection[]>(initialCollections);
+  const [collections, setCollections] = useState<TaxonomyOption[]>(initialCollections);
   // 推入时拿到的是快照；合集面板里的改动会通过 onProjectsChanged 回传到这里。
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
@@ -131,7 +131,7 @@ export function CollectionList({
     return true;
   }
 
-  async function deleteCollection(c: Collection) {
+  async function deleteCollection(c: TaxonomyOption) {
     const confirmed = await confirmAlert({
       icon: { source: Icon.Trash, tintColor: Color.Red },
       title: `${strings.delete} “${c.name}”?`,
@@ -163,10 +163,10 @@ export function CollectionList({
 
   const pinnedCollections = pinnedIds
     .map((id) => collections.find((c) => c.id === id))
-    .filter((c): c is Collection => c !== undefined);
+    .filter((c): c is TaxonomyOption => c !== undefined);
   const unpinnedCollections = collections.filter((c) => !pinnedIds.includes(c.id));
 
-  const renderItem = (c: Collection, options: { isPinned: boolean; index: number; total: number }) => {
+  const renderItem = (c: TaxonomyOption, options: { isPinned: boolean; index: number; total: number }) => {
     const count = projects.filter((p) => p.collectionIds.includes(c.id)).length;
     return (
       <List.Item

@@ -67,9 +67,6 @@ import {
 } from "@/core/ui/collections/tracklist";
 import { projectIcon } from "@/daws/icons";
 
-/** 合集：id 由名字 slug 生成，name 是显示名。 */
-export type Collection = { id: string; name: string };
-
 const VIEW_MODE_STORAGE_KEY = "view-mode:collections";
 const DETAIL_DOC_STORAGE_KEY = "detail-doc:collections";
 const PLAYER_PATH = ensureAudioPlayerBinary();
@@ -94,7 +91,7 @@ export function CollectionPanel({
   genres,
   onProjectsChanged,
 }: {
-  collection: Collection;
+  collection: TaxonomyOption;
   projects: Project[];
   stages: TaxonomyOption[];
   genres: TaxonomyOption[];
