@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Raycast flat config 用 CommonJS require，为模板默认写法 */
 const { defineConfig } = require("eslint/config");
 const raycastConfig = require("@raycast/eslint-config");
+const reactHooks = require("eslint-plugin-react-hooks");
 
 // src/core/ui 的分层：projects 可以打开 bounces / collections / cleanup，
 // 这三个之间不能互相引用，也不能反向引用 projects。
@@ -116,6 +117,14 @@ module.exports = defineConfig([
   // 可能引用已被 typescript-eslint 移除的规则（如 ban-types）而报错。生成产物无需 lint，直接忽略。
   { ignores: ["raycast-env.d.ts"] },
   ...raycastConfig,
+  {
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      // 依赖数组写错不会有别的工具兜底，先只报 warning，等现有代码清干净再改成 error。
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+    },
+  },
   {
     rules: {
       // ⌘⇧↑ / ⌘⇧↓ 等刻意使用的组合会被这条规则误判为应改用 Common.*（插件未跟上最新 Raycast API 的快捷键绑定）。
