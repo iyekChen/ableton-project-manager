@@ -17,14 +17,14 @@ import {
   confirmAlert,
   openExtensionPreferences,
 } from "@raycast/api";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import fs from "node:fs";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
 import { usePlaybackToast } from "@/core/ui/projects/use-playback-toast";
 import { useCurrentSets } from "@/core/ui/projects/use-current-sets";
 import { useOnboarding } from "@/core/ui/projects/use-onboarding";
+import { useProjectList } from "@/core/ui/projects/use-project-list";
 import { resetToFirstRun } from "@/core/ui/projects/reset-to-first-run";
-import { refreshDocFile, useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
+import { useDocWatcher } from "@/core/ui/hooks/use-doc-watcher";
 import { ensureAudioPlayerBinary } from "@/core/audio/audio-player-path";
 import { getSettings } from "@/settings";
 import { deleteProjectMetadata, movePinnedProject, setProjectPinned } from "@/core/metadata/project-metadata";
@@ -56,13 +56,6 @@ import { EditInfo } from "@/core/ui/components/edit-info";
 import { DuplicateProject } from "@/core/ui/projects/duplicate-project";
 import { ManageExternalBounces } from "@/core/ui/components/manage-external-bounces";
 import type { Project } from "@/core/projects/types";
-import {
-  readProjectListCache,
-  sameFsFields,
-  serializeProjectList,
-  writeProjectListCache,
-} from "@/core/projects/list-cache";
-import { applyProjectMetadata, reloadProjectData } from "@/core/ui/shared/reload-projects";
 import { findLatestProjectBounce, resolveSharedBouncesFolder } from "@/core/projects/bounces";
 import { daw } from "@/daws";
 import { SetsView, projectFilesInfo } from "@/daws/ui";
@@ -71,7 +64,6 @@ import { projectIcon } from "@/daws/icons";
 import { openWithDaw } from "@/core/daw-app";
 import { useDawApp } from "@/core/ui/hooks/use-daw-app";
 import { useTaxonomies } from "@/core/ui/projects/use-taxonomies";
-import { LOG_PREFIX } from "@/core/log";
 import { optionKeywords } from "@/core/ui/shared/search-keywords";
 import { findCurrentSet } from "@/core/projects/current-set";
 import { formatDate } from "@/core/ui/shared/format";
@@ -115,18 +107,6 @@ export function ProjectsView() {
   const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useSortOption(SORT_STORAGE_KEY, PROJECT_SORT_OPTIONS, "created-desc");
   const [groupBy, setGroupBy] = useGroupOption(GROUP_STORAGE_KEY, "created");
-  // 冷启动先显示上次读到的列表，扫描完再替换。
-  const [initialCache] = useState(() => readProjectListCache(PROJECTS_ROOT));
-  const [projects, setProjects] = useState<Project[]>(() => initialCache ?? []);
-  // 先渲染前 INITIAL_ITEM_COUNT 项，首帧之后补全；一打字也立刻补全。
-  const { showAll, showAllNow } = useProgressiveList(projects.length);
-  // 读到缓存时先不显示加载：扫描完发现没变化就什么都不做。
-  const [isLoading, setIsLoading] = useState(initialCache === undefined);
-  // 静默启动刷新：只在读到缓存的那一次刷新里为 true，结束后复位。
-  const silentStartupRef = useRef(initialCache !== undefined);
-  // 上次写进缓存的列表：打开时刚读出来的那份不重复写。
-  const lastWrittenRef = useRef(initialCache);
-  const [orphanIds, setOrphanIds] = useState<string[]>([]);
   // 默认 Detail；只有记过 Overview 才进 Overview。
   const { showDetail, toggleDetail, detailDoc, toggleDetailDoc } = useDetailView({
     viewModeKey: VIEW_MODE_STORAGE_KEY,
@@ -134,20 +114,46 @@ export function ProjectsView() {
     defaultMode: "detail",
   });
   const dawApp = useDawApp();
-  const baseProjectsRef = useRef<Project[]>([]);
-  // 每次渲染都更新：load() 的闭包里拿不到最新的 projects state。
-  const projectsRef = useRef<Project[]>(projects);
-  projectsRef.current = projects;
+  // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
+  const leftoverToastShownRef = useRef(false);
+  // 这两个回调要等下面的 hook 返回才能拿到，而它们又依赖 projects，所以用 ref 传进去。
+  const refreshCurrentSetsRef = useRef<(list: Project[]) => Promise<void>>(async () => {});
+  const runOnboardingRef = useRef<() => Promise<void>>(async () => {});
+  const reloadProjectsRef = useRef<() => Promise<string[]>>(async () => []);
+  const onStartupLoadedRef = useRef<(orphans: string[]) => Promise<void>>(async () => {});
+
+  const { projects, isLoading, orphanIds, reloadProjects, applyMetadata, refreshDoc, getProjects } = useProjectList({
+    root: PROJECTS_ROOT,
+    trashingIds,
+    onAppliedRef: refreshCurrentSetsRef,
+    onStartupLoadedRef,
+  });
+  reloadProjectsRef.current = reloadProjects;
+
+  // 首次加载完：残留数据提示只弹一次，然后跑引导。时机和原来一样（加载状态关掉之后）。
+  onStartupLoadedRef.current = async (orphans) => {
+    if (orphans.length > 0 && !leftoverToastShownRef.current) {
+      leftoverToastShownRef.current = true;
+      await showToast({
+        style: Toast.Style.Success,
+        title: strings.leftoversFound,
+        message: strings.leftoversFoundMessage.replace("{count}", String(orphans.length)),
+        primaryAction: {
+          title: strings.cleanUpLeftovers,
+          onAction: () => push(<CleanUpRemovedProjects />, () => void reloadProjectsRef.current()),
+        },
+      });
+    }
+    await runOnboardingRef.current();
+  };
+
+  // 先渲染前 INITIAL_ITEM_COUNT 项，首帧之后补全；一打字也立刻补全。
+  const { showAll, showAllNow } = useProgressiveList(projects.length);
   // 每个项目「工程文件」这一层的信息（由 DAW 提供，没有这一层时为 null）。只在列表变化时重算，不在每次渲染时读磁盘。
   const projectFiles = useMemo(
     () => new Map(projects.map((project) => [project.id, projectFilesInfo(project)])),
     [projects],
   );
-  // 残留数据提示每次打开只弹一次（fs.watch 触发的重载不再重复提示）。
-  const leftoverToastShownRef = useRef(false);
-
-  // 外部编辑器改了笔记 / 歌词：只重读那一份，详情面板马上跟着变。
-  useDocWatcher(PROJECTS_ROOT, (file) => setProjects((prev) => refreshDocFile(prev, file)));
 
   const { playbackStatus, playingId, positionSeconds, durationSeconds, play, pause, resume, stop, seek, restart } =
     useAudioPlayer({
@@ -161,127 +167,13 @@ export function ProjectsView() {
     durationSeconds,
   });
   const { currentSets, readingSets, refreshCurrentSets } = useCurrentSets({ isPlaybackToastActive });
+  refreshCurrentSetsRef.current = refreshCurrentSets;
 
-  // 静默启动刷新：内容没变就保留原引用，不触发重渲染，也不重写缓存。
-  const commitProjects = useCallback((updated: Project[]) => {
-    setProjects((prev) =>
-      silentStartupRef.current && serializeProjectList(updated) === serializeProjectList(prev) ? prev : updated,
-    );
-  }, []);
+  const { runOnboarding } = useOnboarding({ getProjects, reloadProjects });
+  runOnboardingRef.current = runOnboarding;
 
-  const applyMetadata = useCallback(async () => {
-    const updated = await applyProjectMetadata(baseProjectsRef.current);
-    commitProjects(updated);
-  }, [commitProjects]);
-
-  const runReload = useCallback(async (): Promise<string[]> => {
-    try {
-      const { orphans } = await reloadProjectData(PROJECTS_ROOT, trashingIds, {
-        onScanned: (base) => {
-          baseProjectsRef.current = base;
-          // 静默启动刷新：磁盘上的项目有变化才显示加载。
-          if (silentStartupRef.current && !sameFsFields(base, projectsRef.current)) setIsLoading(true);
-        },
-        onApplied: (updated, base) => {
-          commitProjects(updated);
-          // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
-          void refreshCurrentSets(base);
-        },
-      });
-      setOrphanIds(orphans);
-      return orphans;
-    } catch (error) {
-      console.error(`${LOG_PREFIX} Failed to load projects:`, error);
-      setProjects([]);
-      setOrphanIds([]);
-      await showFailure(strings.loadProjectsFailed, error, { message: strings.loadProjectsFailedHint });
-    } finally {
-      // 静默启动刷新只做一次，成功失败都复位。
-      silentStartupRef.current = false;
-    }
-    return [] as string[];
-  }, [commitProjects, refreshCurrentSets]);
-
-  // 同一时刻只跑一次：执行中再被触发（目录监听、返回刷新、保存回调）只记一笔，结束后补跑一次。
-  // 避免两次 Finder 同步交错——后一次可能拿已被前一次清掉的空数据去覆盖删除记录。
-  const reloadInFlightRef = useRef<Promise<string[]> | null>(null);
-  const reloadPendingRef = useRef(false);
-
-  const reloadProjects = useCallback((): Promise<string[]> => {
-    if (reloadInFlightRef.current) {
-      reloadPendingRef.current = true;
-      return reloadInFlightRef.current;
-    }
-    const run = async (): Promise<string[]> => {
-      let orphans = await runReload();
-      while (reloadPendingRef.current) {
-        reloadPendingRef.current = false;
-        orphans = await runReload();
-      }
-      return orphans;
-    };
-    const promise = run().finally(() => {
-      reloadInFlightRef.current = null;
-    });
-    reloadInFlightRef.current = promise;
-    return promise;
-  }, [runReload]);
-
-  const { runOnboarding } = useOnboarding({ getProjects: () => projectsRef.current, reloadProjects });
-
-  // 启动只加载一遍：依赖里的 push 每次渲染都是新函数，会让这个 effect 重跑。
-  const startupDoneRef = useRef(false);
-
-  useEffect(() => {
-    if (startupDoneRef.current) return;
-    startupDoneRef.current = true;
-    async function load() {
-      const orphans = await reloadProjects();
-      setIsLoading(false);
-      if (orphans.length > 0 && !leftoverToastShownRef.current) {
-        leftoverToastShownRef.current = true;
-        await showToast({
-          style: Toast.Style.Success,
-          title: strings.leftoversFound,
-          message: strings.leftoversFoundMessage.replace("{count}", String(orphans.length)),
-          primaryAction: {
-            title: strings.cleanUpLeftovers,
-            onAction: () => push(<CleanUpRemovedProjects />, () => void reloadProjects()),
-          },
-        });
-      }
-      await runOnboarding();
-    }
-    void load();
-  }, [reloadProjects, push, runOnboarding]);
-
-  // 列表刷新完就更新缓存：下次冷启动先显示这一份。
-  useEffect(() => {
-    if (isLoading) return;
-    if (projects === lastWrittenRef.current) return;
-    writeProjectListCache(PROJECTS_ROOT, projects);
-    lastWrittenRef.current = projects;
-  }, [isLoading, projects]);
-
-  // 监听项目根目录（fs.watch 为 Node 内置，底层走 FSEvents）：Finder 里新建、删除、改名或从废纸篓放回项目时自动重载。
-  // 去抖 0.5 秒，合并 Finder 连续触发的多次事件。
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let watcher: fs.FSWatcher | null = null;
-    try {
-      watcher = fs.watch(PROJECTS_ROOT, () => {
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => void reloadProjects(), 500);
-      });
-      watcher.on("error", () => watcher?.close());
-    } catch {
-      // 根目录不存在等：不监听，照常在打开时加载。
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-      watcher?.close();
-    };
-  }, [reloadProjects]);
+  // 外部编辑器改了笔记 / 歌词：只重读那一份，详情面板马上跟着变。
+  useDocWatcher(PROJECTS_ROOT, refreshDoc);
 
   const playProjectBounce = useCallback(
     (project: Project) => {

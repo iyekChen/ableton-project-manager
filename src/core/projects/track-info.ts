@@ -11,6 +11,7 @@ import {
 } from "./audio-cache";
 import { daw, type ProjectFileMetadata } from "@/daws";
 import { findCurrentSet } from "./current-set";
+import { runBatched } from "./run-batched";
 import {
   EMPTY_METADATA,
   cachedSetMetadata,
@@ -133,22 +134,15 @@ export async function loadTrackInfos(
   shouldCancel: () => boolean,
   concurrency = 3,
 ): Promise<void> {
-  let nextIndex = 0;
-
-  async function worker() {
-    while (!shouldCancel()) {
-      const index = nextIndex++;
-      if (index >= projects.length) return;
-
-      const project = projects[index];
+  await runBatched(
+    projects,
+    async (project) => {
       const info = await loadTrackInfo(project);
-
       if (shouldCancel()) return;
       onResult(project.id, info);
-    }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(concurrency, projects.length) }, () => worker()));
+    },
+    { concurrency, isCancelled: shouldCancel },
+  );
 }
 
 /** 本专辑某个特征的取值范围（min/max），用于把特征归一化到 0..1。 */

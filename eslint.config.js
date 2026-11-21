@@ -120,9 +120,9 @@ module.exports = defineConfig([
   {
     plugins: { "react-hooks": reactHooks },
     rules: {
-      // 依赖数组写错不会有别的工具兜底，先只报 warning，等现有代码清干净再改成 error。
+      // 依赖数组写错不会有别的工具兜底，现有代码已清干净，按 error 拦。
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/exhaustive-deps": "error",
     },
   },
   {

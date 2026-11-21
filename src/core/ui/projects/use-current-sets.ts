@@ -3,6 +3,7 @@ import { showToast, Toast } from "@raycast/api";
 import { daw } from "@/daws";
 import type { Project } from "@/core/projects/types";
 import { findCurrentSet } from "@/core/projects/current-set";
+import { runBatched } from "@/core/projects/run-batched";
 import {
   cachedSetMetadata,
   loadPersistentProjectFileCache,
@@ -54,12 +55,9 @@ export function useCurrentSets(input: { isPlaybackToastActive: () => boolean }):
         : null;
 
       let done = 0;
-      let nextIndex = 0;
-      async function worker() {
-        while (run === currentSetsRunRef.current) {
-          const index = nextIndex++;
-          if (index >= missing.length) return;
-          const [id, set] = missing[index];
+      await runBatched(
+        missing,
+        async ([id, set]) => {
           try {
             const metadata = await parseSetMetadata(set);
             if (run !== currentSetsRunRef.current) return;
@@ -69,9 +67,9 @@ export function useCurrentSets(input: { isPlaybackToastActive: () => boolean }):
           }
           done++;
           if (toast) toast.message = `${done} / ${missing.length}`;
-        }
-      }
-      await Promise.all(Array.from({ length: Math.min(METADATA_CONCURRENCY, missing.length) }, () => worker()));
+        },
+        { concurrency: METADATA_CONCURRENCY, isCancelled: () => run !== currentSetsRunRef.current },
+      );
 
       void toast?.hide();
       // 只有最新一轮能关掉加载状态，否则旧轮次结束会把新一轮的关掉。
