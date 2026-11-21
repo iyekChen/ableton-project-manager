@@ -14,15 +14,15 @@
 
 ## ✨ What it does
 
-- **[Browse and open your projects](#-projects)**, and **[tag them](#-tags)** by stage and genre.
-- **[Find projects](#-search)** by name, tag, created date, key, BPM, and more.
-- **[Gather your bounces](#-bounces)** from project folders, a shared export folder, or anywhere else.
-- **[Listen to your bounces](#playback)** without digging through Finder.
-- **[Plan the tracklist](#-collections)** for an EP or album, give tracks roles, and compare each track's energy.
-- **[Keep notes and lyrics](#-notes--lyrics)** as Markdown files, in each project or in a folder such as an Obsidian vault.
-- **[Start new Live Sets](#-new-live-sets)** from your templates.
+- **[Browse and open your projects](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-projects)**, and **[tag them](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-tags)** by stage and genre.
+- **[Find projects](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-search)** by name, tag, created date, key, BPM, and more.
+- **[Gather your bounces](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-bounces)** from project folders, a shared export folder, or anywhere else.
+- **[Listen to your bounces](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#playback)** without digging through Finder.
+- **[Plan the tracklist](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-collections)** for an EP or album, give tracks roles, and compare each track's energy.
+- **[Keep notes and lyrics](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-notes--lyrics)** as Markdown files, in each project or in a folder such as an Obsidian vault.
+- **[Start new Live Sets](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-new-live-sets)** from your templates.
 
-See also: [Configuration](#-configuration) · [Known limitations](#-known-limitations) · [Data & files](#-data--files)
+See also: [Configuration](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-configuration) · [Known limitations](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-known-limitations) · [Data & files](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-data--files)
 
 ## 🚀 Quick start
 
@@ -44,12 +44,12 @@ Most of the time you'll use Search Projects. To get it ready:
 ### ② Tell it where your bounces are
 
 - In Extension Preferences, set Bounces Subfolder to the subfolder inside each project where you save bounces (e.g. `Bounces`), or leave it empty if they're saved directly in each project folder.
-- Optional: if you also export bounces from all your projects into one folder, set it as the Shared Bounces Folder. Files there are matched to projects by name, and the next time you open Search Projects, it offers to review any that don't match; see [Shared Bounces Folder](#shared-bounces-folder).
+- Optional: if you also export bounces from all your projects into one folder, set it as the Shared Bounces Folder. Files there are matched to projects by name, and the next time you open Search Projects, it offers to review any that don't match; see [Shared Bounces Folder](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#shared-bounces-folder).
 - Optional: to include bounces stored anywhere else, select a project in Search Projects and use Manage External Bounce (⌘B).
 
 ### ③ Tag your projects
 
-- In Manage Tags, select a stage (Demo, Mix, Released…) or genre and use Assign to Projects to tag several projects at once; see [Tags](#-tags).
+- In Manage Tags, select a stage (Demo, Mix, Released…) or genre and use Assign to Projects to tag several projects at once; see [Tags](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-tags).
 - To tag a single project, use Edit Info in Search Projects.
 
 ### ④ Try it
@@ -62,7 +62,7 @@ Most of the time you'll use Search Projects. To get it ready:
 
 Search Projects lists every project in your Projects Folder. Pinned projects stay at the top. The rest can be grouped by created or modified date and sorted by date or name.
 
-### Opening Sets
+### View Sets
 
 - **View Sets** (Enter) lists a project's Sets. Open one in Ableton Live, or rename, duplicate, or move it to the Trash. Renaming asks you to close the Set in Live first.
 - **Open Latest Set** (⌘O) opens the project's most recently modified Set.
@@ -72,7 +72,7 @@ Search Projects lists every project in your Projects Folder. Pinned projects sta
 Search Projects has two views. Overview shows each project's stage and how many Sets and bounces it has. Detail adds a side panel with the project's note, its tags and collections, the latest Set's key and BPM, and its created and modified dates.
 
 - ⌘⇧T switches between Overview and Detail.
-- In Detail, ⌘⌥⇧T switches the panel between notes and lyrics; see [Notes & lyrics](#-notes--lyrics).
+- In Detail, ⌘⌥⇧T switches the panel between notes and lyrics; see [Notes & lyrics](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-notes--lyrics).
 
 ### Playback
 
@@ -81,17 +81,17 @@ There are two ways to listen: the built-in player plays a project's latest bounc
 - **Play Latest Bounce** (⌘↵) plays the project's latest bounce. Press it again to pause or resume.
 - While something is playing, you can also use Stop Playback (⌘-), Backward and Forward (⌥← and ⌥→, 5 seconds), and Restart Track (⌘←).
 - Playback keeps going when you close the Raycast window, and stops when Raycast quits.
-- **Browse Bounces** (⌥↵) lists all of the project's bounces. Press Enter to preview any of them with Quick Look; see [Browse Bounces](#browse-bounces).
+- **Browse Bounces** (⌥↵) lists all of the project's bounces. Press Enter to preview any of them with Quick Look; see [Browse Bounces](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#browse-bounces).
 
 ### Managing projects
 
-- **Edit Info** changes a project's name, stage, genres, and collections. To tag several projects at once, use Assign to Projects in Manage Tags; see [Tags](#-tags). Renaming asks you to close the project in Live first, then renames its folder; tags, track numbers, roles, notes, and lyrics move with it.
+- **Edit Info** changes a project's name, stage, genres, and collections. To tag several projects at once, use Assign to Projects in Manage Tags; see [Tags](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-tags). Renaming asks you to close the project in Live first, then renames its folder; tags, track numbers, roles, notes, and lyrics move with it.
 - **Duplicate Project** copies the whole project folder under a new name (`Song copy` by default), including any bounces, notes, and lyrics saved inside it. Tags, collections, and pins aren't copied.
 - **Pin** keeps a project at the top of the list. Pinned projects can be reordered with Move Up and Move Down.
-- **Move to Trash** moves the whole project folder to the Trash. Its data is kept for 30 days in case you put it back; see [Project tracking](#project-tracking).
+- **Move to Trash** moves the whole project folder to the Trash. Its data is kept for 30 days in case you put it back; see [Project tracking](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#project-tracking).
 - **Copy Latest Bounce** copies the audio file itself, so you can paste it into a message or another app. You can also copy the project's name or path, or open it in Finder.
 
-Other actions in Search Projects have their own chapters: [Collections](#-collections) (⌃↵), [Notes & lyrics](#-notes--lyrics), bounce sources in [Bounces](#-bounces) (⌘B), and [New Live Sets](#-new-live-sets).
+Other actions in Search Projects have their own chapters: [Collections](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-collections) (⌃↵), [Notes & lyrics](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-notes--lyrics), bounce sources in [Bounces](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-bounces) (⌘B), and [New Live Sets](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-new-live-sets).
 
 ## 🔖 Tags
 
@@ -106,7 +106,7 @@ Manage Tags edits the three lists you tag with. Use the dropdown next to the sea
 ### Editing the lists
 
 - **Create** (⌘N) adds an option. **Edit** (⌘E) changes its name, aliases, and, for stages, its color. Renaming keeps the option on every project and track that uses it. Two options in the same list can't share a name.
-- **Aliases** are other names to search by, separated by commas (e.g. `dnb` for Drum & Bass). See [Combined search](#combined-search).
+- **Aliases** are other names to search by, separated by commas (e.g. `dnb` for Drum & Bass). See [Combined search](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#combined-search).
 - Reorder with Move Up (⌘⌥↑) and Move Down (⌘⌥↓), or Move to Top (⌘⇧↑) and Move to Bottom (⌘⇧↓). The same order is used everywhere you pick a tag.
 - **Delete** (⌃X) asks first, telling you how many projects or tracks use the option, and then removes it from all of them.
 - **Reset to Defaults** restores the default list for the list you're viewing. Your custom names, colors, aliases, and order are lost, and projects or tracks using an option that's no longer in the list lose it.
@@ -114,7 +114,7 @@ Manage Tags edits the three lists you tag with. Use the dropdown next to the sea
 ### Tagging projects
 
 - **Assign to Projects** (stages and genres only) shows every project, with the ones that already have the tag checked. Check projects to add the tag and uncheck them to remove it. Because a project has only one stage, checking a project that's in another stage moves it, and the form tells you how many will move.
-- To tag a single project, use Edit Info in Search Projects. To give a track a role, open Edit Info from inside a collection; see [Collections](#-collections).
+- To tag a single project, use Edit Info in Search Projects. To give a track a role, open Edit Info from inside a collection; see [Collections](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-collections).
 
 ## 🔍 Search
 
@@ -152,7 +152,7 @@ Things that are easy to miss:
 A project's bounces are collected from:
 
 - its Bounces Subfolder, or the project folder itself if Bounces Subfolder isn't set;
-- the [Shared Bounces Folder](#shared-bounces-folder), for files whose names match the project;
+- the [Shared Bounces Folder](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#shared-bounces-folder), for files whose names match the project;
 - external folders and files added with Manage External Bounce (⌘B in Search Projects). Sources that can't be reached (e.g. an unplugged drive) are kept and shown as unavailable until you remove them. If a linked file is renamed in place or moved into your Shared Bounces Folder, it's re-linked automatically when there's a single match.
 
 Only audio files directly inside each folder are read; subfolders aren't. A file reached through more than one source counts once. The most recently modified audio file (WAV, AIFF, MP3, M4A, or FLAC) is the latest bounce: it's the one that's played, copied, queued, and used for energy analysis.
@@ -163,7 +163,7 @@ Browse Bounces (⌥↵ in Search Projects) lists all of a project's bounces, gro
 
 - Press Enter to preview a bounce with Quick Look, or ⌘O to open it in its default app.
 - Rename a bounce (its extension stays the same), copy the file itself, show it in Finder, or move it to the Trash.
-- **Not This Project** sends a file from the Shared Bounces Folder back to [Unmatched Bounces](#unmatched-bounces) when it was matched to the wrong project.
+- **Not This Project** sends a file from the Shared Bounces Folder back to [Unmatched Bounces](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#unmatched-bounces) when it was matched to the wrong project.
 - For an unavailable external source, **Remove External Source** removes it from the project. The file itself isn't deleted.
 
 ### Search Bounces
@@ -186,7 +186,7 @@ Assigning bounces never moves or renames your files.
 
 ### Unmatched bounces
 
-When a Shared Bounces Folder is set, files in it that don't belong to any project are listed in Unmatched Bounces (⌘⇧B in Search Projects) and marked in [Search Bounces](#search-bounces). The first time you open Search Projects after setting or changing the folder, the extension offers to review any unmatched files it finds.
+When a Shared Bounces Folder is set, files in it that don't belong to any project are listed in Unmatched Bounces (⌘⇧B in Search Projects) and marked in [Search Bounces](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#search-bounces). The first time you open Search Projects after setting or changing the folder, the extension offers to review any unmatched files it finds.
 
 Use Assign to Project to give a file to a project:
 
@@ -209,15 +209,15 @@ In Browse Collections, you can rename, pin, or delete collections. Deleting a co
 
 - **Tracklist** lists numbered tracks in order, with each track's role, number, duration, and energy. Its header shows the total duration. **Unsorted** lists the other tracks alphabetically.
 - Reorder with Swap Up and Swap Down, or Move to Top and Move to Bottom. Remove from Tracklist sends a track back to Unsorted and clears its role. If two tracks share a number, both are marked with a warning icon.
-- **Roles:** open Edit Info from inside a collection to give a track a role, such as Intro or Interlude. Edit the list of roles in [Manage Tags](#-tags).
+- **Roles:** open Edit Info from inside a collection to give a track a role, such as Intro or Interlude. Edit the list of roles in [Manage Tags](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-tags).
 - Use the dropdown to show only one stage or genre. The Detail view shows each track's note, stage, duration, role, BPM, key, time signature, and energy.
 - **Remove from Collection** removes a track from the collection, along with its number and role there. The project itself isn't affected.
 - Back to Search Projects (⌃↵) returns to your project list from anywhere in Browse Collections.
 
 ### Listening to a collection
 
-- Play any track's latest bounce with ⌘↵, as in [Playback](#playback).
-- **Queue Collection in Player** (⌘⇧↵) opens the latest bounce of every track in the Tracklist, in order, as an `.m3u` playlist in your default player. Unsorted tracks and tracks without a bounce are skipped, and the action is hidden while the Tracklist is empty. See [Known limitations](#-known-limitations) for player support.
+- Play any track's latest bounce with ⌘↵, as in [Playback](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#playback).
+- **Queue Collection in Player** (⌘⇧↵) opens the latest bounce of every track in the Tracklist, in order, as an `.m3u` playlist in your default player. Unsorted tracks and tracks without a bounce are skipped, and the action is hidden while the Tracklist is empty. See [Known limitations](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-known-limitations) for player support.
 
 ### How energy is calculated
 
@@ -243,8 +243,8 @@ Each feature is then scaled from 0 to 1 across the tracks in the collection's Tr
 
 Each project can have a note and a lyrics file, saved as ordinary Markdown files.
 
-- **Where they're saved:** `Notes.md` and `Lyrics.md` in the project folder by default. Set a Notes Folder or Lyrics Folder to keep them elsewhere, such as an Obsidian vault; see [File names](#file-names).
-- **Viewing:** in Search Projects' [Detail view](#overview-and-detail) (⌘⇧T), the side panel shows the note, and ⌘⌥⇧T switches it to the lyrics.
+- **Where they're saved:** `Notes.md` and `Lyrics.md` in the project folder by default. Set a Notes Folder or Lyrics Folder to keep them elsewhere, such as an Obsidian vault; see [File names](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#file-names).
+- **Viewing:** in Search Projects' [Detail view](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#overview-and-detail) (⌘⇧T), the side panel shows the note, and ⌘⌥⇧T switches it to the lyrics.
 - **Editing:** use Edit Note (⌘⌥N) and Edit Lyrics (⌘⌥L) to edit in Raycast, or Open Note (⌘⇧N) and Open Lyrics (⌘⇧L) to open the file in your Markdown app. These actions also work on tracks inside a collection.
 - **Editing elsewhere:** changes made in other apps show up right away. If a file changes in another app while you're editing it in Raycast, you're asked before your save replaces those changes.
 
@@ -297,15 +297,15 @@ In Search Projects:
 | Preference                | Description                                                                                                                                                            |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Projects Folder**       | The folder containing your Ableton Live projects.                                                                                                                      |
-| **Shared Bounces Folder** | One folder for bounces from all your projects. Files are matched to projects by name; see [Shared Bounces Folder](#shared-bounces-folder).                             |
+| **Shared Bounces Folder** | One folder for bounces from all your projects. Files are matched to projects by name; see [Shared Bounces Folder](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#shared-bounces-folder).                             |
 | **Bounces Subfolder**     | The subfolder inside each project where bounces are saved (e.g. `Bounces`). Leave empty to look directly in each project folder.                                       |
-| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [Templates](#templates).                                   |
+| **Templates Folder**      | The folder that holds your Live templates. Leave empty to use `~/Music/Ableton/User Library/Templates`; see [Templates](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#templates).                                   |
 | **Notes Folder**          | The folder where notes are saved as `.md` files (e.g. an Obsidian vault). Leave empty to save `Notes.md` in each project folder.                                       |
 | **Lyrics Folder**         | The folder where lyrics are saved as `.md` files. Leave empty to save `Lyrics.md` in each project folder.                                                              |
-| **Notes Template**        | Optional `.md` file used as the starting point for new notes; see [Note templates](#note-templates).                                                                   |
-| **Lyrics Template**       | Optional `.md` file used as the starting point for new lyrics; see [Note templates](#note-templates).                                                                  |
+| **Notes Template**        | Optional `.md` file used as the starting point for new notes; see [Note templates](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#note-templates).                                                                   |
+| **Lyrics Template**       | Optional `.md` file used as the starting point for new lyrics; see [Note templates](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#note-templates).                                                                  |
 | **Strict Line Breaks**    | Off: preserve single line breaks. On: follow standard Markdown line breaks (two trailing spaces or a blank line). Affects the preview only; your files aren't changed. |
-| **Energy: Density**       | How much density (crest factor) affects the energy score; see [How energy is calculated](#how-energy-is-calculated). Only the ratio between the three weights matters. |
+| **Energy: Density**       | How much density (crest factor) affects the energy score; see [How energy is calculated](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#how-energy-is-calculated). Only the ratio between the three weights matters. |
 | **Energy: Brightness**    | How much brightness (spectral centroid) affects the energy score.                                                                                                      |
 | **Energy: Movement**      | How much movement (spectral flux) affects the energy score.                                                                                                            |
 
@@ -327,7 +327,7 @@ The extension changes project files only when you ask:
 - duplicating a project or a Set;
 - moving something to the Trash.
 
-Renaming a project or Set asks you to close it in Ableton Live first. Notes and lyrics are written only when you edit them, or when you use Open Note or Open Lyrics before the file exists. They're renamed or archived along with their project, as described in [Project tracking](#project-tracking).
+Renaming a project or Set asks you to close it in Ableton Live first. Notes and lyrics are written only when you edit them, or when you use Open Note or Open Lyrics before the file exists. They're renamed or archived along with their project, as described in [Project tracking](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#project-tracking).
 
 ### Storage
 
