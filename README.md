@@ -164,6 +164,7 @@ Browse Bounces (⌥↵ in Search Projects) lists all of a project's bounces, gro
 - Press Enter to preview a bounce with Quick Look, or ⌘O to open it in its default app.
 - Rename a bounce (its extension stays the same), copy the file itself, show it in Finder, or move it to the Trash.
 - **Not This Project** sends a file from the Shared Bounces Folder back to [Unmatched Bounces](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#unmatched-bounces) when it was matched to the wrong project.
+- **Manage External Bounce** (⌘B) also works here, so you can add or remove external sources without going back to Search Projects.
 - For an unavailable external source, **Remove External Source** removes it from the project. The file itself isn't deleted.
 
 ### Search Bounces
@@ -210,7 +211,7 @@ In Browse Collections, you can rename, pin, or delete collections. Deleting a co
 - **Tracklist** lists numbered tracks in order, with each track's role, number, duration, and energy. Its header shows the total duration. **Unsorted** lists the other tracks alphabetically.
 - Reorder with Swap Up and Swap Down, or Move to Top and Move to Bottom. Remove from Tracklist sends a track back to Unsorted and clears its role. If two tracks share a number, both are marked with a warning icon.
 - **Roles:** open Edit Info from inside a collection to give a track a role, such as Intro or Interlude. Edit the list of roles in [Manage Tags](https://github.com/iyekChen/ableton-project-manager/blob/main/README.md#-tags).
-- Use the dropdown to show only one stage or genre. The Detail view shows each track's note, stage, duration, role, BPM, key, time signature, and energy.
+- Use the dropdown to show only one stage or genre. ⌘⇧T switches to the Detail view, which shows each track's note, stage, duration, role, BPM, key, time signature, and energy; in Detail, ⌘⌥⇧T switches the panel between notes and lyrics.
 - **Remove from Collection** removes a track from the collection, along with its number and role there. The project itself isn't affected.
 - Back to Search Projects (⌃↵) returns to your project list from anywhere in Browse Collections.
 

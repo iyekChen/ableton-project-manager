@@ -745,12 +745,14 @@ function CollectionPanel({
       <Action
         title={showDetail ? t.showOverview : t.showDetail}
         icon={Icon.AppWindowSidebarRight}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "t" }}
         onAction={toggleDetail}
       />
       {showDetail && (
         <Action
           title={detailDoc === "notes" ? t.showLyrics : t.showNotes}
           icon={Icon.Text}
+          shortcut={{ modifiers: ["cmd", "opt", "shift"], key: "t" }}
           onAction={toggleDetailDoc}
         />
       )}

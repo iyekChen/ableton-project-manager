@@ -258,6 +258,7 @@ export function Bounces(props: {
     <Action.Push
       title={t.manageExternalBounce}
       icon={Icon.Link}
+      shortcut={{ modifiers: ["cmd"], key: "b" }}
       target={
         <ManageExternalBounces
           projectId={props.projectId}

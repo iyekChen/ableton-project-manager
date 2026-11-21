@@ -164,6 +164,7 @@ Browse Bounces（在 Search Projects 中按 ⌥↵）列出项目的所有 bounc
 - 按 Enter 用 Quick Look 预览，按 ⌘O 用默认 App 打开。
 - 可以重命名 bounce（扩展名保持不变）、复制文件本身、在 Finder 中显示，或移到废纸篓。
 - **Not This Project**：Shared Bounces Folder 中的文件被匹配到了错误的项目时，用它把文件退回 [Unmatched Bounces](https://github.com/iyekChen/ableton-project-manager/blob/main/README.zh-CN.md#unmatched-bounces)。
+- **Manage External Bounce**（⌘B）在这里也能用，不用回到 Search Projects 就能添加或移除外部来源。
 - 对于不可用的外部来源，**Remove External Source** 会把它从项目中移除，文件本身不会被删除。
 
 ### Search Bounces
@@ -210,7 +211,7 @@ Search Bounces 命令在一个地方列出所有项目的 bounce。属于多个�
 - **Tracklist** 按顺序列出已编号的曲目，显示每首曲目的角色、编号、时长和能量，顶部显示总时长。**Unsorted** 按字母顺序列出其余曲目。
 - 用 Swap Up 和 Swap Down，或 Move to Top 和 Move to Bottom 调整顺序。Remove from Tracklist 把曲目退回 Unsorted，并清除它的角色。如果两首曲目编号相同，两者都会带上警告图标。
 - **角色：** 在合集里打开 Edit Info 给曲目分配角色，例如 Intro 或 Interlude。角色列表在 [Manage Tags](https://github.com/iyekChen/ableton-project-manager/blob/main/README.zh-CN.md#-标签) 中编辑。
-- 用下拉框可以只显示某个阶段或风格。Detail 视图显示每首曲目的笔记、阶段、时长、角色、BPM、调性、拍号和能量。
+- 用下拉框可以只显示某个阶段或风格。⌘⇧T 切换到 Detail 视图，显示每首曲目的笔记、阶段、时长、角色、BPM、调性、拍号和能量；在 Detail 中，⌘⌥⇧T 在笔记和歌词之间切换。
 - **Remove from Collection** 把曲目移出合集，同时清除它在这个合集中的编号和角色。项目本身不受影响。
 - 在 Browse Collections 的任何位置，Back to Search Projects（⌃↵）都能回到项目列表。
 
