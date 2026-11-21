@@ -27,6 +27,7 @@ import { PlaybackControlsSection } from "@/core/ui/actions/playback-controls";
 import { DocActions } from "@/core/ui/actions/doc-actions";
 import { CopyProjectSection } from "@/core/ui/actions/copy-project-section";
 import { OpenProjectInFinderAction } from "@/core/ui/actions/open-project-in-finder";
+import { ViewToggleSection } from "@/core/ui/actions/view-toggle";
 import { useDetailView } from "@/core/ui/hooks/use-detail-view";
 import {
   TrackMap,
@@ -652,22 +653,12 @@ function CollectionPanel({
 
   // 视图切换 Action（Detail / Overview，本视图独立记忆）。
   const renderViewToggle = () => (
-    <ActionPanel.Section>
-      <Action
-        title={showDetail ? strings.showOverview : strings.showDetail}
-        icon={Icon.AppWindowSidebarRight}
-        shortcut={{ modifiers: ["cmd", "shift"], key: "t" }}
-        onAction={toggleDetail}
-      />
-      {showDetail && (
-        <Action
-          title={detailDoc === "notes" ? strings.showLyrics : strings.showNotes}
-          icon={Icon.Text}
-          shortcut={{ modifiers: ["cmd", "opt", "shift"], key: "t" }}
-          onAction={toggleDetailDoc}
-        />
-      )}
-    </ActionPanel.Section>
+    <ViewToggleSection
+      showDetail={showDetail}
+      detailDoc={detailDoc}
+      onToggleDetail={toggleDetail}
+      onToggleDetailDoc={toggleDetailDoc}
+    />
   );
 
   // 返回 Search Projects（跨层直接回根视图）。

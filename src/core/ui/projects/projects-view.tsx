@@ -39,6 +39,7 @@ import { PlaybackControlsSection } from "@/core/ui/actions/playback-controls";
 import { DocActions } from "@/core/ui/actions/doc-actions";
 import { CopyProjectSection } from "@/core/ui/actions/copy-project-section";
 import { OpenProjectInFinderAction } from "@/core/ui/actions/open-project-in-finder";
+import { ViewToggleSection } from "@/core/ui/actions/view-toggle";
 import { SortBySubmenu } from "@/core/ui/actions/sort-by-submenu";
 import { useSortOption } from "@/core/ui/hooks/use-sort-option";
 import { useDetailView } from "@/core/ui/hooks/use-detail-view";
@@ -879,22 +880,12 @@ export function ProjectsView() {
                 </>
               )}
             </ActionPanel.Section>
-            <ActionPanel.Section title={strings.sectionView}>
-              <Action
-                title={showDetail ? strings.showOverview : strings.showDetail}
-                icon={Icon.AppWindowSidebarRight}
-                shortcut={{ modifiers: ["cmd", "shift"], key: "t" }}
-                onAction={toggleDetail}
-              />
-              {showDetail && (
-                <Action
-                  title={detailDoc === "notes" ? strings.showLyrics : strings.showNotes}
-                  shortcut={{ modifiers: ["cmd", "opt", "shift"], key: "t" }}
-                  icon={Icon.Paragraph}
-                  onAction={toggleDetailDoc}
-                />
-              )}
-            </ActionPanel.Section>
+            <ViewToggleSection
+              showDetail={showDetail}
+              detailDoc={detailDoc}
+              onToggleDetail={toggleDetail}
+              onToggleDetailDoc={toggleDetailDoc}
+            />
             <ActionPanel.Section title={strings.sectionArrange}>
               <GroupBySubmenu allowed={["modified", "created"]} value={groupBy} onChange={setGroupBy} />
               <SortBySubmenu allowed={PROJECT_SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
