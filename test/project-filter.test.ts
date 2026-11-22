@@ -9,9 +9,9 @@ import {
   splitPinned,
   tagNames,
   type ProjectSearchContext,
-} from "../src/core/ui/projects/project-filter";
-import type { Project } from "../src/core/projects/types";
-import type { TaxonomyOption } from "../src/core/metadata/taxonomy";
+} from "@/core/ui/projects/project-filter";
+import type { Project } from "@/core/projects/types";
+import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 
 function project(overrides: Partial<Project> & { id: string }): Project {
   return {

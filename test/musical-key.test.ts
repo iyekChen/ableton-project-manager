@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { keyKeywords, keyToken } from "../src/core/projects/musical-key";
+import { keyKeywords, keyToken } from "@/core/projects/musical-key";
 
 describe("keyKeywords", () => {
   it("大小调给出简写", () => {

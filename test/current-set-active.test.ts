@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { findCurrentSet } from "../src/core/projects/current-set";
-import type { DawSet } from "../src/daws/types";
+import { findCurrentSet } from "@/core/projects/current-set";
+import type { DawSet } from "@/daws/types";
 
 function set(name: string, modifiedAt: number, active?: boolean): DawSet {
   return {

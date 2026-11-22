@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, formatTime } from "../src/core/ui/shared/format";
+import { formatDate, formatTime } from "@/core/ui/shared/format";
 
 describe("formatDate", () => {
   it("按本地时间补零成 YYYY-MM-DD", () => {

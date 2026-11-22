@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readCachedChoice, viewPrefs } from "../src/core/ui/shared/view-prefs";
+import { readCachedChoice, viewPrefs } from "@/core/ui/shared/view-prefs";
 
 type Mode = "detail" | "overview";
 const isMode = (value: string): value is Mode => value === "detail" || value === "overview";

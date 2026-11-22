@@ -3,12 +3,12 @@ const { defineConfig } = require("eslint/config");
 const raycastConfig = require("@raycast/eslint-config");
 const reactHooks = require("eslint-plugin-react-hooks");
 
-// 跨文件夹的 import 一律用 @/ 别名：../../ 会随文件移动而失效，也看不出指向哪个文件夹。
-// 同一文件夹里的兄弟文件用 ./ 或 ../ 不受影响。
+// 跨文件夹的 import 一律用 @/ 别名：../ 和 ../../ 会随文件移动而失效，也看不出指向哪个文件夹。
+// 相对路径只允许 ./（同一文件夹里的兄弟文件）。
 // 每条 no-restricted-imports 都要带上它：同一文件后定义的规则会整条替换前面的，不能单独写一条。
 const CROSS_FOLDER = {
-  group: ["../../**"],
-  message: "跨文件夹的 import 用 @/ 别名，不要用 ../../。",
+  group: ["../**"],
+  message: "跨文件夹的 import 用 @/ 别名，相对路径只允许 ./。",
 };
 
 // src/core/ui 的分层：projects 可以打开 bounces / collections / cleanup，
@@ -123,9 +123,9 @@ const coreLayering = {
   },
 };
 
-// 其余文件（命令入口、src/daws 等）只拦跨文件夹的相对路径。
+// 其余文件（命令入口、src/daws、测试等）只拦跨文件夹的相对路径。
 const crossFolderOnly = {
-  files: ["src/**"],
+  files: ["src/**", "test/**"],
   rules: {
     "no-restricted-imports": ["error", { patterns: [CROSS_FOLDER] }],
   },

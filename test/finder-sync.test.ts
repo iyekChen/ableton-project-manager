@@ -3,26 +3,26 @@ import os from "node:os";
 import path from "node:path";
 import { LocalStorage } from "@raycast/api";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { syncFinderChanges } from "../src/core/fs/finder-sync";
+import { syncFinderChanges } from "@/core/fs/finder-sync";
 import {
   getAllProjectMetadata,
   saveProjectMetadata,
   type ProjectMetadata,
-} from "../src/core/metadata/project-metadata";
-import { getTrackMap, setTrackMap } from "../src/core/metadata/collection-order";
-import { getRoleMap, setRoleMap } from "../src/core/metadata/collection-roles";
-import type { Project } from "../src/core/projects/types";
+} from "@/core/metadata/project-metadata";
+import { getTrackMap, setTrackMap } from "@/core/metadata/collection-order";
+import { getRoleMap, setRoleMap } from "@/core/metadata/collection-roles";
+import type { Project } from "@/core/projects/types";
 import { __setPreferences, environment } from "./mocks/raycast-api";
 
 // 废纸篓位置由用例控制：真实的 ~/. Trash 读不读得到取决于机器权限，不能依赖。
 const trash = vi.hoisted(() => ({ dirs: [] as string[] }));
-vi.mock("../src/core/fs/project-snapshot", async (importOriginal) => ({
+vi.mock("@/core/fs/project-snapshot", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   trashDirsFor: () => trash.dirs,
 }));
 
 // 删除归档会读现有合集列表；避免加载真实的 taxonomies（用到 Raycast 运行时对象）。
-vi.mock("../src/core/metadata/taxonomies", () => ({
+vi.mock("@/core/metadata/taxonomies", () => ({
   collectionTaxonomy: { get: async () => [{ id: "ep", name: "EP" }] },
 }));
 

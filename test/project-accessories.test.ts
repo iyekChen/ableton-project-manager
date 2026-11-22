@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { projectAccessories } from "../src/core/ui/projects/project-accessories";
-import type { Project } from "../src/core/projects/types";
-import type { ProjectFilesInfo } from "../src/daws/types";
+import { projectAccessories } from "@/core/ui/projects/project-accessories";
+import type { Project } from "@/core/projects/types";
+import type { ProjectFilesInfo } from "@/daws/types";
 
 function project(overrides: Partial<Project> = {}): Project {
   return {

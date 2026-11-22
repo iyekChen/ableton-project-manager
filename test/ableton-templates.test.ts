@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { isTemplate, listTemplates } from "../src/daws/ableton/templates";
+import { isTemplate, listTemplates } from "@/daws/ableton/templates";
 
 // listTemplates 的测试里用一个假的后缀判断，不依赖模板的实际形态。
 const isFakeTemplate = (entryPath: string, entryName: string) =>

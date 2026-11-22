@@ -5,7 +5,7 @@ import {
   saveProjectMetadata,
   setGenreMembers,
   setStageMembers,
-} from "../src/core/metadata/project-metadata";
+} from "@/core/metadata/project-metadata";
 
 const meta = (over: Partial<Parameters<typeof saveProjectMetadata>[1]> = {}) => ({
   stageId: null,

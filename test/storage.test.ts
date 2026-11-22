@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCorruptJson } from "../src/core/fs/storage";
+import { isCorruptJson } from "@/core/fs/storage";
 
 describe("isCorruptJson", () => {
   it("从未存过（undefined）不算损坏", () => {

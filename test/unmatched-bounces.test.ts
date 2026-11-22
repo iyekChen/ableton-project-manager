@@ -15,7 +15,7 @@ import {
   setSharedBounceTitles,
   sharedBounceFilesFor,
   unmatchedSharedBounces,
-} from "../src/core/projects/bounces";
+} from "@/core/projects/bounces";
 import { __setPreferences } from "./mocks/raycast-api";
 
 let shared: string;

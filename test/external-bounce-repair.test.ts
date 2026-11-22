@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { findMovedBounceFiles } from "../src/core/projects/external-bounce-repair";
+import { findMovedBounceFiles } from "@/core/projects/external-bounce-repair";
 
 // 固定的修改时间：2026-01-01 00:00:00 UTC。
 const MTIME = new Date(Date.UTC(2026, 0, 1));

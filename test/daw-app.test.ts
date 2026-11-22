@@ -1,7 +1,7 @@
 import type { Application } from "@raycast/api";
 import { afterEach, describe, expect, it } from "vitest";
-import { pickDawApp } from "../src/core/daw-app";
-import { daw } from "../src/daws";
+import { pickDawApp } from "@/core/daw-app";
+import { daw } from "@/daws";
 import { __setPreferences } from "./mocks/raycast-api";
 
 // 应用名从适配器取，测试里不写死某个 DAW 的名字。

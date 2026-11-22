@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { mergeBounces, parseBounceList, serializeBounceList } from "../src/core/projects/bounce-list";
-import type { BounceOwner } from "../src/core/projects/bounce-list";
-import type { Bounce, BounceWithSource } from "../src/core/projects/bounces";
+import { mergeBounces, parseBounceList, serializeBounceList } from "@/core/projects/bounce-list";
+import type { BounceOwner } from "@/core/projects/bounce-list";
+import type { Bounce, BounceWithSource } from "@/core/projects/bounces";
 
 const owner = (title: string): BounceOwner => ({
   id: title,

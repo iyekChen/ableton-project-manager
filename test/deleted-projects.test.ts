@@ -3,15 +3,15 @@ import os from "node:os";
 import path from "node:path";
 import { LocalStorage } from "@raycast/api";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { archiveDeletedProject, assertDeletionWritable, restorePutBackProjects } from "../src/core/fs/deleted-projects";
-import { StorageUnreadableError } from "../src/core/fs/storage";
-import { deleteProjectMetadata, getProjectMetadata, saveProjectMetadata } from "../src/core/metadata/project-metadata";
-import { getTrackMap, removeProjectFromAllOrders, setTrackMap } from "../src/core/metadata/collection-order";
-import type { Project } from "../src/core/projects/types";
+import { archiveDeletedProject, assertDeletionWritable, restorePutBackProjects } from "@/core/fs/deleted-projects";
+import { StorageUnreadableError } from "@/core/fs/storage";
+import { deleteProjectMetadata, getProjectMetadata, saveProjectMetadata } from "@/core/metadata/project-metadata";
+import { getTrackMap, removeProjectFromAllOrders, setTrackMap } from "@/core/metadata/collection-order";
+import type { Project } from "@/core/projects/types";
 import { __setPreferences, environment } from "./mocks/raycast-api";
 
 // 只需要"现有合集"列表；避免加载真实的 taxonomies（可能用到 Raycast 运行时对象）。
-vi.mock("../src/core/metadata/taxonomies", () => ({
+vi.mock("@/core/metadata/taxonomies", () => ({
   collectionTaxonomy: { get: async () => [{ id: "ep", name: "EP" }] },
 }));
 

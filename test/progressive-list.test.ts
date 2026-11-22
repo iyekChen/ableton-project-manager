@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { INITIAL_ITEM_COUNT, itemLimit, limitGroups } from "../src/core/ui/shared/progressive-list";
+import { INITIAL_ITEM_COUNT, itemLimit, limitGroups } from "@/core/ui/shared/progressive-list";
 
 describe("itemLimit", () => {
   it("还没补全时是首帧上限", () => {

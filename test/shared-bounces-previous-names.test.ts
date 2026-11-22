@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignSharedBounces } from "../src/core/projects/bounces";
+import { assignSharedBounces } from "@/core/projects/bounces";
 
 // 改名时间：2026-01-01 00:00:00 UTC。
 const RENAMED_AT = Date.UTC(2026, 0, 1);

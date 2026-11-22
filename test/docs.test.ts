@@ -20,7 +20,7 @@ import {
   setKnownProjectTitles,
   softBreaksToHard,
   writeDocBody,
-} from "../src/core/docs/docs";
+} from "@/core/docs/docs";
 import { __setPreferences, environment } from "./mocks/raycast-api";
 
 let notes: string;

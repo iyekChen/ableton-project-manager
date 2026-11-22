@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseProjectList, sameFsFields, serializeProjectList } from "../src/core/projects/list-cache";
-import type { Project } from "../src/core/projects/types";
+import { parseProjectList, sameFsFields, serializeProjectList } from "@/core/projects/list-cache";
+import type { Project } from "@/core/projects/types";
 
 const project = (over: Partial<Project> = {}): Project => ({
   id: "Demo",

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { LocalStorage } from "@raycast/api";
-import { StorageUnreadableError, updateJson } from "../src/core/fs/storage";
+import { StorageUnreadableError, updateJson } from "@/core/fs/storage";
 import {
   getAllProjectMetadata,
   removeCollectionEverywhere,
   saveProjectMetadata,
   type ProjectMetadata,
-} from "../src/core/metadata/project-metadata";
+} from "@/core/metadata/project-metadata";
 
 const counter = (value: unknown) => (typeof value === "number" ? value : 0);
 

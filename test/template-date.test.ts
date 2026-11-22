@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, renderTemplate } from "../src/core/docs/docs";
+import { formatDate, renderTemplate } from "@/core/docs/docs";
 
 // 本地时区的 2026-03-09 14:05，周一。
 const date = new Date(2026, 2, 9, 14, 5);

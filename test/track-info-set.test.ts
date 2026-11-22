@@ -2,9 +2,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { daw, type DawSet } from "../src/daws";
-import { loadTrackInfo } from "../src/core/projects/track-info";
-import type { Project } from "../src/core/projects/types";
+import { daw, type DawSet } from "@/daws";
+import { loadTrackInfo } from "@/core/projects/track-info";
+import type { Project } from "@/core/projects/types";
 
 function project(id: string): Project {
   return {

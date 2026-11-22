@@ -12,9 +12,9 @@ import {
   splitTracklist,
   totalDuration,
   trackInfoSignature,
-} from "../src/core/ui/collections/tracklist";
-import type { Project } from "../src/core/projects/types";
-import type { TrackInfo } from "../src/core/projects/track-info";
+} from "@/core/ui/collections/tracklist";
+import type { Project } from "@/core/projects/types";
+import type { TrackInfo } from "@/core/projects/track-info";
 
 function project(id: string, overrides: Partial<Project> = {}): Project {
   return {

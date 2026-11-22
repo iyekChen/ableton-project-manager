@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { energyLevelFromScore, energyScore } from "../src/core/projects/track-info";
+import { energyLevelFromScore, energyScore } from "@/core/projects/track-info";
 
 // 测试环境没有设偏好，三项权重都回落到 Normal（1）。
 const unit = { min: 0, max: 1 };

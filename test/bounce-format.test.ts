@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatSize, groupBySource, sourceGroupTitle, splitExt } from "../src/core/ui/bounces/bounce-format";
+import { formatSize, groupBySource, sourceGroupTitle, splitExt } from "@/core/ui/bounces/bounce-format";
 
 describe("formatSize", () => {
   it("小于 1 KB 用字节", () => {

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { DocUnreadableError, readDocFileForEdit } from "../src/core/docs/docs";
+import { DocUnreadableError, readDocFileForEdit } from "@/core/docs/docs";
 import { __setPreferences, environment } from "./mocks/raycast-api";
 
 let notes: string;

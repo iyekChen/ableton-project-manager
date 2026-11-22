@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { collectBounces, findLatestBounce, isAudioFile, listBounces } from "../src/core/projects/bounces";
+import { collectBounces, findLatestBounce, isAudioFile, listBounces } from "@/core/projects/bounces";
 
 let tmpDir: string;
 
