@@ -336,9 +336,9 @@ tags:
 
 - **LocalStorage：**
   - 你的数据：阶段、风格、角色和合集；每个项目的标签、所属合集、置顶状态、外部 bounce 来源和 Shared Bounces Folder 匹配设置（bounce 别名、旧名称和标记为 Not This Project 的文件）；曲目编号和角色；置顶的合集。
-  - 记录：Browse Bounces 和 Search Bounces 中的分组选择；用于检测 Finder 改动的项目列表；已删除项目的记录。
+  - 记录：用于检测 Finder 改动的项目列表；已删除项目的记录。
   - 缓存：Set 元数据和 bounce 分析结果。
-- **Cache：** Search Projects 中的视图模式、排序和分组选择；bounce 数量；以及上一次的项目和 bounce 列表，这样 Search Projects 和 Search Bounces 能先立即显示列表，再检查变化。
+- **Cache：** Search Projects 中的视图模式、排序和分组选择；Browse Bounces 和 Search Bounces 中的分组选择；bounce 数量；以及上一次的项目和 bounce 列表，这样 Search Projects 和 Search Bounces 能先立即显示列表，再检查变化。
 
 Raycast 按扩展分别保存这些数据。卸载扩展会删除它们，所以如果你可能重新安装，请先运行 Export Data。你的项目、笔记和歌词都是普通文件，不受影响。
 

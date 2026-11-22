@@ -336,9 +336,9 @@ The extension stores its own data in Raycast:
 
 - **LocalStorage:**
   - Your data: stages, genres, roles, and collections; each project's tags, collections, pin, external bounce sources, and Shared Bounces Folder matching (bounce aliases, previous names, and files marked Not This Project); track numbers and roles; pinned collections.
-  - Records: grouping choices in Browse Bounces and Search Bounces; the project list used to detect Finder changes; records of deleted projects.
+  - Records: the project list used to detect Finder changes; records of deleted projects.
   - Caches: Set metadata and bounce analysis.
-- **Cache:** view mode, sort, and grouping choices in Search Projects; bounce counts; and the last project and bounce lists, so Search Projects and Search Bounces show your list right away while they check for changes.
+- **Cache:** view mode, sort, and grouping choices in Search Projects; grouping choices in Browse Bounces and Search Bounces; bounce counts; and the last project and bounce lists, so Search Projects and Search Bounces show your list right away while they check for changes.
 
 Raycast keeps this data per extension. Uninstalling the extension deletes it, so run Export Data first if you might reinstall. Your projects, notes, and lyrics are ordinary files and aren't affected.
 
