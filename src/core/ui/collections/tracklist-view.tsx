@@ -288,13 +288,6 @@ export function CollectionPanel({
       return;
     }
     await reloadMetadata();
-    // 曲目信息只在打开面板时按快照加载一次；新成员单独补一次，否则时长等一直空着。
-    const added = projectList.filter((p) => ids.includes(p.id));
-    void loadTrackInfos(
-      added,
-      (projectId, info) => setInfos((prev) => ({ ...prev, [projectId]: info })),
-      () => false,
-    );
     await showToast({ style: Toast.Style.Success, title: strings.projectsAdded, message: String(ids.length) });
   }
 
