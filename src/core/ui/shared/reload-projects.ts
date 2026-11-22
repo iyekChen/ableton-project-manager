@@ -122,6 +122,7 @@ export async function reloadProjectData(
     onScanned?: (base: Project[]) => void;
     onApplied?: (projects: Project[], base: Project[]) => void;
   },
+  isCancelled: () => boolean = () => false,
 ): Promise<{ base: Project[]; projects: Project[]; orphans: string[] }> {
   const base = loadProjects(root);
   hooks.onScanned?.(base);
@@ -170,7 +171,7 @@ export async function reloadProjectData(
   }
   // 先还原从废纸篓放回的项目（标签/轨号/角色/文档），再套用元数据。
   const { restored, docConflicts } = await restorePutBackProjects(base);
-  const projects = await applyProjectMetadata(base);
+  const projects = await applyProjectMetadata(base, isCancelled);
   hooks.onApplied?.(projects, base);
   if (docConflicts.length > 0) {
     await showToast({

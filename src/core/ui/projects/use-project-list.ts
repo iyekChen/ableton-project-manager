@@ -44,30 +44,54 @@ export function useProjectList(input: {
   const projectsRef = useRef<Project[]>(projects);
   projectsRef.current = projects;
 
+  // 每次刷新算一轮：新一轮开始后，旧一轮不再读剩下的项目，结果也不再写回。
+  const runRef = useRef(0);
+  // 卸载后也算作废：不再读磁盘。
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+  const cancelledFor = useCallback((run: number) => () => run !== runRef.current || !mountedRef.current, []);
+
   // 静默启动刷新：内容没变就保留原引用，不触发重渲染，也不重写缓存。
   const commitProjects = useCallback((updated: Project[]) => {
     setProjects((prev) => (shouldCommitProjects(silentStartupRef.current, updated, prev) ? updated : prev));
   }, []);
 
   const applyMetadata = useCallback(async () => {
-    const updated = await applyProjectMetadata(baseProjectsRef.current);
+    // 不开启新一轮：套用元数据不该打断正在进行的刷新，只跟着当前这一轮作废。
+    const isCancelled = cancelledFor(runRef.current);
+    const updated = await applyProjectMetadata(baseProjectsRef.current, isCancelled);
+    if (isCancelled()) return;
     commitProjects(updated);
-  }, [commitProjects]);
+  }, [commitProjects, cancelledFor]);
 
   const runReload = useCallback(async (): Promise<string[]> => {
+    const isCancelled = cancelledFor(++runRef.current);
     try {
-      const { orphans } = await reloadProjectData(root, trashingIds, {
-        onScanned: (base) => {
-          baseProjectsRef.current = base;
-          // 静默启动刷新：磁盘上的项目有变化才显示加载。
-          if (shouldShowLoadingOnScan(silentStartupRef.current, base, projectsRef.current)) setIsLoading(true);
+      const { orphans } = await reloadProjectData(
+        root,
+        trashingIds,
+        {
+          onScanned: (base) => {
+            if (isCancelled()) return;
+            baseProjectsRef.current = base;
+            // 静默启动刷新：磁盘上的项目有变化才显示加载。
+            if (shouldShowLoadingOnScan(silentStartupRef.current, base, projectsRef.current)) setIsLoading(true);
+          },
+          onApplied: (updated, base) => {
+            if (isCancelled()) return;
+            commitProjects(updated);
+            // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
+            onAppliedRef.current(base);
+          },
         },
-        onApplied: (updated, base) => {
-          commitProjects(updated);
-          // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
-          onAppliedRef.current(base);
-        },
-      });
+        isCancelled,
+      );
+      if (isCancelled()) return [];
       setOrphanIds(orphans);
       return orphans;
     } catch (error) {
@@ -80,7 +104,7 @@ export function useProjectList(input: {
       silentStartupRef.current = false;
     }
     return [] as string[];
-  }, [commitProjects, onAppliedRef, root, trashingIds]);
+  }, [commitProjects, onAppliedRef, root, trashingIds, cancelledFor]);
 
   // 同一时刻只跑一次：执行中再被触发（目录监听、返回刷新、保存回调）只记一笔，结束后补跑一次。
   // 避免两次 Finder 同步交错——后一次可能拿已被前一次清掉的空数据去覆盖删除记录。
