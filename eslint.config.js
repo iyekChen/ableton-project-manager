@@ -3,6 +3,14 @@ const { defineConfig } = require("eslint/config");
 const raycastConfig = require("@raycast/eslint-config");
 const reactHooks = require("eslint-plugin-react-hooks");
 
+// 跨文件夹的 import 一律用 @/ 别名：../../ 会随文件移动而失效，也看不出指向哪个文件夹。
+// 同一文件夹里的兄弟文件用 ./ 或 ../ 不受影响。
+// 每条 no-restricted-imports 都要带上它：同一文件后定义的规则会整条替换前面的，不能单独写一条。
+const CROSS_FOLDER = {
+  group: ["../../**"],
+  message: "跨文件夹的 import 用 @/ 别名，不要用 ../../。",
+};
+
 // src/core/ui 的分层：projects 可以打开 bounces / collections / cleanup，
 // 这三个之间不能互相引用，也不能反向引用 projects。
 const FEATURE_SIBLINGS = {
@@ -11,19 +19,12 @@ const FEATURE_SIBLINGS = {
   cleanup: ["projects", "bounces", "collections"],
 };
 
-// 别名和相对路径都要拦，否则换个写法就绕过去了。
-const featurePaths = (name) => [
-  `@/core/ui/${name}`,
-  `@/core/ui/${name}/**`,
-  `../${name}`,
-  `../${name}/**`,
-  `../../${name}`,
-  `../../${name}/**`,
-];
+// 跨文件夹一律用 @/ 别名，所以分层规则只认别名。
+const featurePaths = (name) => [`@/core/ui/${name}`, `@/core/ui/${name}/**`];
 
 // 功能文件夹之间只认 index.ts：深层路径一律拦掉。
 const deepOnly = (name) => ({
-  group: [`@/core/ui/${name}/**`, `../${name}/**`, `../../${name}/**`],
+  group: [`@/core/ui/${name}/**`],
   message: `只能从 @/core/ui/${name} 引用，不要引用内部文件。`,
 });
 
@@ -33,10 +34,13 @@ const featureLayering = Object.entries(FEATURE_SIBLINGS).map(([feature, forbidde
     "no-restricted-imports": [
       "error",
       {
-        patterns: forbidden.map((name) => ({
-          group: featurePaths(name),
-          message: `${feature} 不能引用 ${name}：依赖只能从 projects 往下走。`,
-        })),
+        patterns: [
+          ...forbidden.map((name) => ({
+            group: featurePaths(name),
+            message: `${feature} 不能引用 ${name}：依赖只能从 projects 往下走。`,
+          })),
+          CROSS_FOLDER,
+        ],
       },
     ],
   },
@@ -46,7 +50,10 @@ const featureLayering = Object.entries(FEATURE_SIBLINGS).map(([feature, forbidde
 const projectsLayering = {
   files: ["src/core/ui/projects/**"],
   rules: {
-    "no-restricted-imports": ["error", { patterns: ["bounces", "collections", "cleanup"].map(deepOnly) }],
+    "no-restricted-imports": [
+      "error",
+      { patterns: [...["bounces", "collections", "cleanup"].map(deepOnly), CROSS_FOLDER] },
+    ],
   },
 };
 
@@ -57,10 +64,13 @@ const typeFolders = {
     "no-restricted-imports": [
       "error",
       {
-        patterns: ["projects", "bounces", "collections", "cleanup"].map((name) => ({
-          group: featurePaths(name),
-          message: `不能引用功能文件夹 ${name}：依赖只能从功能文件夹往下走。`,
-        })),
+        patterns: [
+          ...["projects", "bounces", "collections", "cleanup"].map((name) => ({
+            group: featurePaths(name),
+            message: `不能引用功能文件夹 ${name}：依赖只能从功能文件夹往下走。`,
+          })),
+          CROSS_FOLDER,
+        ],
       },
     ],
   },
@@ -103,12 +113,21 @@ const coreLayering = {
         ],
         patterns: [
           {
-            group: ["@/core/ui", "@/core/ui/**", "../ui", "../ui/**", "../../ui", "../../ui/**"],
+            group: ["@/core/ui", "@/core/ui/**"],
             message: "core 不能引用 core/ui：依赖只能从界面往下走。",
           },
+          CROSS_FOLDER,
         ],
       },
     ],
+  },
+};
+
+// 其余文件（命令入口、src/daws 等）只拦跨文件夹的相对路径。
+const crossFolderOnly = {
+  files: ["src/**"],
+  rules: {
+    "no-restricted-imports": ["error", { patterns: [CROSS_FOLDER] }],
   },
 };
 
@@ -131,6 +150,7 @@ module.exports = defineConfig([
       "@raycast/prefer-common-shortcut": "off",
     },
   },
+  crossFolderOnly,
   ...featureLayering,
   projectsLayering,
   typeFolders,
