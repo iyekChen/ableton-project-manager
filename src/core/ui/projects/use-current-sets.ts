@@ -40,12 +40,14 @@ export function useCurrentSets(input: { isPlaybackToastActive: () => boolean }):
       await loadPersistentProjectFileCache();
       if (run !== currentSetsRunRef.current) return;
 
-      const { initial, missing } = planCurrentSetReads(
+      const { initial, missing } = await planCurrentSetReads(
         list,
         (project) => daw.listSets(project),
         findCurrentSet,
         cachedSetMetadata,
+        () => run !== currentSetsRunRef.current,
       );
+      if (run !== currentSetsRunRef.current) return;
       setCurrentSets(initial);
       setReadingSets(missing.length > 0);
       if (missing.length === 0) return;

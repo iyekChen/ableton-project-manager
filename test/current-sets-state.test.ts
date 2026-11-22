@@ -26,14 +26,15 @@ function makeProject(id: string): Project {
 const metadata = { bpm: 120, key: "C" } as ProjectFileMetadata;
 
 describe("planCurrentSetReads", () => {
-  it("有缓存的进 initial，没缓存的进 missing", () => {
+  it("有缓存的进 initial，没缓存的进 missing", async () => {
     const cachedSet = makeSet("/a");
     const uncachedSet = makeSet("/b");
-    const { initial, missing } = planCurrentSetReads(
+    const { initial, missing } = await planCurrentSetReads(
       [makeProject("a"), makeProject("b")],
       (project) => (project.id === "a" ? [cachedSet] : [uncachedSet]),
       (sets) => sets[0] ?? null,
       (set) => (set.path === "/a" ? metadata : null),
+      () => false,
     );
 
     expect(initial).toEqual({
@@ -43,15 +44,32 @@ describe("planCurrentSetReads", () => {
     expect(missing).toEqual([["b", uncachedSet]]);
   });
 
-  it("没有 current Set 的项目跳过", () => {
-    const { initial, missing } = planCurrentSetReads(
+  it("没有 current Set 的项目跳过", async () => {
+    const { initial, missing } = await planCurrentSetReads(
       [makeProject("a")],
       () => [],
       () => null,
       () => null,
+      () => false,
     );
     expect(initial).toEqual({});
     expect(missing).toEqual([]);
+  });
+
+  it("取消后不再读剩下的项目", async () => {
+    const read: string[] = [];
+    const { initial } = await planCurrentSetReads(
+      [makeProject("a"), makeProject("b"), makeProject("c")],
+      (project) => {
+        read.push(project.id);
+        return [makeSet(`/${project.id}`)];
+      },
+      (sets) => sets[0] ?? null,
+      () => metadata,
+      () => read.length >= 1,
+    );
+    expect(read.length).toBeLessThan(3);
+    expect(Object.keys(initial).length).toBeLessThan(3);
   });
 });
 

@@ -19,9 +19,16 @@ import {
   type PreviousBounceName,
 } from "@/core/projects/bounces";
 import { loadProjects } from "@/core/projects/load-projects";
+import { runBatched } from "@/core/projects/run-batched";
 import type { Project } from "@/core/projects/types";
 
-export async function applyProjectMetadata(base: Project[]): Promise<Project[]> {
+// 同时读几个项目：每个项目都要读笔记、歌词和 bounce 数，曲库大时不能一口气读完。
+const PROJECT_READ_CONCURRENCY = 3;
+
+export async function applyProjectMetadata(
+  base: Project[],
+  isCancelled: () => boolean = () => false,
+): Promise<Project[]> {
   let metadataStore = await getAllProjectMetadata();
   // 手动登记的外部文件在 Finder 里改名或移动后，登记路径会失效：按大小和修改时间找回，再往下算。
   const sharedFolder = resolveSharedBouncesFolder();
@@ -65,40 +72,47 @@ export async function applyProjectMetadata(base: Project[]): Promise<Project[]> 
   setSharedBouncePreviousNames(previousNames);
   setSharedBounceExclusions(exclusions);
   const hasShared = resolveSharedBouncesFolder() !== null;
-  const updatedProjects = base.map((project) => {
-    const metadata = metadataStore[project.id];
-    // 笔记和歌词都总是读：applyMetadata 只在挂载时创建一次，按 showDetail 判断会锁死首帧的值，切到 Detail 时内容为空。
-    const notes = stripFrontmatter(readDocFile(project, "notes"));
-    const lyrics = stripFrontmatter(readDocFile(project, "lyrics"));
-    const externalBounceFolders = metadata?.externalBounceFolders ?? [];
-    const externalBounceFiles = metadata?.externalBounceFiles ?? [];
-    // 无外部来源时复用 loadProjects 已算好的默认文件夹计数，省去重复扫描；
-    // 有外部来源才走聚合器（默认文件夹 + 外部来源，去重、排除不可用）。
-    const hasExternal = externalBounceFolders.length > 0 || externalBounceFiles.length > 0;
-    const bouncesCount =
-      hasExternal || hasShared
-        ? countProjectBounces({
-            title: project.title,
-            folderPath: project.folderPath,
-            externalBounceFolders,
-            externalBounceFiles,
-          })
-        : project.bouncesCount;
-    return {
-      ...project,
-      stageId: metadata?.stageId ?? null,
-      genreIds: metadata?.genreIds ?? [],
-      collectionIds: metadata?.collectionIds ?? [],
-      notes,
-      lyrics,
-      pinned: metadata?.pinned ?? false,
-      pinOrder: metadata?.pinOrder ?? null,
-      externalBounceFolders,
-      externalBounceFiles,
-      bouncesCount,
-    };
-  });
-  return updatedProjects;
+  // 每个项目都要读磁盘，所以分批读；结果按原顺序放回，列表顺序不变。
+  const updatedProjects: (Project | null)[] = base.map(() => null);
+  await runBatched(
+    base.map((project, index) => ({ project, index })),
+    async ({ project, index }) => {
+      const metadata = metadataStore[project.id];
+      // 笔记和歌词都总是读：applyMetadata 只在挂载时创建一次，按 showDetail 判断会锁死首帧的值，切到 Detail 时内容为空。
+      const notes = stripFrontmatter(readDocFile(project, "notes"));
+      const lyrics = stripFrontmatter(readDocFile(project, "lyrics"));
+      const externalBounceFolders = metadata?.externalBounceFolders ?? [];
+      const externalBounceFiles = metadata?.externalBounceFiles ?? [];
+      // 无外部来源时复用 loadProjects 已算好的默认文件夹计数，省去重复扫描；
+      // 有外部来源才走聚合器（默认文件夹 + 外部来源，去重、排除不可用）。
+      const hasExternal = externalBounceFolders.length > 0 || externalBounceFiles.length > 0;
+      const bouncesCount =
+        hasExternal || hasShared
+          ? countProjectBounces({
+              title: project.title,
+              folderPath: project.folderPath,
+              externalBounceFolders,
+              externalBounceFiles,
+            })
+          : project.bouncesCount;
+      updatedProjects[index] = {
+        ...project,
+        stageId: metadata?.stageId ?? null,
+        genreIds: metadata?.genreIds ?? [],
+        collectionIds: metadata?.collectionIds ?? [],
+        notes,
+        lyrics,
+        pinned: metadata?.pinned ?? false,
+        pinOrder: metadata?.pinOrder ?? null,
+        externalBounceFolders,
+        externalBounceFiles,
+        bouncesCount,
+      };
+    },
+    { concurrency: PROJECT_READ_CONCURRENCY, isCancelled },
+  );
+  // 取消时没读到的项目保持原样，不丢列表。
+  return base.map((project, index) => updatedProjects[index] ?? project);
 }
 
 export async function reloadProjectData(
