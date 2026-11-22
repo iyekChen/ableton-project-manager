@@ -6,4 +6,4 @@ import type { ProjectFilesInfo } from "./types";
 export { SetsView } from "./ableton/sets-view";
 
 // Live 的项目里没有「工程文件」这一层：Search Projects 按 Set 显示。
-export const projectFilesInfo: (project: Pick<Project, "kind" | "folderPath">) => ProjectFilesInfo | null = () => null;
+export const projectFilesInfo: (project: Pick<Project, "projectFilesCount">) => ProjectFilesInfo | null = () => null;

@@ -17,6 +17,9 @@ export type Project = {
   pinOrder: number | null;
   setsCount: number;
   bouncesCount: number;
+  // 项目里「工程文件」的个数，加载时由 daw.countProjectFiles 算好；没有这一层的 DAW 为 null。
+  // 渲染时只读这个字段，不再读磁盘。
+  projectFilesCount: number | null;
   // 外部 bounce 来源（绝对路径），由元数据套用；loadProjects 阶段默认为空。
   externalBounceFolders: string[];
   externalBounceFiles: string[];

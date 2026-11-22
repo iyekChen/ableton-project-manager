@@ -24,6 +24,7 @@ function project(id: string): Project {
     pinOrder: null,
     setsCount: 0,
     bouncesCount: 0,
+    projectFilesCount: null,
     externalBounceFolders: [],
     externalBounceFiles: [],
   };

@@ -63,6 +63,9 @@ export interface DawAdapter {
   /** 列出项目里的 Set，读不到的跳过。 */
   listSets(project: { folderPath: string; kind: ProjectKind }): DawSet[];
 
+  /** 项目里「工程文件」的个数；没有这一层的 DAW 返回 null。加载项目时调用一次，结果存进 Project。 */
+  countProjectFiles(project: { folderPath: string; kind: ProjectKind }): number | null;
+
   /** 解析一个 Set 的音乐元数据（BPM / 拍号 / 调）。读不到时各字段为 null。 */
   parseSet(set: DawSet): Promise<ProjectFileMetadata>;
 
@@ -95,6 +98,7 @@ export type DawLabels = {
 /**
  * 项目里「工程文件」这一层的信息：有的 DAW 一个项目文件夹里可以有多个工程文件，每个工程文件里再有多个 Set。
  * 每个仓库在 src/daws/ui.ts 里提供 projectFilesInfo；没有这一层时返回 null，Search Projects 按 Set 显示。
+ * 个数由 DawAdapter.countProjectFiles 在加载项目时算好，这里只读 Project 上的字段。
  */
 export type ProjectFilesInfo = {
   /** 工程文件的个数。 */

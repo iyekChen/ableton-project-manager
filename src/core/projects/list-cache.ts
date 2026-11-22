@@ -42,7 +42,16 @@ export function parseProjectList(raw: string | undefined): Project[] | undefined
 // 其余字段（stageId、genreIds、collectionIds、notes、lyrics、pinned、pinOrder、
 // externalBounceFolders、externalBounceFiles、bouncesCount）由元数据套用，
 // 缓存里可能比磁盘新，拿来比较会误判成「有变化」。id 用作对应键，不放进这里。
-export const FS_FIELDS = ["title", "folderPath", "kind", "createdAt", "inode", "modifiedAt", "setsCount"] as const;
+export const FS_FIELDS = [
+  "title",
+  "folderPath",
+  "kind",
+  "createdAt",
+  "inode",
+  "modifiedAt",
+  "setsCount",
+  "projectFilesCount",
+] as const;
 
 /** 两份列表在文件系统层面是否一致：id 集合相同，且每个项目的 FS_FIELDS 全部相等。顺序无关。 */
 export function sameFsFields(base: Project[], cached: Project[]): boolean {

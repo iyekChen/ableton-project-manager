@@ -19,6 +19,7 @@ const project = (over: Partial<Project> = {}): Project => ({
   pinOrder: null,
   setsCount: 1,
   bouncesCount: 0,
+  projectFilesCount: null,
   externalBounceFolders: [],
   externalBounceFiles: [],
   ...over,

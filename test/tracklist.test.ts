@@ -34,6 +34,7 @@ function project(id: string, overrides: Partial<Project> = {}): Project {
     pinOrder: null,
     setsCount: 1,
     bouncesCount: 0,
+    projectFilesCount: null,
     externalBounceFolders: [],
     externalBounceFiles: [],
     ...overrides,

@@ -54,6 +54,7 @@ function makeProject(id: string, createdAt: number, inode: number): Project {
     pinOrder: null,
     setsCount: 1,
     bouncesCount: 0,
+    projectFilesCount: null,
     externalBounceFolders: [],
     externalBounceFiles: [],
   };

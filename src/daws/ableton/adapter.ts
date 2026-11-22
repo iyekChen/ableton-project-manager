@@ -27,6 +27,11 @@ export const abletonAdapter: DawAdapter = {
     return { id: entryName, folderPath: entryPath, kind: "folder" };
   },
 
+  // Live 的项目里没有「工程文件」这一层：Search Projects 按 Set 显示。
+  countProjectFiles() {
+    return null;
+  },
+
   listSets({ folderPath }) {
     let entries: string[];
     try {

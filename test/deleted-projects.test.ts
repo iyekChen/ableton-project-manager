@@ -34,6 +34,7 @@ function makeProject(id: string, createdAt = 1000, inode = 42): Project {
     pinOrder: null,
     setsCount: 1,
     bouncesCount: 0,
+    projectFilesCount: null,
     externalBounceFolders: [],
     externalBounceFiles: [],
   };

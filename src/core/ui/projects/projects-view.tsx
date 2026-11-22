@@ -14,7 +14,7 @@ import {
   confirmAlert,
   openExtensionPreferences,
 } from "@raycast/api";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useAudioPlayer } from "@/core/ui/hooks/use-audio-player";
 import { usePlaybackToast } from "@/core/ui/projects/use-playback-toast";
 import { useCurrentSets } from "@/core/ui/projects/use-current-sets";
@@ -147,11 +147,6 @@ export function ProjectsView() {
 
   // 先渲染前 INITIAL_ITEM_COUNT 项，首帧之后补全；一打字也立刻补全。
   const { showAll, showAllNow } = useProgressiveList(projects.length);
-  // 每个项目「工程文件」这一层的信息（由 DAW 提供，没有这一层时为 null）。只在列表变化时重算，不在每次渲染时读磁盘。
-  const projectFiles = useMemo(
-    () => new Map(projects.map((project) => [project.id, projectFilesInfo(project)])),
-    [projects],
-  );
 
   const { playbackStatus, playingId, positionSeconds, durationSeconds, play, pause, resume, stop, seek, restart } =
     useAudioPlayer({
@@ -256,7 +251,8 @@ export function ProjectsView() {
 
   const renderProject = (item: Project) => {
     const stage = stageOptions.find((option) => option.id === item.stageId);
-    const files = projectFiles.get(item.id) ?? null;
+    // 工程文件数在加载项目时已算好，这里只读字段。
+    const files = projectFilesInfo(item);
     const isThisPlaying = playingId === item.id;
 
     return (

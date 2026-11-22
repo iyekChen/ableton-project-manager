@@ -21,6 +21,7 @@ function project(overrides: Partial<Project> = {}): Project {
     pinOrder: null,
     setsCount: 3,
     bouncesCount: 2,
+    projectFilesCount: null,
     externalBounceFolders: [],
     externalBounceFiles: [],
     ...overrides,

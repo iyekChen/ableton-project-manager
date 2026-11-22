@@ -83,6 +83,7 @@ export function loadProjects(projectsRoot: string): Project[] {
         pinOrder: null,
         setsCount: sets.length,
         bouncesCount: 0, // 等全部项目都读完再算：共享文件夹按名字分配，要先知道所有项目名
+        projectFilesCount: daw.countProjectFiles(detected),
         externalBounceFolders: [],
         externalBounceFiles: [],
       });
