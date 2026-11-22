@@ -131,6 +131,42 @@ const crossFolderOnly = {
   },
 };
 
+// 用户可见文字只能来自文案表。字面部分含字母才报：`—`、`\n` 这类分隔符不算文字，
+// 纯拼接 strings 常量的模板字符串因此不会被拦。
+const VISIBLE_ATTRS = "title|subtitle|text|placeholder|searchBarPlaceholder|navigationTitle|tooltip|message";
+const VISIBLE_PROPS = "text|tooltip|tag|title|subtitle|message|placeholder";
+const LITERAL_TEXT = "字面文字写进了界面代码：放进文案表（src/strings.ts 或 src/daws 下的文案表）。";
+const hardcodedText = {
+  files: ["src/**"],
+  // 文案表本身就是写文字的地方。
+  ignores: ["src/strings.ts", "src/daws/labels.ts", "src/daws/*/strings.ts"],
+  rules: {
+    "no-restricted-syntax": [
+      "error",
+      {
+        selector: `JSXAttribute[name.name=/^(${VISIBLE_ATTRS})$/] > Literal[value=/[A-Za-z]/]`,
+        message: LITERAL_TEXT,
+      },
+      {
+        selector: `JSXAttribute[name.name=/^(${VISIBLE_ATTRS})$/] > JSXExpressionContainer > Literal[value=/[A-Za-z]/]`,
+        message: LITERAL_TEXT,
+      },
+      {
+        selector: `JSXAttribute[name.name=/^(${VISIBLE_ATTRS})$/] > JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/(?<!\\\\)[A-Za-z]/]`,
+        message: LITERAL_TEXT,
+      },
+      {
+        selector: `Property[key.name=/^(${VISIBLE_PROPS})$/] > Literal[value=/[A-Za-z]/]`,
+        message: LITERAL_TEXT,
+      },
+      {
+        selector: `Property[key.name=/^(${VISIBLE_PROPS})$/] > TemplateLiteral > TemplateElement[value.raw=/(?<!\\\\)[A-Za-z]/]`,
+        message: LITERAL_TEXT,
+      },
+    ],
+  },
+};
+
 module.exports = defineConfig([
   // raycast-env.d.ts 是 ray 自动生成的产物（已 gitignore），其头部的 eslint-disable 注释随 ray 版本变化，
   // 可能引用已被 typescript-eslint 移除的规则（如 ban-types）而报错。生成产物无需 lint，直接忽略。
@@ -151,6 +187,7 @@ module.exports = defineConfig([
     },
   },
   crossFolderOnly,
+  hardcodedText,
   ...featureLayering,
   projectsLayering,
   typeFolders,

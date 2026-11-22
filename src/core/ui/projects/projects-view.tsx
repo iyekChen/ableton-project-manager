@@ -375,7 +375,7 @@ export function ProjectsView() {
             {environment.isDevelopment && (
               <ActionPanel.Section>
                 <Action
-                  title="Reset to First Run (Dev)"
+                  title={strings.resetToFirstRunDev}
                   icon={Icon.ArrowCounterClockwise}
                   onAction={async () => {
                     await resetToFirstRun();

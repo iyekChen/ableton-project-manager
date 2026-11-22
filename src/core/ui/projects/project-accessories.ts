@@ -1,4 +1,5 @@
 import { Color, Icon, type List } from "@raycast/api";
+import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
 import type { TaxonomyOption } from "@/core/metadata/taxonomy";
 import type { ProjectFilesInfo } from "@/daws/types";
@@ -30,7 +31,7 @@ export function projectAccessories({
   return [
     ...stagePill,
     ...countAccessories,
-    { text: String(project.bouncesCount), tooltip: `${project.bouncesCount} Bounces` },
-    { icon: Icon.Waveform, tooltip: `${project.bouncesCount} Bounces` },
+    { text: String(project.bouncesCount), tooltip: `${project.bouncesCount} ${strings.bounces}` },
+    { icon: Icon.Waveform, tooltip: `${project.bouncesCount} ${strings.bounces}` },
   ];
 }

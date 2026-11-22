@@ -151,7 +151,9 @@ export function ManageExternalBounces({
             <Form.TagPicker.Item
               key={previous.name}
               value={previous.name}
-              title={`${previous.name} (before ${formatDate(previous.before)})`}
+              title={strings.previousNameBefore
+                .replace("{name}", previous.name)
+                .replace("{date}", formatDate(previous.before))}
             />
           ))}
         </Form.TagPicker>

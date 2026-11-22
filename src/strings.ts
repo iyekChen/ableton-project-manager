@@ -133,6 +133,7 @@ type TranslationKeys = {
   modified: string;
   duration: string;
   timeSignature: string;
+  energy: string;
   track: string;
   collections: string;
   deleteCollectionHint: string;
@@ -214,6 +215,8 @@ type TranslationKeys = {
   allProjectsInCollection: string;
   resetToDefaults: string;
   resetToDefaultsHint: string;
+  resetToFirstRun: string;
+  resetToFirstRunDev: string;
   resetToFirstRunHint: string;
   noChanges: string;
   removeCollectionsConfirmTitle: string;
@@ -246,6 +249,7 @@ type TranslationKeys = {
   bounceAliasesInfo: string;
   previousNamesField: string;
   previousNamesInfo: string;
+  previousNameBefore: string;
   notThisProject: string;
   movedToUnmatched: string;
   unavailable: string;
@@ -460,6 +464,7 @@ export const strings: TranslationKeys = {
   modified: "Modified",
   duration: "Duration",
   timeSignature: "Time Signature",
+  energy: "Energy",
   track: "Track",
   collections: "Collections",
   deleteCollectionHint: "This only removes the collection. Your projects are not deleted.",
@@ -546,6 +551,8 @@ export const strings: TranslationKeys = {
   resetToDefaults: "Reset to Defaults",
   resetToDefaultsHint:
     "Custom names, colors, and order will be lost. Projects tagged with an option that no longer exists will have that tag cleared.",
+  resetToFirstRun: "Reset to First Run",
+  resetToFirstRunDev: "Reset to First Run (Dev)",
   resetToFirstRunHint: "Reopen Search Projects to start fresh.",
   removeCollectionsConfirmTitle: "Remove from collection?",
   removeCollectionsConfirmHint:
@@ -580,6 +587,7 @@ export const strings: TranslationKeys = {
     "Separated by commas. Bounces in the shared folder that start with one of these belong to this project.",
   previousNamesField: "Previous Names",
   previousNamesInfo: "Bounces made before the project was renamed. Deselect a name to stop matching it.",
+  previousNameBefore: "{name} (before {date})",
   notThisProject: "Not This Project",
   movedToUnmatched: "Moved to Unmatched Bounces",
   unavailable: "Unavailable",

@@ -445,7 +445,7 @@ export function CollectionPanel({
             <List.Item.Detail.Metadata.Label title={strings.key} text={info?.key ?? ""} />
             <List.Item.Detail.Metadata.Label title={strings.timeSignature} text={info?.timeSignature ?? ""} />
             {ENERGY_ENABLED && level !== null && (
-              <List.Item.Detail.Metadata.TagList title="Energy">
+              <List.Item.Detail.Metadata.TagList title={strings.energy}>
                 {ENERGY_SLOT_COLORS.map((color, i) => (
                   <List.Item.Detail.Metadata.TagList.Item
                     key={i}

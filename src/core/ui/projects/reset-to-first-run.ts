@@ -19,5 +19,5 @@ export async function resetToFirstRun(): Promise<void> {
   await clearAudioAnalysisCache();
   await LocalStorage.removeItem(ONBOARDING_ASKED_KEY);
   await LocalStorage.removeItem(ONBOARDING_UNMATCHED_KEY);
-  await showToast({ style: Toast.Style.Success, title: "Reset to First Run", message: strings.resetToFirstRunHint });
+  await showToast({ style: Toast.Style.Success, title: strings.resetToFirstRun, message: strings.resetToFirstRunHint });
 }
