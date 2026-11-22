@@ -127,6 +127,13 @@ type TranslationKeys = {
   stage: string;
   genre: string;
   collection: string;
+  bounces: string;
+  key: string;
+  bpm: string;
+  modified: string;
+  duration: string;
+  timeSignature: string;
+  track: string;
   collections: string;
   deleteCollectionHint: string;
   role: string;
@@ -446,6 +453,13 @@ export const strings: TranslationKeys = {
   stage: "Stage",
   genre: "Genre",
   collection: "Collection",
+  bounces: "Bounces",
+  key: "Key",
+  bpm: "BPM",
+  modified: "Modified",
+  duration: "Duration",
+  timeSignature: "Time Signature",
+  track: "Track",
   collections: "Collections",
   deleteCollectionHint: "This only removes the collection. Your projects are not deleted.",
   role: "Role",

@@ -430,20 +430,20 @@ export function CollectionPanel({
         metadata={
           <List.Item.Detail.Metadata>
             {stage ? (
-              <List.Item.Detail.Metadata.TagList title="Stage">
+              <List.Item.Detail.Metadata.TagList title={strings.stage}>
                 <List.Item.Detail.Metadata.TagList.Item text={stage.name} color={stage.color ?? Color.SecondaryText} />
               </List.Item.Detail.Metadata.TagList>
             ) : (
-              <List.Item.Detail.Metadata.Label title="Stage" text="" />
+              <List.Item.Detail.Metadata.Label title={strings.stage} text="" />
             )}
             <List.Item.Detail.Metadata.Label
-              title="Duration"
+              title={strings.duration}
               text={info?.duration != null ? formatDuration(info.duration, minuteDigits) : ""}
             />
-            <List.Item.Detail.Metadata.Label title="Role" text={role ?? ""} />
-            <List.Item.Detail.Metadata.Label title="BPM" text={info?.bpm != null ? String(info.bpm) : ""} />
-            <List.Item.Detail.Metadata.Label title="Key" text={info?.key ?? ""} />
-            <List.Item.Detail.Metadata.Label title="Time Signature" text={info?.timeSignature ?? ""} />
+            <List.Item.Detail.Metadata.Label title={strings.role} text={role ?? ""} />
+            <List.Item.Detail.Metadata.Label title={strings.bpm} text={info?.bpm != null ? String(info.bpm) : ""} />
+            <List.Item.Detail.Metadata.Label title={strings.key} text={info?.key ?? ""} />
+            <List.Item.Detail.Metadata.Label title={strings.timeSignature} text={info?.timeSignature ?? ""} />
             {ENERGY_ENABLED && level !== null && (
               <List.Item.Detail.Metadata.TagList title="Energy">
                 {ENERGY_SLOT_COLORS.map((color, i) => (
@@ -607,7 +607,7 @@ export function CollectionPanel({
             } as List.Item.Accessory,
           ]
         : []),
-      { text: `Track ${String(num).padStart(2, "0")}` },
+      { text: `${strings.track} ${String(num).padStart(2, "0")}` },
       { text: info?.duration != null ? formatDuration(info.duration, minuteDigits) : placeholder },
       ...(ENERGY_ENABLED ? energyAccessories(levelOf(p)) : []),
     ];
