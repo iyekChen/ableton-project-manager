@@ -70,47 +70,43 @@ export function useProjectList(input: {
     commitProjects(updated);
   }, [commitProjects, cancelledFor]);
 
-  const runReload = useCallback(
-    async (isPending: () => boolean): Promise<string[]> => {
-      const run = ++runRef.current;
-      // 后面还有一轮排队时也停下：这一轮剩下的读取白做，补跑那一轮会重新读。
-      const isCancelled = () => run !== runRef.current || !mountedRef.current || isPending();
-      try {
-        const { orphans } = await reloadProjectData(
-          root,
-          trashingIds,
-          {
-            onScanned: (base) => {
-              if (isCancelled()) return;
-              baseProjectsRef.current = base;
-              // 静默启动刷新：磁盘上的项目有变化才显示加载。
-              if (shouldShowLoadingOnScan(silentStartupRef.current, base, projectsRef.current)) setIsLoading(true);
-            },
-            onApplied: (updated, base) => {
-              if (isCancelled()) return;
-              commitProjects(updated);
-              // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
-              onAppliedRef.current(base);
-            },
+  const runReload = useCallback(async (): Promise<string[]> => {
+    const run = ++runRef.current;
+    const isCancelled = () => run !== runRef.current || !mountedRef.current;
+    try {
+      const { orphans } = await reloadProjectData(
+        root,
+        trashingIds,
+        {
+          onScanned: (base) => {
+            if (isCancelled()) return;
+            baseProjectsRef.current = base;
+            // 静默启动刷新：磁盘上的项目有变化才显示加载。
+            if (shouldShowLoadingOnScan(silentStartupRef.current, base, projectsRef.current)) setIsLoading(true);
           },
-          isCancelled,
-        );
-        if (isCancelled()) return [];
-        setOrphanIds(orphans);
-        return orphans;
-      } catch (error) {
-        console.error(`${LOG_PREFIX} Failed to load projects:`, error);
-        setProjects([]);
-        setOrphanIds([]);
-        await showFailure(strings.loadProjectsFailed, error, { message: strings.loadProjectsFailedHint });
-      } finally {
-        // 静默启动刷新只做一次，成功失败都复位。
-        silentStartupRef.current = false;
-      }
-      return [] as string[];
-    },
-    [commitProjects, onAppliedRef, root, trashingIds],
-  );
+          onApplied: (updated, base) => {
+            if (isCancelled()) return;
+            commitProjects(updated);
+            // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
+            onAppliedRef.current(base);
+          },
+        },
+        isCancelled,
+      );
+      if (isCancelled()) return [];
+      setOrphanIds(orphans);
+      return orphans;
+    } catch (error) {
+      console.error(`${LOG_PREFIX} Failed to load projects:`, error);
+      setProjects([]);
+      setOrphanIds([]);
+      await showFailure(strings.loadProjectsFailed, error, { message: strings.loadProjectsFailedHint });
+    } finally {
+      // 静默启动刷新只做一次，成功失败都复位。
+      silentStartupRef.current = false;
+    }
+    return [] as string[];
+  }, [commitProjects, onAppliedRef, root, trashingIds]);
 
   // 同一时刻只跑一轮：执行中再被触发（目录监听、返回刷新、保存回调）只记一笔，结束后补跑一次。
   const queueRef = useRef<ReturnType<typeof createReloadQueue> | null>(null);

@@ -36,7 +36,7 @@ function readProjects(spy: { mock: { calls: unknown[][] } }): string[] {
   return spy.mock.calls.map((call) => String(call[0])).filter((file) => file.startsWith("/p/"));
 }
 
-// 项目要够多：作废发生在定时器里，项目太少会在定时器触发前就读完。
+// 项目要够多：作废和补跑都发生在定时器里，项目太少会在定时器触发前就读完。
 const MANY = Array.from({ length: 10000 }, (_, i) => makeProject(`p${i}`));
 
 beforeEach(() => {
@@ -82,21 +82,21 @@ describe("applyProjectMetadata", () => {
 });
 
 describe("createReloadQueue", () => {
-  it("刷新进行中再次触发，第一轮剩下的读取会停止，最终列表是第二轮的结果", async () => {
-    const readFileSync = vi.spyOn(fs, "readFileSync");
+  it("刷新进行中再次触发，第一轮跑完并提交，之后补跑一轮，最终列表是第二轮的结果", async () => {
     const queue = createReloadQueue();
     let round = 0;
-    // 每轮开始时记下已经读了多少，用来算这一轮自己读了多少。
-    const readsAtRoundStart: number[] = [];
-    const runOnce = async (isPending: () => boolean): Promise<string[]> => {
+    // 每轮跑完提交的列表，用来确认第一轮没被叫停。
+    const committed: string[][] = [];
+    const runOnce = async (): Promise<string[]> => {
       const current = ++round;
-      readsAtRoundStart.push(readProjects(readFileSync).length);
-      const updated = await applyProjectMetadata(MANY, isPending);
-      return updated.map((project) => `${project.id}:${current}`);
+      const updated = await applyProjectMetadata(MANY, () => false);
+      const ids = updated.map((project) => `${project.id}:${current}`);
+      committed.push(ids);
+      return ids;
     };
 
     const first = queue.reload(runOnce);
-    // 第一轮读到一半时再触发一次：这一轮剩下的读取应该停下。
+    // 第一轮读到一半时再触发一次：这一轮照常跑完，结束后补跑一轮。
     await new Promise((resolve) => setTimeout(resolve, 0));
     const second = queue.reload(runOnce);
     const result = await second;
@@ -106,8 +106,8 @@ describe("createReloadQueue", () => {
     expect(round).toBe(2);
     expect(result).toHaveLength(MANY.length);
     expect(result.every((id) => id.endsWith(":2"))).toBe(true);
-    // 第一轮没读完就被叫停：它读的项目数远少于全部。
-    const firstRoundReads = readsAtRoundStart[1] - readsAtRoundStart[0];
-    expect(firstRoundReads).toBeLessThan(MANY.length);
+    // 第一轮没被叫停：读完了全部项目并提交。
+    expect(committed[0]).toHaveLength(MANY.length);
+    expect(committed[0].every((id) => id.endsWith(":1"))).toBe(true);
   });
 });
