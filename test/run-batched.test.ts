@@ -44,6 +44,27 @@ describe("runBatched", () => {
     expect(seen).toEqual([1, 2]);
   });
 
+  it("任务本身是同步的，也能在定时器里作废，剩下的不再读", async () => {
+    const seen: number[] = [];
+    let cancelled = false;
+    // 真实时序：作废发生在另一个宏任务里，不是读取过程中同步改的。
+    setTimeout(() => {
+      cancelled = true;
+    }, 0);
+
+    // 数量要够多：定时器最早 1ms 才触发，项目太少会在触发前就读完。
+    const items = Array.from({ length: 10000 }, (_, i) => i);
+    await runBatched(items, async (item) => void seen.push(item), {
+      concurrency: 3,
+      isCancelled: () => cancelled,
+    });
+
+    expect(cancelled).toBe(true);
+    expect(seen.length).toBeLessThan(items.length);
+    // 读到的是开头连续的一段，没有跳着读。
+    expect(seen).toEqual(items.slice(0, seen.length));
+  });
+
   it("一开始就取消时一个都不跑", async () => {
     const seen: number[] = [];
     await runBatched([1, 2, 3], async (item) => void seen.push(item), {
