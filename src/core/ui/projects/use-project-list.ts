@@ -8,6 +8,7 @@ import { showFailure } from "@/core/ui/shared/toast";
 import { strings } from "@/strings";
 import { LOG_PREFIX } from "@/core/log";
 import { shouldCommitProjects, shouldShowLoadingOnScan, shouldWriteListCache } from "./project-list-state";
+import { createReloadQueue } from "./reload-queue";
 
 /** 项目列表：冷启动缓存、扫描、Finder 同步、目录监听、写回缓存。
  *  两个回调用 ref 传：它们依赖的 hook 要等这里返回 projects 才能调用，直接传会绕成环。 */
@@ -69,67 +70,54 @@ export function useProjectList(input: {
     commitProjects(updated);
   }, [commitProjects, cancelledFor]);
 
-  const runReload = useCallback(async (): Promise<string[]> => {
-    const isCancelled = cancelledFor(++runRef.current);
-    try {
-      const { orphans } = await reloadProjectData(
-        root,
-        trashingIds,
-        {
-          onScanned: (base) => {
-            if (isCancelled()) return;
-            baseProjectsRef.current = base;
-            // 静默启动刷新：磁盘上的项目有变化才显示加载。
-            if (shouldShowLoadingOnScan(silentStartupRef.current, base, projectsRef.current)) setIsLoading(true);
+  const runReload = useCallback(
+    async (isPending: () => boolean): Promise<string[]> => {
+      const run = ++runRef.current;
+      // 后面还有一轮排队时也停下：这一轮剩下的读取白做，补跑那一轮会重新读。
+      const isCancelled = () => run !== runRef.current || !mountedRef.current || isPending();
+      try {
+        const { orphans } = await reloadProjectData(
+          root,
+          trashingIds,
+          {
+            onScanned: (base) => {
+              if (isCancelled()) return;
+              baseProjectsRef.current = base;
+              // 静默启动刷新：磁盘上的项目有变化才显示加载。
+              if (shouldShowLoadingOnScan(silentStartupRef.current, base, projectsRef.current)) setIsLoading(true);
+            },
+            onApplied: (updated, base) => {
+              if (isCancelled()) return;
+              commitProjects(updated);
+              // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
+              onAppliedRef.current(base);
+            },
           },
-          onApplied: (updated, base) => {
-            if (isCancelled()) return;
-            commitProjects(updated);
-            // 不等它读完：列表先出来，Key / BPM 读到一个填一个。
-            onAppliedRef.current(base);
-          },
-        },
-        isCancelled,
-      );
-      if (isCancelled()) return [];
-      setOrphanIds(orphans);
-      return orphans;
-    } catch (error) {
-      console.error(`${LOG_PREFIX} Failed to load projects:`, error);
-      setProjects([]);
-      setOrphanIds([]);
-      await showFailure(strings.loadProjectsFailed, error, { message: strings.loadProjectsFailedHint });
-    } finally {
-      // 静默启动刷新只做一次，成功失败都复位。
-      silentStartupRef.current = false;
-    }
-    return [] as string[];
-  }, [commitProjects, onAppliedRef, root, trashingIds, cancelledFor]);
-
-  // 同一时刻只跑一次：执行中再被触发（目录监听、返回刷新、保存回调）只记一笔，结束后补跑一次。
-  // 避免两次 Finder 同步交错——后一次可能拿已被前一次清掉的空数据去覆盖删除记录。
-  const reloadInFlightRef = useRef<Promise<string[]> | null>(null);
-  const reloadPendingRef = useRef(false);
-
-  const reloadProjects = useCallback((): Promise<string[]> => {
-    if (reloadInFlightRef.current) {
-      reloadPendingRef.current = true;
-      return reloadInFlightRef.current;
-    }
-    const run = async (): Promise<string[]> => {
-      let orphans = await runReload();
-      while (reloadPendingRef.current) {
-        reloadPendingRef.current = false;
-        orphans = await runReload();
+          isCancelled,
+        );
+        if (isCancelled()) return [];
+        setOrphanIds(orphans);
+        return orphans;
+      } catch (error) {
+        console.error(`${LOG_PREFIX} Failed to load projects:`, error);
+        setProjects([]);
+        setOrphanIds([]);
+        await showFailure(strings.loadProjectsFailed, error, { message: strings.loadProjectsFailedHint });
+      } finally {
+        // 静默启动刷新只做一次，成功失败都复位。
+        silentStartupRef.current = false;
       }
-      return orphans;
-    };
-    const promise = run().finally(() => {
-      reloadInFlightRef.current = null;
-    });
-    reloadInFlightRef.current = promise;
-    return promise;
-  }, [runReload]);
+      return [] as string[];
+    },
+    [commitProjects, onAppliedRef, root, trashingIds],
+  );
+
+  // 同一时刻只跑一轮：执行中再被触发（目录监听、返回刷新、保存回调）只记一笔，结束后补跑一次。
+  const queueRef = useRef<ReturnType<typeof createReloadQueue> | null>(null);
+  if (!queueRef.current) queueRef.current = createReloadQueue();
+  const queue = queueRef.current;
+
+  const reloadProjects = useCallback((): Promise<string[]> => queue.reload(runReload), [queue, runReload]);
 
   // 启动只加载一遍：依赖里的回调每次渲染都是新函数，会让这个 effect 重跑。
   const startupDoneRef = useRef(false);

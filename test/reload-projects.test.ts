@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Project } from "@/core/projects/types";
 import { applyProjectMetadata } from "@/core/ui/shared/reload-projects";
+import { createReloadQueue } from "@/core/ui/projects/reload-queue";
 import { __setPreferences, environment } from "./mocks/raycast-api";
 
 function makeProject(id: string): Project {
@@ -35,6 +36,9 @@ function readProjects(spy: { mock: { calls: unknown[][] } }): string[] {
   return spy.mock.calls.map((call) => String(call[0])).filter((file) => file.startsWith("/p/"));
 }
 
+// 项目要够多：作废发生在定时器里，项目太少会在定时器触发前就读完。
+const MANY = Array.from({ length: 10000 }, (_, i) => makeProject(`p${i}`));
+
 beforeEach(() => {
   // 自定义文档文件夹会记在 supportPath 里：换成空目录，免得读到别的用例留下的设置。
   environment.supportPath = fs.mkdtempSync(path.join(os.tmpdir(), "asm-support-"));
@@ -47,19 +51,23 @@ afterEach(() => {
 });
 
 describe("applyProjectMetadata", () => {
-  it("新一轮开始后，旧一轮不再读剩下的项目", async () => {
+  it("作废后不再读剩下的项目", async () => {
     const readFileSync = vi.spyOn(fs, "readFileSync");
-    const base = ["a", "b", "c", "d", "e", "f"].map(makeProject);
-    // 第一个项目的笔记和歌词读完就作废，模拟期间又开了一轮刷新。
-    const isCancelled = () => readProjects(readFileSync).length >= 2;
+    let cancelled = false;
+    // 真实时序：作废发生在另一个宏任务里，不是读取过程中同步改的。
+    setTimeout(() => {
+      cancelled = true;
+    }, 0);
 
-    const updated = await applyProjectMetadata(base, isCancelled);
+    const updated = await applyProjectMetadata(MANY, () => cancelled);
 
-    // 只读了第一个项目的两个文件，后面的项目没碰磁盘。
-    expect(readProjects(readFileSync)).toEqual(["/p/a/Notes.md", "/p/a/Lyrics.md"]);
+    const read = readProjects(readFileSync);
+    expect(cancelled).toBe(true);
+    // 远没读完：作废后剩下的项目没碰磁盘。
+    expect(read.length).toBeLessThan(MANY.length);
     // 没读到的项目原样保留，列表不丢。
-    expect(updated).toHaveLength(6);
-    for (const project of base.slice(1)) expect(updated).toContain(project);
+    expect(updated).toHaveLength(MANY.length);
+    expect(updated[MANY.length - 1]).toBe(MANY[MANY.length - 1]);
   });
 
   it("没作废时读完所有项目", async () => {
@@ -70,5 +78,36 @@ describe("applyProjectMetadata", () => {
 
     expect(readProjects(readFileSync)).toHaveLength(4);
     expect(updated).toHaveLength(2);
+  });
+});
+
+describe("createReloadQueue", () => {
+  it("刷新进行中再次触发，第一轮剩下的读取会停止，最终列表是第二轮的结果", async () => {
+    const readFileSync = vi.spyOn(fs, "readFileSync");
+    const queue = createReloadQueue();
+    let round = 0;
+    // 每轮开始时记下已经读了多少，用来算这一轮自己读了多少。
+    const readsAtRoundStart: number[] = [];
+    const runOnce = async (isPending: () => boolean): Promise<string[]> => {
+      const current = ++round;
+      readsAtRoundStart.push(readProjects(readFileSync).length);
+      const updated = await applyProjectMetadata(MANY, isPending);
+      return updated.map((project) => `${project.id}:${current}`);
+    };
+
+    const first = queue.reload(runOnce);
+    // 第一轮读到一半时再触发一次：这一轮剩下的读取应该停下。
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const second = queue.reload(runOnce);
+    const result = await second;
+    await first;
+
+    // 补跑了一轮，最终列表来自第二轮。
+    expect(round).toBe(2);
+    expect(result).toHaveLength(MANY.length);
+    expect(result.every((id) => id.endsWith(":2"))).toBe(true);
+    // 第一轮没读完就被叫停：它读的项目数远少于全部。
+    const firstRoundReads = readsAtRoundStart[1] - readsAtRoundStart[0];
+    expect(firstRoundReads).toBeLessThan(MANY.length);
   });
 });
