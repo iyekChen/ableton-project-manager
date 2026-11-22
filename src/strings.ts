@@ -214,6 +214,7 @@ type TranslationKeys = {
   allProjectsInCollection: string;
   resetToDefaults: string;
   resetToDefaultsHint: string;
+  resetToFirstRunHint: string;
   noChanges: string;
   removeCollectionsConfirmTitle: string;
   removeCollectionsConfirmHint: string;
@@ -545,6 +546,7 @@ export const strings: TranslationKeys = {
   resetToDefaults: "Reset to Defaults",
   resetToDefaultsHint:
     "Custom names, colors, and order will be lost. Projects tagged with an option that no longer exists will have that tag cleared.",
+  resetToFirstRunHint: "Reopen Search Projects to start fresh.",
   removeCollectionsConfirmTitle: "Remove from collection?",
   removeCollectionsConfirmHint:
     "This project will be removed from {names}, clearing its order and role there. The project itself won't be deleted.",

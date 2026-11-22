@@ -1,4 +1,5 @@
 import { LocalStorage, showToast, Toast } from "@raycast/api";
+import { strings } from "@/strings";
 import { clearProjectListCache } from "@/core/projects/list-cache";
 import { clearBounceListCache } from "@/core/projects/bounce-list";
 import { clearBounceCountCache } from "@/core/projects/load-projects";
@@ -18,5 +19,5 @@ export async function resetToFirstRun(): Promise<void> {
   await clearAudioAnalysisCache();
   await LocalStorage.removeItem(ONBOARDING_ASKED_KEY);
   await LocalStorage.removeItem(ONBOARDING_UNMATCHED_KEY);
-  await showToast({ style: Toast.Style.Success, title: "Reset to First Run" });
+  await showToast({ style: Toast.Style.Success, title: "Reset to First Run", message: strings.resetToFirstRunHint });
 }

@@ -379,7 +379,8 @@ export function ProjectsView() {
                   icon={Icon.ArrowCounterClockwise}
                   onAction={async () => {
                     await resetToFirstRun();
-                    await reloadProjects();
+                    // 缓存已清空，当前窗口里的列表还是旧的：关掉窗口，重开才是第一次打开的样子。
+                    await closeMainWindow();
                   }}
                 />
               </ActionPanel.Section>
