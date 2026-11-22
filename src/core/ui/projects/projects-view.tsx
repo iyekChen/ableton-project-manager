@@ -288,7 +288,6 @@ export function ProjectsView() {
               <PlayToggleAction
                 isThisPlaying={isThisPlaying}
                 playbackStatus={playbackStatus}
-                shortcut={{ modifiers: ["cmd"], key: "return" }}
                 onPlay={() => playProjectBounce(item, play)}
                 onPause={pause}
                 onResume={resume}
