@@ -19,14 +19,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { strings } from "@/strings";
 import { SortBySubmenu } from "@/core/ui/actions/sort-by-submenu";
-import { CopyBounceSection } from "@/core/ui/actions/copy-bounce-section";
+import { CopyBounceSection } from "./copy-bounce-section";
 import { ShowInFinderAction } from "@/core/ui/actions/show-in-finder";
 import { useSortOption } from "@/core/ui/hooks/use-sort-option";
 import { sortItems, sortOptionTitle } from "@/core/ui/shared/sorting";
 import type { SortOption } from "@/core/ui/shared/sorting";
 import { groupItems, type BounceGroup } from "@/core/ui/shared/grouping";
 import { formatSize, groupBySource, splitExt } from "@/core/ui/bounces/bounce-format";
-import { useBounceGroupOption } from "@/core/ui/hooks/use-bounce-group-option";
+import { useBounceGroupOption } from "./use-bounce-group-option";
 import {
   collectBounces,
   getSharedBounceExclusions,
