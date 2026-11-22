@@ -291,9 +291,12 @@ export function SetsView({ project }: { project: Project }) {
                 <List.Item.Detail
                   metadata={
                     <List.Item.Detail.Metadata>
-                      <List.Item.Detail.Metadata.Label title="Key" text={set.key ?? ""} />
-                      <List.Item.Detail.Metadata.Label title="BPM" text={set.bpm === null ? "" : String(set.bpm)} />
-                      <List.Item.Detail.Metadata.Label title="Time Signature" text={set.timeSignature ?? ""} />
+                      <List.Item.Detail.Metadata.Label title={strings.key} text={set.key ?? ""} />
+                      <List.Item.Detail.Metadata.Label
+                        title={strings.bpm}
+                        text={set.bpm === null ? "" : String(set.bpm)}
+                      />
+                      <List.Item.Detail.Metadata.Label title={strings.timeSignature} text={set.timeSignature ?? ""} />
                     </List.Item.Detail.Metadata>
                   }
                 />
