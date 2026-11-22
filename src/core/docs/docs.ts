@@ -83,7 +83,7 @@ function resolveDocFolder(kind: DocKind): { folder: string; fromMemory: boolean 
 }
 
 // 该类文档的自定义保存文件夹（选填）。留空 = 存进项目文件夹。
-// 设置为空、但之前用过的文件夹已消失时，仍返回旧路径，交给 missingDocFolder 判定为失效。
+// 设置为空、但之前用过的文件夹已消失时，仍返回旧路径，交给 useMissingDocFolders 判定为失效。
 export function getDocFolder(kind: DocKind): string {
   return resolveDocFolder(kind).folder;
 }
@@ -109,12 +109,6 @@ function customFoldersCollide(): boolean {
   const notes = normalizeFolder(getDocFolder("notes"));
   const lyrics = normalizeFolder(getDocFolder("lyrics"));
   return notes !== "" && notes === lyrics;
-}
-
-// 自定义文件夹设置了但不存在（被改名、移动或外接盘未挂载）时返回该路径，否则返回 null。
-export function missingDocFolder(kind: DocKind): string | null {
-  const folder = getDocFolder(kind);
-  return folder !== "" && !fs.existsSync(folder) ? folder : null;
 }
 
 /** 自定义文档文件夹不存在时抛出：此时只读不写，避免在旧路径上悄悄重建文件夹、把笔记拆成两份。 */
