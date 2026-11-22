@@ -1,5 +1,6 @@
-import { Action, ActionPanel, Icon, Keyboard, Toast, open, showToast } from "@raycast/api";
+import { Action, ActionPanel, Icon, Keyboard, Toast, open, showToast, useNavigation } from "@raycast/api";
 import type { Application } from "@raycast/api";
+import path from "node:path";
 import type { Project } from "@/core/projects/types";
 import { strings } from "@/strings";
 import { labels } from "@/daws/labels";
@@ -7,7 +8,7 @@ import { daw } from "@/daws";
 import { DocActions } from "@/core/ui/actions/doc-actions";
 import { OpenProjectInFinderAction } from "@/core/ui/actions/open-project-in-finder";
 import { EditInfo } from "@/core/ui/components/edit-info";
-import { DuplicateProject } from "@/core/ui/projects/duplicate-project";
+import { DuplicateProject, uniqueCopyName } from "@/core/ui/projects/duplicate-project";
 import { ManageExternalBounces } from "@/core/ui/components/manage-external-bounces";
 import { UnmatchedBounces } from "@/core/ui/bounces";
 import { CleanUpRemovedProjects } from "@/core/ui/cleanup";
@@ -82,6 +83,7 @@ export function ProjectFileSection({
   projects: Project[];
   onChanged: () => void;
 }) {
+  const { push } = useNavigation();
   return (
     <ActionPanel.Section title={strings.sectionFile}>
       <OpenProjectInFinderAction kind={project.kind} folderPath={project.folderPath} />
@@ -109,11 +111,15 @@ export function ProjectFileSection({
           target={<daw.extraNewAction.component />}
         />
       )}
-      <Action.Push
+      <Action
         title={strings.duplicateProject}
         icon={Icon.Duplicate}
         shortcut={Keyboard.Shortcut.Common.Duplicate}
-        target={<DuplicateProject project={project} onDuplicated={onChanged} />}
+        onAction={() => {
+          // 副本名要读磁盘，在这里算好再打开表单，表单里不读。
+          const initialName = uniqueCopyName(path.dirname(project.folderPath), project.title, project.kind);
+          push(<DuplicateProject project={project} initialName={initialName} onDuplicated={onChanged} />);
+        }}
       />
       <Action.Push
         title={strings.manageExternalBounce}

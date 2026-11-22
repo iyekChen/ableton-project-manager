@@ -9,7 +9,8 @@ import { daw, type ProjectKind } from "@/daws";
 import { copyErrorAction } from "@/core/ui/shared/toast";
 
 // 与 Finder 一致的副本命名：Song copy、Song copy 2、Song copy 3…
-function uniqueCopyName(dir: string, title: string, kind: ProjectKind): string {
+// 要读磁盘，所以由打开表单的操作先算好，表单里不读。
+export function uniqueCopyName(dir: string, title: string, kind: ProjectKind): string {
   let name = `${title} copy`;
   for (let n = 2; fs.existsSync(path.join(dir, daw.entryNameFor(name, kind))); n++) {
     name = `${title} copy ${n}`;
@@ -18,10 +19,19 @@ function uniqueCopyName(dir: string, title: string, kind: ProjectKind): string {
 }
 
 /** 复制整个项目文件夹（与 Finder 逻辑一致，含 Bounces、Backup）。新项目不继承任何扩展数据。 */
-export function DuplicateProject({ project, onDuplicated }: { project: Project; onDuplicated: () => void }) {
+export function DuplicateProject({
+  project,
+  initialName,
+  onDuplicated,
+}: {
+  project: Project;
+  /** 打开表单时算好的副本名，表单不会先闪一下空名字。 */
+  initialName: string;
+  onDuplicated: () => void;
+}) {
   const { pop } = useNavigation();
   const parent = path.dirname(project.folderPath);
-  const [name, setName] = useState(() => uniqueCopyName(parent, project.title, project.kind));
+  const [name, setName] = useState(initialName);
 
   async function handleSubmit() {
     const trimmed = name.trim();
