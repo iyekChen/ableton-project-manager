@@ -88,7 +88,7 @@ function RenameBounceForm({ current, onSubmit }: { current: string; onSubmit: (n
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={strings.name} value={value} onChange={setValue} />
+      <Form.TextField id="name" title={strings.name} placeholder={current} value={value} onChange={setValue} />
     </Form>
   );
 }

@@ -15,6 +15,7 @@ More keyboard shortcuts, clearer labels when you move between views, and a list 
 - **Browse Bounces**: The search bar placeholder now says Search Project Bounces, so it's clear what it searches
 - **Group By**: Browse Bounces and Search Bounces no longer show the default grouping for a moment before switching to the one you picked
 - **Templates**: Show in Finder now also works with ⌘⌥O
+- **Forms**: Empty text fields now show a hint, such as the current name, or what to write in notes and lyrics
 
 ### 🐞 Fixes
 

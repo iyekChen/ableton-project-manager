@@ -90,7 +90,7 @@ export function DuplicateProject({
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={strings.name} value={name} onChange={setName} />
+      <Form.TextField id="name" title={strings.name} placeholder={initialName} value={name} onChange={setName} />
     </Form>
   );
 }

@@ -191,6 +191,8 @@ type TranslationKeys = {
   openExtensionPreferences: string;
   noNotesYet: string;
   noLyricsYet: string;
+  notesPlaceholder: string;
+  lyricsPlaceholder: string;
   storageUnreadable: string;
   renameDataPending: string;
   docUnreadable: string;
@@ -524,6 +526,8 @@ export const strings: TranslationKeys = {
   openExtensionPreferences: "Open Extension Preferences",
   noNotesYet: "_No notes yet_",
   noLyricsYet: "_No lyrics yet_",
+  notesPlaceholder: "Ideas, to-dos, mix notes…",
+  lyricsPlaceholder: "Write your lyrics here…",
   storageUnreadable: "Saved data unreadable — nothing changed",
   renameDataPending: "Renamed — tags not moved yet",
   docUnreadable: "Couldn't read this note",

@@ -283,7 +283,7 @@ export function EditInfo({
         </ActionPanel>
       }
     >
-      <Form.TextField id="name" title={strings.name} value={name} onChange={setName} />
+      <Form.TextField id="name" title={strings.name} placeholder={project.title} value={name} onChange={setName} />
       {alteredDocChars(name.trim()).length > 0 && (
         <Form.Description
           text={strings.docNameHint
