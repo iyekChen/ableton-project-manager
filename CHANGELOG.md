@@ -2,12 +2,14 @@
 
 ## [Shortcuts, Navigation, and Polish] - {PR_MERGE_DATE}
 
-More keyboard shortcuts, clearer labels when you move between views, and a list that no longer flickers when it opens.
+More keyboard shortcuts, clearer labels when you move between views, a list that no longer flickers when it opens, and error pages when something can't be read.
 
 ### ✨ New
 
 - **Manage External Bounce** (⌘B): Add or remove external bounce sources from Browse Bounces without going back to Search Projects
 - **Show Overview / Show Detail** (⌘⇧T) and **Show Notes / Show Lyrics** (⌘⌥⇧T) in Tracklist: Toggle the detail panel and switch between notes and lyrics from the keyboard, the same as in Search Projects. Both now sit in a View section
+- **Delete All** (⌃⇧X) in Manage Tags: Empty the list you're viewing and remove those options from every project and track that uses them
+- **Restore Previous Settings**: When a new project replaces a deleted one with the same name, bring back the old project's tags, collections, track numbers, roles, notes, and lyrics
 
 ### 💎 Improvements
 
@@ -16,10 +18,16 @@ More keyboard shortcuts, clearer labels when you move between views, and a list 
 - **Group By**: Browse Bounces and Search Bounces no longer show the default grouping for a moment before switching to the one you picked
 - **Templates**: Show in Finder now also works with ⌘⌥O
 - **Forms**: Empty text fields now show a hint, such as the current name, or what to write in notes and lyrics
+- **Rename**: Renaming a bounce is now called Rename, the same as everywhere else
+- **Icons**: Actions that do different things no longer share an icon, so it's easier to tell them apart in the Action Panel
+- **Commands**: Each command now shows Ableton Live under its name in Raycast
 
 ### 🐞 Fixes
 
 - **README**: Fixed links that didn't work on the Store page, and made section titles match the action names
+- **Loading**: Fixed a failed load showing up as an empty list. Search Projects, Sets, and Manage Tags now show what went wrong, with Try Again and Open Extension Preferences
+- **Duplicate Project**: Fixed the form closing when the copy failed. It now stays open with your name, and shows the error
+- **Tracklist**: Fixed the list changing when saving a track number or role failed. It now stays as it was and shows the error
 
 ## [Search Bounces, Shared Bounces Folder, and Data Export & Import] - 2026-11-21
 
