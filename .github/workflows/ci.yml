@@ -23,9 +23,6 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm test
-
       # 必须在 build:player 之前：编译会重写哈希文件，放在后面就永远比对通过。
       - name: Check audio player matches source
         run: |

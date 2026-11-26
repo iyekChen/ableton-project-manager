@@ -22,12 +22,12 @@ In development mode, Search Projects has an extra **Reset Onboarding (Dev)** act
 ```bash
 npm run lint          # ESLint + Prettier
 npm run fix-lint      # Auto-fix lint and formatting issues
-npm test              # Run unit tests with Vitest
-npm run test:watch    # Re-run tests on every change
 npm run build         # Build the production extension
 ```
 
-Before opening a PR, run lint, tests, and build. CI runs the same steps on macOS with Node 22, installing with `npm ci`, plus the audio player check below.
+Before opening a PR, run lint and build. CI runs the same steps on macOS with Node 22, installing with `npm ci`, plus the audio player check below.
+
+The unit tests live in a separate private repository, so this repository doesn't include them.
 
 ## Project layout
 
@@ -36,7 +36,6 @@ Before opening a PR, run lint, tests, and build. CI runs the same steps on macOS
 - `src/daws/ableton/` holds the Ableton-specific parts: reading `.als` files, the Sets view, and Live templates. They plug into the rest through the `DawAdapter` interface in `src/daws/types.ts`.
 - Most UI text lives in `src/strings.ts`. Ableton-specific wording is in `src/daws/labels.ts` and `src/daws/ableton/strings.ts`, and command and preference titles are in `package.json`.
 - `swift/` holds the audio player's source, and `scripts/` the script that builds it.
-- `test/` holds the Vitest unit tests.
 
 ## Audio player
 

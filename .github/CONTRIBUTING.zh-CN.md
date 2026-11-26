@@ -22,12 +22,12 @@ npm run dev        # 以 Raycast 开发模式运行扩展
 ```bash
 npm run lint          # ESLint + Prettier
 npm run fix-lint      # 自动修复 lint 和格式问题
-npm test              # 用 Vitest 运行单元测试
-npm run test:watch    # 每次改动后重新运行测试
 npm run build         # 构建正式版扩展
 ```
 
-提交 PR 前，请运行 lint、测试和构建。CI 会在 macOS 和 Node 22 上用 `npm ci` 安装依赖，执行同样的步骤，另外还有下面的音频播放器检查。
+提交 PR 前，请运行 lint 和构建。CI 会在 macOS 和 Node 22 上用 `npm ci` 安装依赖，执行同样的步骤，另外还有下面的音频播放器检查。
+
+单元测试放在另一个私有仓库里，这个仓库不带测试。
 
 ## 项目结构
 
@@ -36,7 +36,6 @@ npm run build         # 构建正式版扩展
 - `src/daws/ableton/` 包含 Ableton 专用的部分：读取 `.als` 文件、Sets 视图和 Live 模板。它们通过 `src/daws/types.ts` 中的 `DawAdapter` 接口接入其余部分。
 - 大部分界面文字在 `src/strings.ts` 中。Ableton 专用的文字在 `src/daws/labels.ts` 和 `src/daws/ableton/strings.ts` 中，命令和设置项的标题在 `package.json` 中。
 - `swift/` 是音频播放器的源码，`scripts/` 是构建它的脚本。
-- `test/` 是 Vitest 单元测试。
 
 ## 音频播放器
 
