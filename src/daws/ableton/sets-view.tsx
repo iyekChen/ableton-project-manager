@@ -9,6 +9,7 @@ import {
   Icon,
   Keyboard,
   List,
+  openExtensionPreferences,
   showToast,
   Toast,
   trash,
@@ -35,7 +36,8 @@ import { useGroupOption } from "@/core/ui/hooks/use-group-option";
 import { groupItems } from "@/core/ui/shared/grouping";
 import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
-import { showFailure } from "@/core/ui/shared/toast";
+import { listEmptyState } from "@/core/ui/shared/list-empty-state";
+import { errorMessage, showFailure } from "@/core/ui/shared/toast";
 import { ShowInFinderAction } from "@/core/ui/actions/show-in-finder";
 import { LOG_PREFIX } from "@/core/log";
 import { setsViewStrings } from "./strings";
@@ -148,6 +150,8 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
 export function SetsView({ project }: { project: Project }) {
   const [sets, setSets] = useState<ProjectSet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // 读取失败的原因：列表为空时据此显示出错页面，而不是看起来像没有 Set。
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useSortOption(SETS_SORT_STORAGE_KEY, SETS_SORT_OPTIONS, "created-desc");
   const [groupBy, setGroupBy] = useGroupOption(SETS_GROUP_STORAGE_KEY, "created");
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
@@ -211,10 +215,12 @@ export function SetsView({ project }: { project: Project }) {
         if (cancelled) return;
 
         setSets(items.map((item) => item.set));
+        setLoadError(null);
       } catch (error) {
         if (!cancelled) {
           console.error(`${LOG_PREFIX} Failed to load sets:`, error);
-          setSets([]);
+          // 保留已读到的条目：读不到时不该看起来像没有 Set。
+          setLoadError(errorMessage(error));
         }
       } finally {
         if (!cancelled) {
@@ -229,6 +235,12 @@ export function SetsView({ project }: { project: Project }) {
       cancelled = true;
     };
   }, [folderPath, kind, reloadToken]);
+
+  // 出错页面上的 Try Again：重读期间显示加载，读完再收起。
+  const retryLoad = () => {
+    setIsLoading(true);
+    setReloadToken((n) => n + 1);
+  };
 
   const handleDuplicate = async (set: ProjectSet) => {
     try {
@@ -275,6 +287,19 @@ export function SetsView({ project }: { project: Project }) {
       navigationTitle={project.title}
       searchBarPlaceholder={setsViewStrings.searchSets}
     >
+      {listEmptyState(isLoading, sets.length, loadError) === "error" && (
+        <List.EmptyView
+          icon={{ source: Icon.ExclamationMark, tintColor: Color.Red }}
+          title={setsViewStrings.loadFailed}
+          description={loadError ?? undefined}
+          actions={
+            <ActionPanel>
+              <Action title={strings.tryAgain} icon={Icon.ArrowClockwise} onAction={retryLoad} />
+              <Action title={strings.openExtensionPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
+            </ActionPanel>
+          }
+        />
+      )}
       {groupItems(
         sortedSets,
         groupBy,

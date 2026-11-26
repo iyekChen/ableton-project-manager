@@ -12,6 +12,7 @@ type SetsViewStrings = {
   renameSetConfirmTitle: string;
   renameSetConfirmMessage: string;
   trashSetHint: string;
+  loadFailed: string;
 };
 
 export const setsViewStrings: SetsViewStrings = {
@@ -28,4 +29,5 @@ export const setsViewStrings: SetsViewStrings = {
   renameSetConfirmMessage:
     "Make sure this Set is closed in Ableton Live. Renaming while it's open can make Ableton keep saving to the old name.",
   trashSetHint: "This moves the Set to the Trash:",
+  loadFailed: "Couldn't Load Sets",
 };

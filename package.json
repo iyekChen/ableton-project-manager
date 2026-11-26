@@ -163,6 +163,7 @@
 		{
 			"name": "search-projects",
 			"title": "Search Projects",
+			"subtitle": "Ableton Live",
 			"description": "Search, play, and organize your Ableton Live projects and collections",
 			"mode": "view",
 			"keywords": [
@@ -181,12 +182,14 @@
 		{
 			"name": "search-bounces",
 			"title": "Search Bounces",
+			"subtitle": "Ableton Live",
 			"description": "Search the bounces of all your projects",
 			"mode": "view"
 		},
 		{
 			"name": "manage-categories",
 			"title": "Manage Tags",
+			"subtitle": "Ableton Live",
 			"description": "Create and manage Stages, Genres, and Track Roles",
 			"mode": "view",
 			"keywords": [
@@ -202,6 +205,7 @@
 		{
 			"name": "export-data",
 			"title": "Export Data",
+			"subtitle": "Ableton Live",
 			"description": "Save your tags, collections and other extension data to a file",
 			"mode": "view",
 			"keywords": [
@@ -215,6 +219,7 @@
 		{
 			"name": "import-data",
 			"title": "Import Data",
+			"subtitle": "Ableton Live",
 			"description": "Restore extension data from an exported file",
 			"mode": "view",
 			"keywords": [
