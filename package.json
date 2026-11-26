@@ -243,7 +243,6 @@
 	},
 	"scripts": {
 		"build": "ray build",
-		"build:player": "bash ./scripts/build-audio-player.sh",
 		"dev": "ray develop",
 		"fix-lint": "ray lint --fix",
 		"lint": "ray lint",

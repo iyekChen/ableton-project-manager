@@ -103,6 +103,13 @@ type TranslationKeys = {
   manyProjectsMissingHint: string;
   openProjectsFolder: string;
   ambiguousFinderChanges: string;
+  newProjectLooksNew: string;
+  newProjectsLookNew: string;
+  newProjectLooksNewHint: string;
+  restorePreviousSettings: string;
+  restorePreviousSettingsConfirmTitle: string;
+  restorePreviousSettingsConfirmMessage: string;
+  previousSettingsRestored: string;
   docShared: string;
   docSharedHint: string;
   docNameTaken: string;
@@ -140,6 +147,9 @@ type TranslationKeys = {
   role: string;
   create: string;
   delete: string;
+  deleteAll: string;
+  deleteAllConfirmTitle: string;
+  deleteAllFailed: string;
   created: string;
   renamed: string;
   deleted: string;
@@ -183,11 +193,14 @@ type TranslationKeys = {
   loadProjectsFailed: string;
   loadProjectsFailedHint: string;
   loadBounceSettingsFailed: string;
+  loadTagsFailed: string;
+  loadInfoFailed: string;
   bounceAliasesPlaceholder: string;
   stageAliasesPlaceholder: string;
   genreAliasesPlaceholder: string;
   roleAliasesPlaceholder: string;
   retry: string;
+  tryAgain: string;
   openExtensionPreferences: string;
   noNotesYet: string;
   noLyricsYet: string;
@@ -219,8 +232,8 @@ type TranslationKeys = {
   resetToDefaults: string;
   resetToDefaultsHint: string;
   resetToFirstRun: string;
-  resetToFirstRunDev: string;
   resetToFirstRunHint: string;
+  dev: string;
   noChanges: string;
   removeCollectionsConfirmTitle: string;
   removeCollectionsConfirmHint: string;
@@ -256,7 +269,6 @@ type TranslationKeys = {
   notThisProject: string;
   movedToUnmatched: string;
   unavailable: string;
-  renameBounce: string;
   bounceRenamed: string;
   bounceNameExists: string;
   removeExternalSource: string;
@@ -435,6 +447,14 @@ export const strings: TranslationKeys = {
     "Most projects disappeared at once. Is the drive connected? If you moved the folder, update it in preferences.",
   openProjectsFolder: "Open Projects Folder",
   ambiguousFinderChanges: "Some Finder changes skipped",
+  newProjectLooksNew: "“{name}” looks like a new project",
+  newProjectsLookNew: "{count} projects look new",
+  newProjectLooksNewHint: "Previous settings were archived. Use Restore Previous Settings to bring them back.",
+  restorePreviousSettings: "Restore Previous Settings",
+  restorePreviousSettingsConfirmTitle: "Restore previous settings?",
+  restorePreviousSettingsConfirmMessage:
+    "This brings back the previous project's tags, collections, track numbers, and roles, plus notes and lyrics stored in custom folders. Anything already set on this project is kept.",
+  previousSettingsRestored: "Previous Settings Restored",
   docShared: "Shares a note file with another project",
   docSharedHint:
     "This project's notes / lyrics file would be the same as {names}'s. Rename this project so each keeps its own file — nothing is read or written until then.",
@@ -474,6 +494,9 @@ export const strings: TranslationKeys = {
   role: "Role",
   create: "Create",
   delete: "Delete",
+  deleteAll: "Delete All",
+  deleteAllConfirmTitle: "Delete all {count} options?",
+  deleteAllFailed: "Couldn't Delete All",
   created: "Created",
   renamed: "Renamed",
   deleted: "Deleted",
@@ -518,11 +541,14 @@ export const strings: TranslationKeys = {
   loadProjectsFailed: "Couldn't Load Projects",
   loadProjectsFailedHint: "Check that your Projects folder exists and that Raycast can access it.",
   loadBounceSettingsFailed: "Couldn't Load Bounce Settings",
+  loadTagsFailed: "Couldn't Load Tags",
+  loadInfoFailed: "Couldn't Load Info",
   bounceAliasesPlaceholder: "e.g. ND, Night Drive Remix",
   stageAliasesPlaceholder: "e.g. wip, rough",
   genreAliasesPlaceholder: "e.g. dnb, drum n bass",
   roleAliasesPlaceholder: "e.g. opener, closer",
   retry: "Retry",
+  tryAgain: "Try Again",
   openExtensionPreferences: "Open Extension Preferences",
   noNotesYet: "_No notes yet_",
   noLyricsYet: "_No lyrics yet_",
@@ -558,8 +584,8 @@ export const strings: TranslationKeys = {
   resetToDefaultsHint:
     "Custom names, colors, and order will be lost. Projects tagged with an option that no longer exists will have that tag cleared.",
   resetToFirstRun: "Reset to First Run",
-  resetToFirstRunDev: "Reset to First Run (Dev)",
   resetToFirstRunHint: "Reopen Search Projects to start fresh.",
+  dev: "Dev",
   removeCollectionsConfirmTitle: "Remove from collection?",
   removeCollectionsConfirmHint:
     "This project will be removed from {names}, clearing its order and role there. The project itself won't be deleted.",
@@ -597,7 +623,6 @@ export const strings: TranslationKeys = {
   notThisProject: "Not This Project",
   movedToUnmatched: "Moved to Unmatched Bounces",
   unavailable: "Unavailable",
-  renameBounce: "Rename Bounce",
   bounceRenamed: "Bounce Renamed",
   bounceNameExists: "A file with that name already exists",
   removeExternalSource: "Remove External Source",
