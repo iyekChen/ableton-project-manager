@@ -236,7 +236,7 @@ export function SetsView({ project }: { project: Project }) {
     };
   }, [folderPath, kind, reloadToken]);
 
-  // 出错页面上的 Try Again：重读期间显示加载，读完再收起。
+  // 出错页面上的 Retry：重读期间显示加载，读完再收起。
   const retryLoad = () => {
     setIsLoading(true);
     setReloadToken((n) => n + 1);

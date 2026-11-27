@@ -19,7 +19,7 @@ export const labels: DawLabels = {
 // 模板列表的文字。只有 Live 有模板功能，所以不放进共用的 DawLabels。
 export const templateLabels: {
   newProjectWithTemplate: string;
-  createLiveSet: string;
+  renameTemplate: string;
   searchTemplates: string;
   templates: string;
   noTemplates: string;
@@ -30,7 +30,7 @@ export const templateLabels: {
   templateTrashHint: string;
 } = {
   newProjectWithTemplate: "New Live Set from Template",
-  createLiveSet: "Create Live Set",
+  renameTemplate: "Rename Template",
   searchTemplates: "Search Templates",
   templates: "Templates",
   noTemplates: "No templates found",

@@ -19,6 +19,7 @@ More keyboard shortcuts, clearer labels when you move between views, a list that
 - **Templates**: Show in Finder now also works with ⌘⌥O
 - **Forms**: Empty text fields now show a hint, such as the current name, or what to write in notes and lyrics
 - **Action Names**: Actions that do the same thing now use the same name everywhere, such as Rename Bounce, New Collection, Edit Stage, and Open Notes
+- **Templates**: Create Live Set is now New Live Set from Template, and the rename form's button is Save
 - **Icons**: Actions that do different things no longer share an icon, so it's easier to tell them apart in the Action Panel
 - **Commands**: Each command now shows Ableton Live under its name in Raycast
 

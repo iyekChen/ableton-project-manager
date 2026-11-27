@@ -83,13 +83,13 @@ export function TemplatesView() {
       actions={
         <ActionPanel>
           <Action
-            title={templateLabels.createLiveSet}
+            title={templateLabels.newProjectWithTemplate}
             icon={Icon.NewDocument}
             onAction={() => handleCreate(template)}
           />
           <ShowInFinderAction path={template.path} />
           <Action.Push
-            title={strings.rename}
+            title={templateLabels.renameTemplate}
             icon={Icon.Pencil}
             shortcut={Keyboard.Shortcut.Common.Edit}
             target={<RenameTemplate template={template} onRenamed={reload} />}
@@ -168,10 +168,10 @@ function RenameTemplate({ template, onRenamed }: { template: Template; onRenamed
 
   return (
     <Form
-      navigationTitle={`${strings.rename} — ${template.name}`}
+      navigationTitle={`${templateLabels.renameTemplate} — ${template.name}`}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title={strings.rename} icon={Icon.Check} onSubmit={handleSubmit} />
+          <Action.SubmitForm title={strings.save} icon={Icon.Check} onSubmit={handleSubmit} />
         </ActionPanel>
       }
     >
