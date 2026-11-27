@@ -65,7 +65,11 @@ export function TemplatesView() {
     try {
       await trash(template.path);
       reload();
-      await showToast({ style: Toast.Style.Success, title: strings.movedToTrash, message: template.name });
+      await showToast({
+        style: Toast.Style.Success,
+        title: templateLabels.templateMovedToTrash,
+        message: template.name,
+      });
     } catch (error) {
       await showFailure(strings.trashFailed, error);
     }
@@ -115,7 +119,7 @@ export function TemplatesView() {
           description={templateLabels.noTemplatesHint.replace("{folder}", TEMPLATES_FOLDER)}
           actions={
             <ActionPanel>
-              <Action title={strings.openPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
+              <Action title={strings.openExtensionPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
             </ActionPanel>
           }
         />
@@ -158,7 +162,7 @@ function RenameTemplate({ template, onRenamed }: { template: Template; onRenamed
       return;
     }
     onRenamed();
-    await showToast({ style: Toast.Style.Success, title: strings.renamed, message: trimmed });
+    await showToast({ style: Toast.Style.Success, title: templateLabels.templateRenamed, message: trimmed });
     pop();
   }
 

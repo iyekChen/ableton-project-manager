@@ -31,7 +31,7 @@ type TranslationKeys = {
   browseCollections: string;
   backToProjects: string;
   backToSearchBounces: string;
-  open: string;
+  openCollection: string;
   tracklist: string;
   unsorted: string;
   setTrackNumber: string;
@@ -48,11 +48,11 @@ type TranslationKeys = {
   all: string;
   notes: string;
   lyrics: string;
-  openNote: string;
+  openNotes: string;
   openLyrics: string;
   showNotes: string;
   showLyrics: string;
-  editNote: string;
+  editNotes: string;
   editLyrics: string;
   none: string;
   pinned: string;
@@ -96,7 +96,6 @@ type TranslationKeys = {
   restoreDocConflict: string;
   docFolderMissing: string;
   docFolderMissingHint: string;
-  openPreferences: string;
   docSaveFailed: string;
   useProjectFolders: string;
   manyProjectsMissing: string;
@@ -115,7 +114,11 @@ type TranslationKeys = {
   docNameTaken: string;
   renameConfirmTitle: string;
   rename: string;
-  edit: string;
+  renameBounce: string;
+  renameCollection: string;
+  editStage: string;
+  editGenre: string;
+  editRole: string;
   color: string;
   sizeLargest: string;
   sizeSmallest: string;
@@ -145,14 +148,29 @@ type TranslationKeys = {
   collections: string;
   deleteCollectionHint: string;
   role: string;
-  create: string;
+  newStage: string;
+  newGenre: string;
+  newRole: string;
+  newCollection: string;
   delete: string;
   deleteAll: string;
   deleteAllConfirmTitle: string;
   deleteAllFailed: string;
   created: string;
-  renamed: string;
-  deleted: string;
+  stageCreated: string;
+  genreCreated: string;
+  roleCreated: string;
+  collectionCreated: string;
+  collectionRenamed: string;
+  stageDeleted: string;
+  genreDeleted: string;
+  roleDeleted: string;
+  collectionDeleted: string;
+  stagesDeleted: string;
+  genresDeleted: string;
+  rolesDeleted: string;
+  projectMovedToTrash: string;
+  bounceMovedToTrash: string;
   noCategories: string;
   tracklistDuration: string;
   queueCollection: string;
@@ -174,7 +192,6 @@ type TranslationKeys = {
   projectDuplicated: string;
   duplicateFailed: string;
   moveToTrash: string;
-  movedToTrash: string;
   trashProjectHint: string;
   trashBounceHint: string;
   cleanUpLeftovers: string;
@@ -200,7 +217,6 @@ type TranslationKeys = {
   genreAliasesPlaceholder: string;
   roleAliasesPlaceholder: string;
   retry: string;
-  tryAgain: string;
   openExtensionPreferences: string;
   noNotesYet: string;
   noLyricsYet: string;
@@ -371,7 +387,7 @@ export const strings: TranslationKeys = {
   browseCollections: "Browse Collections",
   backToProjects: "Back to Search Projects",
   backToSearchBounces: "Back to Search Bounces",
-  open: "Open",
+  openCollection: "Open Collection",
   tracklist: "Tracklist",
   unsorted: "Unsorted",
   setTrackNumber: "Set Track Number…",
@@ -388,11 +404,11 @@ export const strings: TranslationKeys = {
   all: "All",
   notes: "Notes",
   lyrics: "Lyrics",
-  openNote: "Open Note",
+  openNotes: "Open Notes",
   openLyrics: "Open Lyrics",
   showNotes: "Show Notes",
   showLyrics: "Show Lyrics",
-  editNote: "Edit Note",
+  editNotes: "Edit Notes",
   editLyrics: "Edit Lyrics",
   none: "None",
   pinned: "Pinned",
@@ -439,7 +455,6 @@ export const strings: TranslationKeys = {
   restoreDocConflict: "Restored — a note name was taken",
   docFolderMissing: "Notes / lyrics folder not found",
   docFolderMissingHint: "Choose it again in Extension Preferences. Nothing will be written until then.",
-  openPreferences: "Open Extension Preferences",
   docSaveFailed: "Couldn't save",
   useProjectFolders: "Store in Project Folders Instead",
   manyProjectsMissing: "Projects missing — nothing changed",
@@ -461,7 +476,11 @@ export const strings: TranslationKeys = {
   docNameTaken: "Note file name already used",
   renameConfirmTitle: "Rename project?",
   rename: "Rename",
-  edit: "Edit",
+  renameBounce: "Rename Bounce",
+  renameCollection: "Rename Collection",
+  editStage: "Edit Stage",
+  editGenre: "Edit Genre",
+  editRole: "Edit Role",
   color: "Color",
   sizeLargest: "Size — Largest",
   sizeSmallest: "Size — Smallest",
@@ -492,14 +511,29 @@ export const strings: TranslationKeys = {
   collections: "Collections",
   deleteCollectionHint: "This only removes the collection. Your projects are not deleted.",
   role: "Role",
-  create: "Create",
+  newStage: "New Stage",
+  newGenre: "New Genre",
+  newRole: "New Role",
+  newCollection: "New Collection",
   delete: "Delete",
   deleteAll: "Delete All",
   deleteAllConfirmTitle: "Delete all {count} options?",
   deleteAllFailed: "Couldn't Delete All",
   created: "Created",
-  renamed: "Renamed",
-  deleted: "Deleted",
+  stageCreated: "Stage Created",
+  genreCreated: "Genre Created",
+  roleCreated: "Role Created",
+  collectionCreated: "Collection Created",
+  collectionRenamed: "Collection Renamed",
+  stageDeleted: "Stage Deleted",
+  genreDeleted: "Genre Deleted",
+  roleDeleted: "Role Deleted",
+  collectionDeleted: "Collection Deleted",
+  stagesDeleted: "Stages Deleted",
+  genresDeleted: "Genres Deleted",
+  rolesDeleted: "Roles Deleted",
+  projectMovedToTrash: "Project Moved to Trash",
+  bounceMovedToTrash: "Bounce Moved to Trash",
   noCategories: "Nothing here yet",
   tracklistDuration: "Tracklist Duration",
   queueCollection: "Queue Collection in Player",
@@ -521,7 +555,6 @@ export const strings: TranslationKeys = {
   projectDuplicated: "Project Duplicated",
   duplicateFailed: "Duplicate Failed",
   moveToTrash: "Move to Trash",
-  movedToTrash: "Moved to Trash",
   trashProjectHint: "This moves the entire project folder to the Trash:",
   trashBounceHint: "This moves the bounce to the Trash:",
   cleanUpLeftovers: "Clean Up Leftovers",
@@ -548,7 +581,6 @@ export const strings: TranslationKeys = {
   genreAliasesPlaceholder: "e.g. dnb, drum n bass",
   roleAliasesPlaceholder: "e.g. opener, closer",
   retry: "Retry",
-  tryAgain: "Try Again",
   openExtensionPreferences: "Open Extension Preferences",
   noNotesYet: "_No notes yet_",
   noLyricsYet: "_No lyrics yet_",

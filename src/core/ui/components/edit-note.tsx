@@ -78,7 +78,7 @@ export function EditNote({
   return (
     <Form
       isLoading={!loaded}
-      navigationTitle={`${kind === "notes" ? strings.editNote : strings.editLyrics} — ${project.title}`}
+      navigationTitle={`${kind === "notes" ? strings.editNotes : strings.editLyrics} — ${project.title}`}
       actions={
         <ActionPanel>{loaded && <Action.SubmitForm title={strings.save} onSubmit={handleSubmit} />}</ActionPanel>
       }

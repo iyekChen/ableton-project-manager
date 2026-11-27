@@ -268,7 +268,7 @@ export function SetsView({ project }: { project: Project }) {
     try {
       await trash(set.path);
       setReloadToken((n) => n + 1);
-      await showToast({ style: Toast.Style.Success, title: strings.movedToTrash, message: set.name });
+      await showToast({ style: Toast.Style.Success, title: setsViewStrings.setMovedToTrash, message: set.name });
     } catch (error) {
       await showFailure(strings.trashFailed, error);
     }
@@ -294,7 +294,7 @@ export function SetsView({ project }: { project: Project }) {
           description={loadError ?? undefined}
           actions={
             <ActionPanel>
-              <Action title={strings.tryAgain} icon={Icon.ArrowClockwise} onAction={retryLoad} />
+              <Action title={strings.retry} icon={Icon.ArrowClockwise} onAction={retryLoad} />
               <Action title={strings.openExtensionPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
             </ActionPanel>
           }

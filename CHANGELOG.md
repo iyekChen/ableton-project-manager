@@ -18,14 +18,14 @@ More keyboard shortcuts, clearer labels when you move between views, a list that
 - **Group By**: Browse Bounces and Search Bounces no longer show the default grouping for a moment before switching to the one you picked
 - **Templates**: Show in Finder now also works with ⌘⌥O
 - **Forms**: Empty text fields now show a hint, such as the current name, or what to write in notes and lyrics
-- **Rename**: Renaming a bounce is now called Rename, the same as everywhere else
+- **Action Names**: Actions that do the same thing now use the same name everywhere, such as Rename Bounce, New Collection, Edit Stage, and Open Notes
 - **Icons**: Actions that do different things no longer share an icon, so it's easier to tell them apart in the Action Panel
 - **Commands**: Each command now shows Ableton Live under its name in Raycast
 
 ### 🐞 Fixes
 
 - **README**: Fixed links that didn't work on the Store page, and made section titles match the action names
-- **Loading**: Fixed a failed load showing up as an empty list. Search Projects, Sets, and Manage Tags now show what went wrong, with Try Again and Open Extension Preferences
+- **Loading**: Fixed a failed load showing up as an empty list. Search Projects, Sets, and Manage Tags now show what went wrong, with Retry and Open Extension Preferences
 - **Duplicate Project**: Fixed the form closing when the copy failed. It now stays open with your name, and shows the error
 - **Tracklist**: Fixed the list changing when saving a track number or role failed. It now stays as it was and shows the error
 

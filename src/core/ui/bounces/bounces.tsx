@@ -88,7 +88,7 @@ function RenameBounceForm({
   }
   return (
     <Form
-      navigationTitle={strings.rename}
+      navigationTitle={strings.renameBounce}
       actions={
         <ActionPanel>
           <Action.SubmitForm title={strings.save} icon={Icon.Check} onSubmit={handleSubmit} />
@@ -171,7 +171,7 @@ export function Bounces(props: {
       await showFailure(strings.saveFailed, recordError);
       return;
     }
-    await showToast({ style: Toast.Style.Success, title: strings.movedToTrash, message: bounce.name });
+    await showToast({ style: Toast.Style.Success, title: strings.bounceMovedToTrash, message: bounce.name });
   };
 
   const handleCopy = async (bounce: BounceWithSource) => {
@@ -325,7 +325,7 @@ export function Bounces(props: {
                         {renderManageAction()}
                         <ShowInFinderAction path={b.path} />
                         <Action.Push
-                          title={strings.rename}
+                          title={strings.renameBounce}
                           icon={Icon.Pencil}
                           shortcut={Keyboard.Shortcut.Common.Edit}
                           target={

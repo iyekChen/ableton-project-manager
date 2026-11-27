@@ -23,7 +23,7 @@ export async function showDocError(error: unknown): Promise<void> {
       style: Toast.Style.Failure,
       title: strings.docFolderMissing,
       message: error.folder,
-      primaryAction: { title: strings.openPreferences, onAction: () => void openExtensionPreferences() },
+      primaryAction: { title: strings.openExtensionPreferences, onAction: () => void openExtensionPreferences() },
       // 只有设置已被清空时才有意义：设置里还填着旧路径的话，要去设置里改。
       secondaryAction: error.fromMemory
         ? { title: strings.useProjectFolders, onAction: () => forgetDocFolder(error.kind) }
@@ -46,7 +46,7 @@ export async function openDoc(project: { title: string; folderPath: string }, ki
         style: Toast.Style.Failure,
         title: strings.templateMissing,
         message: template,
-        primaryAction: { title: strings.openPreferences, onAction: () => void openExtensionPreferences() },
+        primaryAction: { title: strings.openExtensionPreferences, onAction: () => void openExtensionPreferences() },
       });
     }
   } catch (error) {

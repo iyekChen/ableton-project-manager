@@ -8,6 +8,7 @@ type SetsViewStrings = {
   setDuplicated: string;
   renameSet: string;
   setRenamed: string;
+  setMovedToTrash: string;
   setNameExists: string;
   renameSetConfirmTitle: string;
   renameSetConfirmMessage: string;
@@ -24,6 +25,7 @@ export const setsViewStrings: SetsViewStrings = {
   setDuplicated: "Set Duplicated",
   renameSet: "Rename Set",
   setRenamed: "Set Renamed",
+  setMovedToTrash: "Set Moved to Trash",
   setNameExists: "A Set with that name already exists",
   renameSetConfirmTitle: "Rename Set?",
   renameSetConfirmMessage:

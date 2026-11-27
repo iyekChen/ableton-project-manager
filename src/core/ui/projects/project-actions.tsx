@@ -55,7 +55,7 @@ function RestorePreviousSettingsAction({ project, onRestored }: { project: Proje
   );
 }
 
-/** Details 分区：Edit Info、Edit Note / Edit Lyrics、Open Note / Open Lyrics。 */
+/** Details 分区：Edit Info、Edit Notes / Edit Lyrics、Open Notes / Open Lyrics。 */
 export function ProjectDetailsSection({
   project,
   onSaved,

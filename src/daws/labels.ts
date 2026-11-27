@@ -25,6 +25,8 @@ export const templateLabels: {
   noTemplates: string;
   noTemplatesHint: string;
   templateNameExists: string;
+  templateRenamed: string;
+  templateMovedToTrash: string;
   templateTrashHint: string;
 } = {
   newProjectWithTemplate: "New Live Set from Template",
@@ -34,5 +36,7 @@ export const templateLabels: {
   noTemplates: "No templates found",
   noTemplatesHint: "Nothing in {folder} looks like a template. Check the Templates Folder in preferences.",
   templateNameExists: "A template with that name already exists",
+  templateRenamed: "Template Renamed",
+  templateMovedToTrash: "Template Moved to Trash",
   templateTrashHint: "This moves the template to the Trash:",
 };
