@@ -11,7 +11,7 @@ export const labels: DawLabels = {
   newProjectFile: "New Live Set",
   newProjectFileFailed: "Couldn't Create Live Set",
   dawAppNotFound: "Couldn't Find Ableton Live",
-  noProjectsFound: "No Ableton projects found",
+  noProjectsFound: "No Ableton Projects Found",
   noProjectsFoundHint: "Nothing in {folder} contains a Live Set. Check the Projects Folder in preferences.",
   renameConfirmMessage:
     "Make sure this project is closed in Ableton Live. Renaming while it's open can detach your session.",
@@ -36,7 +36,7 @@ export const templateLabels: {
   renameTemplate: "Rename Template",
   searchTemplates: "Search Templates",
   templates: "Templates",
-  noTemplates: "No templates found",
+  noTemplates: "No Templates Found",
   noTemplatesHint: "Nothing in {folder} looks like a template. Check the Templates Folder in preferences.",
   templateNameExists: "A template with that name already exists",
   templateRenamed: "Template Renamed",

@@ -37,7 +37,7 @@ import { groupItems } from "@/core/ui/shared/grouping";
 import { strings } from "@/strings";
 import type { Project } from "@/core/projects/types";
 import { listEmptyState } from "@/core/ui/shared/list-empty-state";
-import { errorMessage, showFailure } from "@/core/ui/shared/toast";
+import { copyWithHud, errorMessage, showFailure } from "@/core/ui/shared/toast";
 import { ShowInFinderAction } from "@/core/ui/actions/show-in-finder";
 import { LOG_PREFIX } from "@/core/log";
 import { setsViewStrings } from "./strings";
@@ -349,17 +349,17 @@ export function SetsView({ project }: { project: Project }) {
                     />
                   </ActionPanel.Section>
                   <ActionPanel.Section title={strings.sectionCopy}>
-                    <Action.CopyToClipboard
-                      content={set.path.split("/").pop() ?? ""}
+                    <Action
                       title={setsViewStrings.copySetName}
                       icon={Icon.CopyClipboard}
                       shortcut={Keyboard.Shortcut.Common.CopyName}
+                      onAction={() => void copyWithHud(set.path.split("/").pop() ?? "", setsViewStrings.setNameCopied)}
                     />
-                    <Action.CopyToClipboard
-                      content={set.path}
+                    <Action
                       title={setsViewStrings.copySetPath}
                       icon={Icon.CopyClipboard}
                       shortcut={Keyboard.Shortcut.Common.CopyPath}
+                      onAction={() => void copyWithHud(set.path, setsViewStrings.setPathCopied)}
                     />
                   </ActionPanel.Section>
                   <ActionPanel.Section title={strings.sectionArrange}>

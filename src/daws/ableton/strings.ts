@@ -4,6 +4,8 @@ type SetsViewStrings = {
   openInDaw: string;
   copySetName: string;
   copySetPath: string;
+  setNameCopied: string;
+  setPathCopied: string;
   duplicateSet: string;
   setDuplicated: string;
   renameSet: string;
@@ -24,6 +26,8 @@ export const setsViewStrings: SetsViewStrings = {
   openInDaw: "Open in Ableton Live",
   copySetName: "Copy Set Name",
   copySetPath: "Copy Set Path",
+  setNameCopied: "Set Name Copied",
+  setPathCopied: "Set Path Copied",
   duplicateSet: "Duplicate Set",
   setDuplicated: "Set Duplicated",
   renameSet: "Rename Set",
