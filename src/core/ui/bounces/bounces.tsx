@@ -6,7 +6,6 @@ import {
   Icon,
   Keyboard,
   Alert,
-  Clipboard,
   Color,
   confirmAlert,
   showToast,
@@ -175,8 +174,7 @@ export function Bounces(props: {
   };
 
   const handleCopy = async (bounce: BounceWithSource) => {
-    await Clipboard.copy({ file: bounce.path });
-    await showToast({ style: Toast.Style.Success, title: strings.bounceCopied, message: bounce.name });
+    await copyWithHud({ file: bounce.path }, strings.bounceCopied);
   };
 
   // 返回是否保存成功：表单据此决定关不关。
