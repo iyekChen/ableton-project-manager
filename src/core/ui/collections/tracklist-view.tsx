@@ -331,7 +331,7 @@ export function CollectionPanel({
     try {
       fs.writeFileSync(playlistPath, lines.join("\n") + "\n");
     } catch (error) {
-      await showFailure(strings.queueFailed, error);
+      await showFailure(strings.queueCollectionFailed, error);
       return;
     }
 

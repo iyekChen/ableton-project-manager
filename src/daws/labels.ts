@@ -9,7 +9,8 @@ export const labels: DawLabels = {
   openSetFailed: "Couldn't Open Set",
   readingSets: "Reading Sets…",
   newProjectFile: "New Live Set",
-  newProjectFileFailed: "Ableton Live not found",
+  newProjectFileFailed: "Couldn't Create Live Set",
+  dawAppNotFound: "Couldn't Find Ableton Live",
   noProjectsFound: "No Ableton projects found",
   noProjectsFoundHint: "Nothing in {folder} contains a Live Set. Check the Projects Folder in preferences.",
   renameConfirmMessage:
@@ -26,6 +27,8 @@ export const templateLabels: {
   noTemplatesHint: string;
   templateNameExists: string;
   templateRenamed: string;
+  renameTemplateFailed: string;
+  trashTemplateFailed: string;
   templateMovedToTrash: string;
   templateTrashHint: string;
 } = {
@@ -37,6 +40,8 @@ export const templateLabels: {
   noTemplatesHint: "Nothing in {folder} looks like a template. Check the Templates Folder in preferences.",
   templateNameExists: "A template with that name already exists",
   templateRenamed: "Template Renamed",
+  renameTemplateFailed: "Couldn't Rename Template",
+  trashTemplateFailed: "Couldn't Move Template to Trash",
   templateMovedToTrash: "Template Moved to Trash",
   templateTrashHint: "This moves the template to the Trash:",
 };

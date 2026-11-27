@@ -120,7 +120,7 @@ function RenameSetForm({ set, onRenamed }: { set: ProjectSet; onRenamed: () => v
     try {
       fs.renameSync(set.path, target);
     } catch (error) {
-      await showFailure(strings.renameFailed, error);
+      await showFailure(setsViewStrings.renameSetFailed, error);
       return;
     }
 
@@ -253,7 +253,7 @@ export function SetsView({ project }: { project: Project }) {
         message: path.basename(target),
       });
     } catch (error) {
-      await showFailure(strings.duplicateFailed, error);
+      await showFailure(setsViewStrings.duplicateSetFailed, error);
     }
   };
 
@@ -270,7 +270,7 @@ export function SetsView({ project }: { project: Project }) {
       setReloadToken((n) => n + 1);
       await showToast({ style: Toast.Style.Success, title: setsViewStrings.setMovedToTrash, message: set.name });
     } catch (error) {
-      await showFailure(strings.trashFailed, error);
+      await showFailure(setsViewStrings.trashSetFailed, error);
     }
   };
 

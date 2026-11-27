@@ -71,7 +71,7 @@ export function TemplatesView() {
         message: template.name,
       });
     } catch (error) {
-      await showFailure(strings.trashFailed, error);
+      await showFailure(templateLabels.trashTemplateFailed, error);
     }
   }
 
@@ -158,7 +158,7 @@ function RenameTemplate({ template, onRenamed }: { template: Template; onRenamed
     try {
       fs.renameSync(template.path, target);
     } catch (error) {
-      await showFailure(strings.renameFailed, error);
+      await showFailure(templateLabels.renameTemplateFailed, error);
       return;
     }
     onRenamed();

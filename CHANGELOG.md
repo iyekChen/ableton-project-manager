@@ -18,7 +18,7 @@ More keyboard shortcuts, clearer labels when you move between views, a list that
 - **Group By**: Browse Bounces and Search Bounces no longer show the default grouping for a moment before switching to the one you picked
 - **Templates**: Show in Finder now also works with ⌘⌥O
 - **Forms**: Empty text fields now show a hint, such as the current name, or what to write in notes and lyrics
-- **Action Names**: Actions that do the same thing now use the same name everywhere, such as Rename Bounce, New Collection, Edit Stage, and Open Notes
+- **Action Names**: Actions that do the same thing now use the same name everywhere, such as Rename Bounce, New Collection, Edit Stage, and Open Notes. Error messages now say what failed, such as Couldn't Rename Bounce, and copying closes the window and shows a short confirmation
 - **Templates**: Create Live Set is now New Live Set from Template, and the rename form's button is Save
 - **Icons**: Actions that do different things no longer share an icon, so it's easier to tell them apart in the Action Panel
 - **Commands**: Each command now shows Ableton Live under its name in Raycast

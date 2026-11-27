@@ -9,6 +9,9 @@ type SetsViewStrings = {
   renameSet: string;
   setRenamed: string;
   setMovedToTrash: string;
+  renameSetFailed: string;
+  duplicateSetFailed: string;
+  trashSetFailed: string;
   setNameExists: string;
   renameSetConfirmTitle: string;
   renameSetConfirmMessage: string;
@@ -26,6 +29,9 @@ export const setsViewStrings: SetsViewStrings = {
   renameSet: "Rename Set",
   setRenamed: "Set Renamed",
   setMovedToTrash: "Set Moved to Trash",
+  renameSetFailed: "Couldn't Rename Set",
+  duplicateSetFailed: "Couldn't Duplicate Set",
+  trashSetFailed: "Couldn't Move Set to Trash",
   setNameExists: "A Set with that name already exists",
   renameSetConfirmTitle: "Rename Set?",
   renameSetConfirmMessage:

@@ -141,7 +141,7 @@ export function ProjectFileSection({
         shortcut={Keyboard.Shortcut.Common.New}
         onAction={async () => {
           if (!dawApp) {
-            await showToast({ style: Toast.Style.Failure, title: labels.newProjectFileFailed });
+            await showToast({ style: Toast.Style.Failure, title: labels.dawAppNotFound });
             return;
           }
           try {

@@ -13,7 +13,7 @@ import { showFailure } from "@/core/ui/shared/toast";
 import { strings } from "@/strings";
 
 /** 文档读写出错时统一提示；自定义文件夹失效时附带"打开扩展设置"。 */
-export async function showDocError(error: unknown): Promise<void> {
+export async function showDocError(error: unknown, kind: DocKind): Promise<void> {
   if (error instanceof DocSharedError) {
     await showToast({ style: Toast.Style.Failure, title: strings.docShared, message: error.others.join(", ") });
     return;
@@ -31,7 +31,7 @@ export async function showDocError(error: unknown): Promise<void> {
     });
     return;
   }
-  await showFailure(strings.docSaveFailed, error);
+  await showFailure(kind === "notes" ? strings.docSaveFailed : strings.lyricsSaveFailed, error);
 }
 
 /** 打开（必要时按模板新建）某项目的文档；出错时提示而不是抛出。 */
@@ -50,6 +50,6 @@ export async function openDoc(project: { title: string; folderPath: string }, ki
       });
     }
   } catch (error) {
-    await showDocError(error);
+    await showDocError(error, kind);
   }
 }

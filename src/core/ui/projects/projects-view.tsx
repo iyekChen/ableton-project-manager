@@ -236,7 +236,7 @@ export function ProjectsView() {
       await reloadProjects();
       await showToast({ style: Toast.Style.Success, title: strings.projectMovedToTrash, message: project.title });
     } catch (error) {
-      await showFailure(strings.trashFailed, error);
+      await showFailure(strings.trashProjectFailed, error);
     } finally {
       trashingIds.delete(project.id);
     }
