@@ -16,7 +16,7 @@ import {
   useNavigation,
   type Application,
 } from "@raycast/api";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import fs from "node:fs";
 import path from "node:path";
 import type { DawSet, ProjectFileMetadata } from "@/daws";
@@ -152,6 +152,9 @@ export function SetsView({ project }: { project: Project }) {
   const [isLoading, setIsLoading] = useState(true);
   // 读取失败的原因：列表为空时据此显示出错页面，而不是看起来像没有 Set。
   const [loadError, setLoadError] = useState<string | null>(null);
+  // 每次渲染都更新：loadSets 的闭包里拿不到最新的 sets state。
+  const setsRef = useRef<ProjectSet[]>(sets);
+  setsRef.current = sets;
   const [sortBy, setSortBy] = useSortOption(SETS_SORT_STORAGE_KEY, SETS_SORT_OPTIONS, "created-desc");
   const [groupBy, setGroupBy] = useGroupOption(SETS_GROUP_STORAGE_KEY, "created");
   const [abletonApp, setAbletonApp] = useState<Application | null>(null);
@@ -221,6 +224,8 @@ export function SetsView({ project }: { project: Project }) {
           console.error(`${LOG_PREFIX} Failed to load sets:`, error);
           // 保留已读到的条目：读不到时不该看起来像没有 Set。
           setLoadError(errorMessage(error));
+          // 列表里已经有 Set 时，出错页面不会出现，所以另外弹一次提示；列表为空时出错页面已经说了。
+          if (setsRef.current.length > 0) await showFailure(setsViewStrings.loadFailed, error);
         }
       } finally {
         if (!cancelled) {

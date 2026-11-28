@@ -25,6 +25,7 @@ export const templateLabels: {
   templates: string;
   noTemplates: string;
   noTemplatesHint: string;
+  loadTemplatesFailed: string;
   templateNameExists: string;
   templateRenamed: string;
   renameTemplateFailed: string;
@@ -38,6 +39,7 @@ export const templateLabels: {
   templates: "Templates",
   noTemplates: "No Templates Found",
   noTemplatesHint: "Nothing in {folder} looks like a template. Check the Templates Folder in preferences.",
+  loadTemplatesFailed: "Couldn't Load Templates",
   templateNameExists: "A template with that name already exists",
   templateRenamed: "Template Renamed",
   renameTemplateFailed: "Couldn't Rename Template",

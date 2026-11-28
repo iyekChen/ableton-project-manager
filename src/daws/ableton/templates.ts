@@ -50,18 +50,13 @@ function templatesIn(folder: string, isTemplate: (entryPath: string, entryName: 
 /**
  * 列出模板文件夹里的模板：顶层的算一组，每个直接子文件夹各算一组，不再往下深入。
  * 模板本身（.als 文件）由 isTemplate 认出来，不会被当成子文件夹进去扫描。
- * 文件夹不存在或读不到时返回空。
+ * 顶层文件夹读不到时把错误抛出去，由界面显示出错页面；子文件夹读不到时跳过。
  */
 export function listTemplates(
   folder: string,
   isTemplate: (entryPath: string, entryName: string) => boolean,
 ): TemplateGroup[] {
-  let entries: fs.Dirent[];
-  try {
-    entries = fs.readdirSync(folder, { withFileTypes: true });
-  } catch {
-    return [];
-  }
+  const entries = fs.readdirSync(folder, { withFileTypes: true });
 
   const top: Template[] = [];
   const groups: TemplateGroup[] = [];

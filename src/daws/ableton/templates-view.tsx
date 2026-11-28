@@ -3,6 +3,7 @@ import {
   ActionPanel,
   Alert,
   closeMainWindow,
+  Color,
   confirmAlert,
   Form,
   getPreferenceValues,
@@ -21,7 +22,9 @@ import path from "node:path";
 import { strings } from "@/strings";
 import { labels, templateLabels } from "@/daws/labels";
 import { openWithDaw } from "@/core/daw-app";
-import { showFailure } from "@/core/ui/shared/toast";
+import { listEmptyState } from "@/core/ui/shared/list-empty-state";
+import { errorMessage, showFailure } from "@/core/ui/shared/toast";
+import { LOG_PREFIX } from "@/core/log";
 import { ShowInFinderAction } from "@/core/ui/actions/show-in-finder";
 import { defaultTemplatesFolder, isTemplate, listTemplates, type Template, type TemplateGroup } from "./templates";
 
@@ -36,13 +39,28 @@ const TEMPLATES_FOLDER = templatesFolderPreference() ?? defaultTemplatesFolder()
 export function TemplatesView() {
   const [groups, setGroups] = useState<TemplateGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // 读取失败的原因：列表为空时据此显示出错页面，而不是看起来像没有模板。
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const reload = useCallback(() => {
-    setGroups(listTemplates(TEMPLATES_FOLDER, isTemplate));
-    setIsLoading(false);
+    try {
+      setGroups(listTemplates(TEMPLATES_FOLDER, isTemplate));
+      setLoadError(null);
+    } catch (error) {
+      console.error(`${LOG_PREFIX} Failed to load templates:`, error);
+      setLoadError(errorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(reload, [reload]);
+
+  // 出错页面上的 Retry：重读期间显示加载，读完再收起。
+  const retryLoad = () => {
+    setIsLoading(true);
+    reload();
+  };
 
   // 和打开已有 Set 一样：用 Live 打开模板原件，然后关掉 Raycast 窗口。
   async function handleCreate(template: Template) {
@@ -106,13 +124,28 @@ export function TemplatesView() {
     />
   );
 
+  const emptyState = listEmptyState(isLoading, groups.length, loadError);
+
   return (
     <List
       isLoading={isLoading}
       navigationTitle={templateLabels.newProjectWithTemplate}
       searchBarPlaceholder={templateLabels.searchTemplates}
     >
-      {!isLoading && groups.length === 0 && (
+      {emptyState === "error" && (
+        <List.EmptyView
+          icon={{ source: Icon.ExclamationMark, tintColor: Color.Red }}
+          title={templateLabels.loadTemplatesFailed}
+          description={loadError ?? undefined}
+          actions={
+            <ActionPanel>
+              <Action title={strings.retry} icon={Icon.ArrowClockwise} onAction={retryLoad} />
+              <Action title={strings.openExtensionPreferences} icon={Icon.Gear} onAction={openExtensionPreferences} />
+            </ActionPanel>
+          }
+        />
+      )}
+      {emptyState === "empty" && (
         <List.EmptyView
           icon={Icon.Folder}
           title={templateLabels.noTemplates}
